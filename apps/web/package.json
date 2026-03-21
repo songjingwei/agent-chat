@@ -1,0 +1,13 @@
+{
+  "name": "@agent/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node -e \"console.log('[web] scaffold ready: TanStack Start app placeholder')\"",
+    "build": "node -e \"console.log('[web] build placeholder')\"",
+    "test": "node -e \"console.log('[web] test placeholder')\"",
+    "lint": "node -e \"console.log('[web] lint placeholder')\"",
+    "typecheck": "node -e \"console.log('[web] typecheck placeholder')\""
+  }
+}

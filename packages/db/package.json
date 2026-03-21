@@ -1,0 +1,13 @@
+{
+  "name": "@agent/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node -e \"console.log('[db] scaffold ready')\"",
+    "build": "node -e \"console.log('[db] build placeholder')\"",
+    "test": "node -e \"console.log('[db] test placeholder')\"",
+    "lint": "node -e \"console.log('[db] lint placeholder')\"",
+    "typecheck": "node -e \"console.log('[db] typecheck placeholder')\""
+  }
+}

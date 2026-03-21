@@ -1,0 +1,13 @@
+{
+  "name": "@agent/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node -e \"console.log('[shared] scaffold ready')\"",
+    "build": "node -e \"console.log('[shared] build placeholder')\"",
+    "test": "node -e \"console.log('[shared] test placeholder')\"",
+    "lint": "node -e \"console.log('[shared] lint placeholder')\"",
+    "typecheck": "node -e \"console.log('[shared] typecheck placeholder')\""
+  }
+}

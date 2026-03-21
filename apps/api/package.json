@@ -1,0 +1,13 @@
+{
+  "name": "@agent/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node -e \"console.log('[api] scaffold ready: Hono API placeholder')\"",
+    "build": "node -e \"console.log('[api] build placeholder')\"",
+    "test": "node -e \"console.log('[api] test placeholder')\"",
+    "lint": "node -e \"console.log('[api] lint placeholder')\"",
+    "typecheck": "node -e \"console.log('[api] typecheck placeholder')\""
+  }
+}

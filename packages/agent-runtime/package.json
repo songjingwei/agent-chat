@@ -1,0 +1,13 @@
+{
+  "name": "@agent/runtime",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node -e \"console.log('[runtime] scaffold ready')\"",
+    "build": "node -e \"console.log('[runtime] build placeholder')\"",
+    "test": "node -e \"console.log('[runtime] test placeholder')\"",
+    "lint": "node -e \"console.log('[runtime] lint placeholder')\"",
+    "typecheck": "node -e \"console.log('[runtime] typecheck placeholder')\""
+  }
+}
