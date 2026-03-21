@@ -23,15 +23,17 @@
 
 ## 3. 当前真实状态快照（As of 2026-03-21）
 ### 代码现状
-1. 当前处于“前端骨架阶段”。
-2. `apps/web/src/index.ts` 仅导出常量：`webAppName = "agent-web"`。
-3. 目录已预建但为空实现（`.gitkeep`）：
-   - `src/routes/`
-   - `src/features/`
-   - `src/components/`
-   - `src/lib/`
-4. `apps/web/package.json` 中 `dev/build/test/lint/typecheck` 仍是占位脚本（仅输出提示）。
-5. 尚未引入 `TanStack Start`、`TanStack Router`、`TanStack Query`、`Tailwind CSS` 等运行依赖。
+1. 已完成 `TanStack Start (React)` 初始化。
+2. 已有基础路由与页面：
+   - `src/routes/__root.tsx`
+   - `src/routes/index.tsx`
+   - `src/routes/about.tsx`
+3. 已有基础组件与样式：
+   - `src/components/Header.tsx`
+   - `src/components/Footer.tsx`
+   - `src/styles.css`
+4. `apps/web/package.json` 已提供可执行脚本：`dev/build/preview/test/typecheck`。
+5. 已引入模板依赖：`@tanstack/react-start`、`@tanstack/react-router`、`tailwindcss`、`vite` 等。
 
 ### 计划状态（来源：`plans/`）
 1. Day 11（2026-04-06）“最小演示 UI”状态：`Not Started`。
@@ -43,7 +45,7 @@
 2. 路由：`TanStack Router`（类型安全路由与 loader）。
 3. 服务端状态：`TanStack Query`（缓存、重试、失效）。
 4. 语言：`TypeScript`。
-5. 样式：`Tailwind CSS`（后续接入）。
+5. 样式：`Tailwind CSS`（模板已接入，可按业务演进调整）。
 
 实现约束：
 1. API DTO 与错误码优先复用 `packages/shared`，避免前后端类型漂移。
@@ -114,12 +116,12 @@
 ```bash
 pnpm --filter @agent/web dev
 pnpm --filter @agent/web build
+pnpm --filter @agent/web preview
 pnpm --filter @agent/web test
-pnpm --filter @agent/web lint
 pnpm --filter @agent/web typecheck
 ```
 
-注意：以上命令目前为占位输出，不代表 Web 应用已可运行。
+注意：`apps/web` 当前是模板初始化状态，业务页面尚未替换。
 
 ## 11. 文档维护规则（非常重要）
 每次改动 `apps/web` 时，同步检查是否需要更新本文件：
