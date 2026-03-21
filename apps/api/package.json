@@ -4,10 +4,21 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node -e \"console.log('[api] scaffold ready: Hono API placeholder')\"",
-    "build": "node -e \"console.log('[api] build placeholder')\"",
-    "test": "node -e \"console.log('[api] test placeholder')\"",
-    "lint": "node -e \"console.log('[api] lint placeholder')\"",
-    "typecheck": "node -e \"console.log('[api] typecheck placeholder')\""
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "test": "tsx --test src/**/*.test.ts",
+    "lint": "pnpm run typecheck",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.19.11",
+    "hono": "^4.12.8",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   }
 }

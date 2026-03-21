@@ -1,0 +1,40 @@
+import { Hono } from "hono";
+
+import { ApiError } from "../../lib/api-error";
+import { jsonOk } from "../../lib/http";
+import { parseJsonBody, parseWithSchema } from "../../lib/validation";
+import { createSessionBodySchema, listSessionsQuerySchema } from "../../schemas/session";
+import type { SessionService } from "../../services/session.service";
+
+export const createSessionRoutes = (sessionService: SessionService) => {
+  const routes = new Hono();
+
+  routes.post("/sessions", async (c) => {
+    const body = await parseJsonBody(c, createSessionBodySchema);
+    const session = sessionService.create(body);
+    return jsonOk(c, session, 201);
+  });
+
+  routes.get("/sessions", (c) => {
+    const query = parseWithSchema(listSessionsQuerySchema, c.req.query());
+    const items = sessionService.list(query.personaId);
+
+    return jsonOk(c, {
+      items,
+      total: items.length,
+    });
+  });
+
+  routes.get("/sessions/:sessionId", (c) => {
+    const sessionId = c.req.param("sessionId");
+    const session = sessionService.getById(sessionId);
+
+    if (!session) {
+      throw new ApiError(404, "SESSION_NOT_FOUND", `Session not found: ${sessionId}`);
+    }
+
+    return jsonOk(c, session);
+  });
+
+  return routes;
+};
