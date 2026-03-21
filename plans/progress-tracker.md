@@ -7,8 +7,8 @@
 
 | Day | 计划日期 | 今日目标 | 实际结果 | 状态 | 阻塞问题 | 次日第一步 |
 |---|---|---|---|---|---|---|
-| Day 0 | 2026-03-21 | 预备日：理解产品/架构/MVP，检查工具链，整理未知问题清单 | 已完成产品理解、系统分层、Day1-7 依赖、未知问题清单（6 条）、Day 1 风险清单；完成工具链检查（jj/node/pnpm 可用，docker 缺失） | Blocked | 本机未安装 Docker（`docker: command not found`） | 安装 Docker Desktop 并执行 `docker -v`、`docker compose version` 复验 |
-| Day 1 | 2026-03-23 | 定义核心指标、初始化目录、补 `.env.example` |  | Not Started |  |  |
+| Day 0 | 2026-03-21 | 预备日：理解产品/架构/MVP，检查工具链，整理未知问题清单 | 已完成产品理解、系统分层、Day1-7 依赖、未知问题清单（6 条）、Day 1 风险清单；完成工具链检查（jj/node/pnpm 可用，docker 缺失）；**额外完成**：pnpm monorepo 骨架搭建、`.env.example`、API 初始化（Hono + 7 接口 + 2 测试通过）、Web 初始化（TanStack Start）、各模块 AGENTS.md/README 文档、CLAUDE.md | Done | Docker 未安装（不阻塞 Day 1 剩余任务） | 冻结核心指标定义文档，安装 Docker |
+| Day 1 | 2026-03-23 | 定义核心指标、初始化目录、补 `.env.example` | 目录骨架和 `.env.example` 已在 Day 0 提前完成；剩余：核心指标定义文档 | In Progress | 无 | 完成指标定义文档，安装 Docker，推进 Day 2 基础设施 |
 | Day 2 | 2026-03-24 | 搭建 docker 依赖与健康检查 |  | Not Started |  |  |
 | Day 3 | 2026-03-25 | 完成核心数据模型与迁移 |  | Not Started |  |  |
 | Day 4 | 2026-03-26 | Runtime 状态机骨架 + 结构化输出 |  | Not Started |  |  |
