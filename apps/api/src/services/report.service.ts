@@ -1,3 +1,4 @@
+import { ApiError } from "../lib/api-error.js";
 import type { InMemoryStore } from "./store.js";
 import type { LatestReport, Session } from "./types.js";
 
@@ -5,6 +6,10 @@ export class ReportService {
   constructor(private readonly store: InMemoryStore) {}
 
   getLatestByPersona(personaId: string): LatestReport | null {
+    if (!this.store.personas.has(personaId)) {
+      throw new ApiError(404, "PERSONA_NOT_FOUND", `Persona not found: ${personaId}`);
+    }
+
     const sessions = this.findSessionsByPersona(personaId);
     if (sessions.length === 0) {
       return null;

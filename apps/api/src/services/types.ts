@@ -51,6 +51,11 @@ export interface CreateSessionInput {
   targetPersonaId: string;
 }
 
+export interface ListSessionsInput {
+  personaId?: string | undefined;
+  userId?: string | undefined;
+}
+
 export interface CreateHumanMessageInput {
   sessionId: string;
   authorPersonaId: string;

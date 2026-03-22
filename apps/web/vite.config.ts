@@ -6,26 +6,26 @@ import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 
 import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
-import { nitro } from 'nitro/vite'
 
-const config = defineConfig({
+const config = defineConfig(({ mode }) => ({
   server: {
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-      },
-    },
+    proxy: mode === 'development'
+      ? {
+          '/api': {
+            target: 'http://localhost:3001',
+            changeOrigin: true,
+            rewrite: (path) => path.replace(/^\/api/, ''),
+          },
+        }
+      : undefined,
   },
   plugins: [
     devtools(),
-    nitro({ rollupConfig: { external: [/^@sentry\//] } }),
     tsconfigPaths({ projects: ['./tsconfig.json'] }),
     tailwindcss(),
     tanstackStart(),
     viteReact(),
   ],
-})
+}))
 
 export default config

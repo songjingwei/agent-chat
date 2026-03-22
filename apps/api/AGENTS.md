@@ -30,12 +30,13 @@
    - `GET /`
    - `GET /health`
    - `POST/GET /personas`、`GET /personas/:personaId`
-   - `POST/GET /sessions`、`GET /sessions/:sessionId`
+   - `POST/GET /sessions`、`GET /sessions/:sessionId`（`GET /sessions` 支持 `personaId` / `userId` 过滤）
    - `POST /sessions/:sessionId/human-message`
    - `GET /sessions/:sessionId/messages`
    - `GET /reports/latest?personaId=...`
 5. `apps/api` 已具备真实脚本：`dev/build/start/test/typecheck`。
-6. 测试现状：`src/app.test.ts` 有 2 条通过用例（健康检查、persona->session->message->report 主链路）；`pnpm typecheck` 已通过。
+6. 测试现状：`src/app.test.ts` 有 4 条通过用例（健康检查、主链路、`GET /sessions?userId=...` 契约、缺失资源 `404` 契约）；`pnpm typecheck` 已通过。
+7. 已新增 `apps/api/docs/web-api-contract.md`，作为 `apps/web` 联调契约源文件。
 
 ### 计划状态（来源：`plans/`）
 1. Day 0（2026-03-21）状态：`Done`。
@@ -143,3 +144,4 @@ docker compose -f infra/docker/docker-compose.yml up -d
 6. `plans/master-plan.md`
 7. `plans/progress-tracker.md`
 8. `plans/change-log.md`
+9. `apps/api/docs/web-api-contract.md`

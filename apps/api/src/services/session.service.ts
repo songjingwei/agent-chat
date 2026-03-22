@@ -1,7 +1,12 @@
 import { ApiError } from "../lib/api-error.js";
 import { createId } from "../lib/id.js";
 import type { InMemoryStore } from "./store.js";
-import type { CreateSessionInput, Session, SessionStatus } from "./types.js";
+import type {
+  CreateSessionInput,
+  ListSessionsInput,
+  Session,
+  SessionStatus,
+} from "./types.js";
 
 export class SessionService {
   constructor(private readonly store: InMemoryStore) {}
@@ -31,16 +36,31 @@ export class SessionService {
     return session;
   }
 
-  list(personaId?: string): Session[] {
+  list(filters: ListSessionsInput = {}): Session[] {
     const sessions = Array.from(this.store.sessions.values());
 
-    if (!personaId) {
-      return sessions;
-    }
-
     return sessions.filter(
-      (session) =>
-        session.initiatorPersonaId === personaId || session.targetPersonaId === personaId,
+      (session) => {
+        if (
+          filters.personaId &&
+          session.initiatorPersonaId !== filters.personaId &&
+          session.targetPersonaId !== filters.personaId
+        ) {
+          return false;
+        }
+
+        if (!filters.userId) {
+          return true;
+        }
+
+        const initiatorPersona = this.store.personas.get(session.initiatorPersonaId);
+        const targetPersona = this.store.personas.get(session.targetPersonaId);
+
+        return (
+          initiatorPersona?.userId === filters.userId ||
+          targetPersona?.userId === filters.userId
+        );
+      },
     );
   }
 

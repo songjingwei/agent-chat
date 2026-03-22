@@ -46,6 +46,11 @@ export class MessageService {
   }
 
   listBySession(sessionId: string): ChatMessage[] {
+    const session = this.sessionService.getById(sessionId);
+    if (!session) {
+      throw new ApiError(404, "SESSION_NOT_FOUND", `Session not found: ${sessionId}`);
+    }
+
     return this.store.messagesBySession.get(sessionId) ?? [];
   }
 }

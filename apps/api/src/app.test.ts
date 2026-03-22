@@ -103,3 +103,71 @@ test("persona/session/message/report flow should work", async () => {
   assert.equal(reportJson.data.personaId, personaAJson.data.id);
   assert.equal(reportJson.data.totalMessages, 1);
 });
+
+test("GET /sessions should support userId filtering for web session list", async () => {
+  const app = createTestApp();
+
+  const createPersona = async (userId: string, displayName: string) => {
+    const response = await app.request("/personas", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        userId,
+        displayName,
+        traits: [],
+      }),
+    });
+
+    assert.equal(response.status, 201);
+    return response.json();
+  };
+
+  const personaAJson = await createPersona("user-a", "Alice");
+  const personaBJson = await createPersona("user-b", "Bob");
+  const personaCJson = await createPersona("user-c", "Carol");
+
+  const createSession = async (initiatorPersonaId: string, targetPersonaId: string) => {
+    const response = await app.request("/sessions", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        initiatorPersonaId,
+        targetPersonaId,
+      }),
+    });
+
+    assert.equal(response.status, 201);
+    return response.json();
+  };
+
+  await createSession(personaAJson.data.id, personaBJson.data.id);
+  await createSession(personaBJson.data.id, personaCJson.data.id);
+
+  const response = await app.request("/sessions?userId=user-a");
+  assert.equal(response.status, 200);
+
+  const body = await response.json();
+  assert.equal(body.success, true);
+  assert.equal(body.data.total, 1);
+  assert.equal(body.data.items[0].initiatorPersonaId, personaAJson.data.id);
+});
+
+test("web contract should return stable 404 errors for missing messages/report resources", async () => {
+  const app = createTestApp();
+
+  const missingMessagesResponse = await app.request("/sessions/ses_missing/messages");
+  assert.equal(missingMessagesResponse.status, 404);
+
+  const missingMessagesJson = await missingMessagesResponse.json();
+  assert.equal(missingMessagesJson.success, false);
+  assert.equal(missingMessagesJson.error.code, "SESSION_NOT_FOUND");
+
+  const missingReportResponse = await app.request(
+    "/reports/latest?personaId=prs_missing",
+  );
+  assert.equal(missingReportResponse.status, 404);
+
+  const missingReportJson = await missingReportResponse.json();
+  assert.equal(missingReportJson.success, false);
+  assert.equal(missingReportJson.error.code, "PERSONA_NOT_FOUND");
+});
