@@ -34,7 +34,7 @@
    - `src/routes/reports/$id.tsx` — 对话报告
    - `src/routes/about.tsx` — 关于页（模板保留）
 3. 已建立基础设施层：
-   - `src/lib/api-client.ts` — API 请求封装（通过 Vite proxy → localhost:3001）
+   - `src/lib/api-client.ts` — API 请求封装（开发环境优先直连 `VITE_API_ORIGIN`/`localhost:3001`，生产默认 `/api`）
    - `src/lib/types.ts` — 前端类型定义（镜像 API 类型）
    - `src/lib/query-keys.ts` — TanStack Query key 工厂
    - `src/lib/userId.ts` — localStorage 用户 ID（auth P2 前临时方案）
@@ -134,7 +134,8 @@
 1. `apps/api` 当前仍是内存存储实现，前端联调数据不具备持久性。
 2. 实时能力尚未接入，当前应先保证“轮询/刷新”可用兜底。
 3. 接口契约仍在演进，前端需在 `lib` 层集中做错误映射，避免分散改动。
-4. 当前页面仍以模板骨架为主，不应把样式稿或页面规划文档误判为业务功能已实现。
+4. 当前 TanStack Start dev server 下不应假设 `/api` 相对路径一定会被代理；本地联调优先使用 `VITE_API_ORIGIN`。
+5. 当前页面仍以模板骨架为主，不应把样式稿或页面规划文档误判为业务功能已实现。
 
 ## 10. 快速命令（当前可用）
 在仓库根目录执行：

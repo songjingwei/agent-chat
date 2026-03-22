@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
-import { listPersonas } from '#/lib/api-client'
+import { fetchPersonas } from '#/lib/server-fns'
 import { queryKeys } from '#/lib/query-keys'
 
 export function usePersonaList() {
   const query = useQuery({
     queryKey: queryKeys.personas.list(),
-    queryFn: () => listPersonas(),
+    queryFn: () => fetchPersonas(),
   })
 
   return {

@@ -1,12 +1,20 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { SessionList } from '#/features/sessions/SessionList'
+import { queryKeys } from '#/lib/query-keys'
+import { fetchSessions } from '#/lib/server-fns'
 
 export const Route = createFileRoute('/sessions/')({
   beforeLoad: ({ context }) => {
     if (!context.auth.isAuthenticated) {
       throw redirect({ to: '/login' })
     }
+  },
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData({
+      queryKey: queryKeys.sessions.list(),
+      queryFn: () => fetchSessions(),
+    })
   },
   component: SessionsPage,
 })

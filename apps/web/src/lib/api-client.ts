@@ -17,7 +17,14 @@ import type {
   Session,
 } from './types'
 
-const API_BASE = '/api'
+const configuredApiOrigin = import.meta.env.VITE_API_ORIGIN?.trim()
+
+const API_BASE =
+  configuredApiOrigin && configuredApiOrigin.length > 0
+    ? configuredApiOrigin.replace(/\/$/, '')
+    : import.meta.env.DEV
+      ? 'http://localhost:3001'
+      : '/api'
 
 export class ApiRequestError extends Error {
   readonly code: string

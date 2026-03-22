@@ -1,4 +1,5 @@
 const DEFAULT_PORT = 3001;
+const DEFAULT_APP_ORIGIN = "http://localhost:3000";
 const DEFAULT_DATABASE_URL = "postgres://postgres:postgres@localhost:5432/agent_chat";
 const DEFAULT_REDIS_URL = "redis://localhost:6379";
 const DEFAULT_HEALTHCHECK_TIMEOUT_MS = 1000;
@@ -36,6 +37,7 @@ export const apiConfig = {
   nodeEnv: process.env.NODE_ENV ?? "development",
   port: parsePort(process.env.PORT),
   serviceName: "agent-api",
+  appOrigin: process.env.APP_ORIGIN ?? DEFAULT_APP_ORIGIN,
   databaseUrl: process.env.DATABASE_URL ?? DEFAULT_DATABASE_URL,
   redisUrl: process.env.REDIS_URL ?? DEFAULT_REDIS_URL,
   healthcheckTimeoutMs: parsePositiveInt(

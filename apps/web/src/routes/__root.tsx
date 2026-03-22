@@ -14,7 +14,11 @@ import Footer from '../components/Footer'
 import Header from '../components/Header'
 import { NotFound } from '../components/NotFound'
 import { AuthProvider, useAuth } from '../lib/auth-context'
-import type { AuthUser } from '../lib/types'
+import {
+  createUnknownAuthState,
+  resolveRouteAuth,
+  type AuthState,
+} from '../lib/auth-state'
 
 import appCss from '../styles.css?url'
 
@@ -22,13 +26,20 @@ const THEME_INIT_SCRIPT = `(function(){try{var stored=window.localStorage.getIte
 
 interface RouterContext {
   queryClient: QueryClient
-  auth: {
-    isAuthenticated: boolean
-    user: AuthUser | null
-  }
+  auth: AuthState
 }
 
 export const Route = createRootRouteWithContext<RouterContext>()({
+  beforeLoad: async () => {
+    return {
+      auth: await resolveRouteAuth(),
+    }
+  },
+  loader: ({ context }) => ({
+    auth: context.auth.status === 'unknown'
+      ? createUnknownAuthState()
+      : context.auth,
+  }),
   head: () => ({
     meta: [
       {
@@ -64,6 +75,7 @@ function InnerApp({ children }: { children: React.ReactNode }) {
 
   // Keep router context in sync with auth state
   router.options.context.auth = {
+    status: auth.status,
     isAuthenticated: auth.isAuthenticated,
     user: auth.user,
   }
@@ -79,6 +91,7 @@ function InnerApp({ children }: { children: React.ReactNode }) {
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   const { queryClient } = Route.useRouteContext()
+  const { auth } = Route.useLoaderData()
   const { i18n } = useTranslation()
 
   return (
@@ -89,7 +102,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-[rgba(79,184,178,0.24)]">
         <QueryClientProvider client={queryClient}>
-          <AuthProvider>
+          <AuthProvider initialAuth={auth}>
             <InnerApp>{children}</InnerApp>
           </AuthProvider>
         </QueryClientProvider>

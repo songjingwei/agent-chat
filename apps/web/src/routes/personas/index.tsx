@@ -1,12 +1,20 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { MyPersonasList } from '#/features/personas/MyPersonasList'
+import { queryKeys } from '#/lib/query-keys'
+import { fetchPersonas } from '#/lib/server-fns'
 
 export const Route = createFileRoute('/personas/')({
   beforeLoad: ({ context }) => {
     if (!context.auth.isAuthenticated) {
       throw redirect({ to: '/login' })
     }
+  },
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData({
+      queryKey: queryKeys.personas.list(),
+      queryFn: () => fetchPersonas(),
+    })
   },
   component: PersonasPage,
 })

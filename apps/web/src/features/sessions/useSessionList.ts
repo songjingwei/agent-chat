@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
-import { listSessions } from '#/lib/api-client'
+import { fetchSessions } from '#/lib/server-fns'
 import { queryKeys } from '#/lib/query-keys'
 
 export function useSessionList(personaId?: string) {
   const query = useQuery({
     queryKey: queryKeys.sessions.list(personaId),
-    queryFn: () => listSessions(personaId),
+    queryFn: () => fetchSessions({ data: personaId }),
   })
 
   return {

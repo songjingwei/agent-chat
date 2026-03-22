@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
-import { getLatestReport } from '#/lib/api-client'
+import { fetchLatestReport } from '#/lib/server-fns'
 import { queryKeys } from '#/lib/query-keys'
 
 export function useReport(personaId: string) {
   const query = useQuery({
     queryKey: queryKeys.reports.latest(personaId),
-    queryFn: () => getLatestReport(personaId),
+    queryFn: () => fetchLatestReport({ data: personaId }),
     enabled: !!personaId,
   })
 

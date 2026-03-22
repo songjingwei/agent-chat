@@ -1,11 +1,11 @@
 import {
   createContext,
   useContext,
+  useRef,
   useState,
   useEffect,
   type ReactNode,
 } from 'react'
-import type { AuthUser } from './types'
 import {
   loginUser,
   registerUser,
@@ -18,9 +18,16 @@ import {
   setTokens,
   clearTokens,
 } from './auth-tokens'
+import {
+  createAnonymousAuthState,
+  createAuthenticatedAuthState,
+  type AuthState,
+  type AuthStatus,
+} from './auth-state'
 
 interface AuthContextValue {
-  user: AuthUser | null
+  user: AuthState['user']
+  status: AuthStatus
   isLoading: boolean
   isAuthenticated: boolean
   login: (email: string, password: string) => Promise<void>
@@ -34,29 +41,75 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+export function AuthProvider({
+  children,
+  initialAuth,
+}: {
+  children: ReactNode
+  initialAuth: AuthState
+}) {
+  const [authState, setAuthState] = useState<AuthState>(initialAuth)
+  const [isLoading, setIsLoading] = useState(initialAuth.status === 'unknown')
+  const hasAttemptedClientRestore = useRef(false)
 
   useEffect(() => {
+    hasAttemptedClientRestore.current = false
+    setAuthState(initialAuth)
+    setIsLoading(initialAuth.status === 'unknown')
+  }, [
+    initialAuth.status,
+    initialAuth.user?.createdAt,
+    initialAuth.user?.displayName,
+    initialAuth.user?.email,
+    initialAuth.user?.id,
+  ])
+
+  useEffect(() => {
+    if (authState.isAuthenticated || hasAttemptedClientRestore.current) {
+      return
+    }
+
     const token = getAccessToken()
     if (!token) {
       setIsLoading(false)
       return
     }
 
+    hasAttemptedClientRestore.current = true
+    setIsLoading(true)
+
+    let isCancelled = false
+
     getCurrentUser()
-      .then(setUser)
-      .catch(() => {
-        clearTokens()
+      .then((user) => {
+        if (isCancelled) {
+          return
+        }
+        setAuthState(createAuthenticatedAuthState(user))
       })
-      .finally(() => setIsLoading(false))
-  }, [])
+      .catch(() => {
+        if (isCancelled) {
+          return
+        }
+        clearTokens()
+        setAuthState(createAnonymousAuthState())
+      })
+      .finally(() => {
+        if (!isCancelled) {
+          setIsLoading(false)
+        }
+      })
+
+    return () => {
+      isCancelled = true
+    }
+  }, [authState.isAuthenticated])
 
   async function login(email: string, password: string) {
     const res = await loginUser({ email, password })
     setTokens(res.tokens.accessToken, res.tokens.refreshToken)
-    setUser(res.user)
+    setAuthState(createAuthenticatedAuthState(res.user))
+    setIsLoading(false)
   }
 
   async function register(
@@ -66,7 +119,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   ) {
     const res = await registerUser({ email, password, displayName })
     setTokens(res.tokens.accessToken, res.tokens.refreshToken)
-    setUser(res.user)
+    setAuthState(createAuthenticatedAuthState(res.user))
+    setIsLoading(false)
   }
 
   async function logout() {
@@ -79,15 +133,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
     clearTokens()
-    setUser(null)
+    setAuthState(createAnonymousAuthState())
+    setIsLoading(false)
   }
 
   return (
     <AuthContext.Provider
       value={{
-        user,
+        user: authState.user,
+        status: authState.status,
         isLoading,
-        isAuthenticated: user !== null,
+        isAuthenticated: authState.isAuthenticated,
         login,
         register,
         logout,

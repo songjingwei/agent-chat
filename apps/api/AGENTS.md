@@ -25,8 +25,9 @@
 ### 代码现状
 1. 已完成最小可运行 API 初始化：`Hono + Zod + @hono/node-server + TypeScript + tsx`。
 2. 已实现 `app/server` 入口、模块化路由、统一错误响应和基础校验工具。
-3. 已实现内存版服务层（`persona/session/message/report`），用于本地联调和 API 行为验证。
-4. 已落地基础接口：
+3. 已接入本地开发 CORS，允许来自 `APP_ORIGIN` 和本地 `localhost/127.0.0.1` 端口的前端联调请求。
+4. 已实现内存版服务层（`persona/session/message/report`），用于本地联调和 API 行为验证。
+5. 已落地基础接口：
    - `GET /`
    - `GET /health`
    - `POST/GET /personas`、`GET /personas/:personaId`
@@ -34,9 +35,9 @@
    - `POST /sessions/:sessionId/human-message`
    - `GET /sessions/:sessionId/messages`
    - `GET /reports/latest?personaId=...`
-5. `apps/api` 已具备真实脚本：`dev/build/start/test/typecheck`。
-6. 测试现状：`src/app.test.ts` 有 4 条通过用例（健康检查、主链路、`GET /sessions?userId=...` 契约、缺失资源 `404` 契约）；`pnpm typecheck` 已通过。
-7. 已新增 `apps/api/docs/web-api-contract.md`，作为 `apps/web` 联调契约源文件。
+6. `apps/api` 已具备真实脚本：`dev/build/start/test/typecheck`。
+7. 测试现状：`src/app.test.ts` 有 4 条通过用例（健康检查、主链路、`GET /sessions?userId=...` 契约、缺失资源 `404` 契约）；`pnpm typecheck` 已通过。
+8. 已新增 `apps/api/docs/web-api-contract.md`，作为 `apps/web` 联调契约源文件。
 
 ### 计划状态（来源：`plans/`）
 1. Day 0（2026-03-21）状态：`Done`。

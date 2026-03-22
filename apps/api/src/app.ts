@@ -1,19 +1,49 @@
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 
 import { ApiError } from "./lib/api-error.js";
 import { jsonError } from "./lib/http.js";
 import { createId } from "./lib/id.js";
 import { registerRoutes } from "./routes/index.js";
 import { createServices, type AppServices } from "./services/index.js";
+import { apiConfig } from "./config.js";
 
 const getDurationMs = (startedAt: number) => {
   return Number((performance.now() - startedAt).toFixed(2));
+};
+
+const localhostOriginPattern = /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/;
+
+const resolveCorsOrigin = (origin: string) => {
+  if (origin === apiConfig.appOrigin) {
+    return origin;
+  }
+
+  if (
+    apiConfig.nodeEnv === "development" &&
+    localhostOriginPattern.test(origin)
+  ) {
+    return origin;
+  }
+
+  return null;
 };
 
 export const createApp = (services: AppServices = createServices()) => {
   const app = new Hono();
   const requestIds = new WeakMap<Request, string>();
   const requestStartedAts = new WeakMap<Request, number>();
+
+  app.use(
+    "*",
+    cors({
+      origin: resolveCorsOrigin,
+      allowMethods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+      allowHeaders: ["Content-Type", "Authorization"],
+      exposeHeaders: ["x-request-id"],
+      credentials: true,
+    }),
+  );
 
   app.use("*", async (c, next) => {
     const requestId = c.req.header("x-request-id") ?? createId("req");

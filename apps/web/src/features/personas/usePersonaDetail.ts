@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
-import { getPersona } from '#/lib/api-client'
+import { fetchPersona } from '#/lib/server-fns'
 import { queryKeys } from '#/lib/query-keys'
 
 export function usePersonaDetail(id: string) {
   const query = useQuery({
     queryKey: queryKeys.personas.detail(id),
-    queryFn: () => getPersona(id),
+    queryFn: () => fetchPersona({ data: id }),
     enabled: !!id,
   })
 

@@ -1,14 +1,21 @@
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import { createFileRoute, redirect, Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { ReportView } from '#/features/reports/ReportView'
 import { ArrowLeft } from 'lucide-react'
-import { Link } from '@tanstack/react-router'
+import { queryKeys } from '#/lib/query-keys'
+import { fetchLatestReport } from '#/lib/server-fns'
 
 export const Route = createFileRoute('/reports/$id')({
   beforeLoad: ({ context }) => {
     if (!context.auth.isAuthenticated) {
       throw redirect({ to: '/login' })
     }
+  },
+  loader: async ({ context, params }) => {
+    await context.queryClient.ensureQueryData({
+      queryKey: queryKeys.reports.latest(params.id),
+      queryFn: () => fetchLatestReport({ data: params.id }),
+    })
   },
   component: ReportPage,
 })
