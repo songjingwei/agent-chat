@@ -1,6 +1,6 @@
-import { createId } from "../lib/id";
-import type { InMemoryStore } from "./store";
-import type { CreatePersonaInput, Persona } from "./types";
+import { createId } from "../lib/id.js";
+import type { InMemoryStore } from "./store.js";
+import type { CreatePersonaInput, Persona } from "./types.js";
 
 export class PersonaService {
   constructor(private readonly store: InMemoryStore) {}

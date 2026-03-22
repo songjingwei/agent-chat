@@ -1,13 +1,13 @@
 import type { Hono } from "hono";
 
-import { apiConfig } from "../config";
-import { jsonOk } from "../lib/http";
-import { createHealthRoutes } from "../modules/health/health.routes";
-import { createMessageRoutes } from "../modules/messages/messages.routes";
-import { createPersonaRoutes } from "../modules/personas/personas.routes";
-import { createReportRoutes } from "../modules/reports/reports.routes";
-import { createSessionRoutes } from "../modules/sessions/sessions.routes";
-import type { AppServices } from "../services";
+import { apiConfig } from "../config.js";
+import { jsonOk } from "../lib/http.js";
+import { createHealthRoutes } from "../modules/health/health.routes.js";
+import { createMessageRoutes } from "../modules/messages/messages.routes.js";
+import { createPersonaRoutes } from "../modules/personas/personas.routes.js";
+import { createReportRoutes } from "../modules/reports/reports.routes.js";
+import { createSessionRoutes } from "../modules/sessions/sessions.routes.js";
+import type { AppServices } from "../services/index.js";
 
 export const registerRoutes = (app: Hono, services: AppServices) => {
   app.get("/", (c) => {

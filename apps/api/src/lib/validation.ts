@@ -1,7 +1,7 @@
 import type { Context } from "hono";
 import type { z, ZodType } from "zod";
 
-import { ApiError } from "./api-error";
+import { ApiError } from "./api-error.js";
 
 const defaultValidationMessage = "Request validation failed.";
 

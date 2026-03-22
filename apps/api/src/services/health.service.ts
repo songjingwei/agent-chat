@@ -1,6 +1,6 @@
 import net from "node:net";
 
-import { apiConfig } from "../config";
+import { apiConfig } from "../config.js";
 
 type CheckStatus = "ok" | "error";
 

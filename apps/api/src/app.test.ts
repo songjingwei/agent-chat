@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { createApp } from "./app";
-import { HealthService } from "./services/health.service";
-import { createServices } from "./services";
+import { createApp } from "./app.js";
+import { HealthService } from "./services/health.service.js";
+import { createServices } from "./services/index.js";
 
 const createTestApp = () => {
   const healthService = new HealthService({

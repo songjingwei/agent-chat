@@ -1,4 +1,4 @@
-import type { ChatMessage, Persona, Session } from "./types";
+import type { ChatMessage, Persona, Session } from "./types.js";
 
 export interface InMemoryStore {
   personas: Map<string, Persona>;

@@ -1,9 +1,9 @@
-import { HealthService } from "./health.service";
-import { MessageService } from "./message.service";
-import { PersonaService } from "./persona.service";
-import { ReportService } from "./report.service";
-import { SessionService } from "./session.service";
-import { createInMemoryStore } from "./store";
+import { HealthService } from "./health.service.js";
+import { MessageService } from "./message.service.js";
+import { PersonaService } from "./persona.service.js";
+import { ReportService } from "./report.service.js";
+import { SessionService } from "./session.service.js";
+import { createInMemoryStore } from "./store.js";
 
 export interface AppServices {
   healthService: HealthService;

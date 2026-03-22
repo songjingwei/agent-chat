@@ -1,5 +1,5 @@
-export { createApp } from "./app";
-export { apiConfig } from "./config";
-export { createServices } from "./services";
+export { createApp } from "./app.js";
+export { apiConfig } from "./config.js";
+export { createServices } from "./services/index.js";
 
 export const apiAppName = "agent-api";

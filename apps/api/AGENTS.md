@@ -40,8 +40,8 @@
 ### 计划状态（来源：`plans/`）
 1. Day 0（2026-03-21）状态：`Done`。
 2. Day 1（2026-03-23）状态：`Done`，已于 `2026-03-22` 提前完成。
-3. Day 2（2026-03-24）状态：`In Progress`，`docker-compose` 文件和 `GET /health` 最小路由已存在，但依赖探针和 trace 日志未完成。
-4. 结论：`apps/api` 已完成“最小可运行服务 + 基础主链路”阶段，但还不能视为“DB/Redis 已连通”或“异步能力已落地”。
+3. Day 2（2026-03-24）状态：`Done`，本地依赖已启动，`GET /health` 已接入 Postgres/Redis 探针，最小 trace 日志已落地。
+4. 结论：`apps/api` 已完成“最小可运行服务 + Day 2 基础设施验收”阶段，但异步能力、持久化、鉴权和审计仍未落地。
 
 ## 4. 依赖关系与协作面
 ### 上游输入
@@ -64,17 +64,17 @@
 ## 5. API 模块路线图（目标模块已预建目录）
 | 模块 | 目标职责 | 当前接口（已实现） | 来源里程碑 | 当前状态 |
 |---|---|---|---|---|
-| `health` | 服务/依赖健康检查 | `GET /health` | Day 2 | In Progress |
+| `health` | 服务/依赖健康检查 | `GET /health` | Day 2 | Done |
 | `personas` | persona 生成、版本化、人工编辑 | `POST /personas` `GET /personas` `GET /personas/:personaId` | Day 5 | In Progress |
 | `sessions` | 发起会话、查询会话、会话编排入口 | `POST /sessions` `GET /sessions` `GET /sessions/:sessionId` | Day 6 | In Progress |
 | `messages` | 用户介入消息与高权重记忆写入入口 | `POST /sessions/:sessionId/human-message` `GET /sessions/:sessionId/messages` | Day 7 | In Progress |
 | `reports` | 总结与推荐查询 | `GET /reports/latest?personaId=...` | Day 9 | In Progress |
 
-说明：当前接口均为“内存存储版最小实现”。`In Progress` 表示“路由已存在，但里程碑定义的持久化、异步、鉴权、审计或依赖探针尚未补齐”。
+说明：当前接口均为“内存存储版最小实现”。`Done` 仅表示该里程碑的最小验收条件已满足，不代表后续持久化、异步、鉴权或审计也已完成。
 
 ## 6. Day-by-Day（只列 API 相关关键项）
 1. Day 1：已完成错误码和响应结构约定、API 启动骨架。
-2. Day 2：`GET /health` 已存在；待完成 DB/Redis 健康检查与基础 trace 日志。
+2. Day 2：已完成 DB/Redis 健康检查与基础 trace 日志。
 3. Day 3：对接核心表（`profiles`、`agent_personas`、`memory_items`、`chat_sessions`、`chat_messages`、`match_reports`）的 API 访问层。
 4. Day 5：交付 persona 生成/编辑 API（含版本化与审计）。
 5. Day 6：交付会话创建入口并投递 worker 任务，支持消息落表查询。
@@ -102,11 +102,11 @@
 6. 在 `plans/progress-tracker.md` 更新状态，并在本文件更新“模块状态”。
 
 ## 9. 当前阻塞与风险
-1. 依赖连通未验证：Docker / Docker Compose 已可用，但 Postgres / Redis / MinIO 尚未通过 API 探针接入和验证。
-2. 当前为内存存储：服务重启即丢数据，不可用于真实环境验证。
-3. 安全链路未接入：审核、脱敏、审计仅在文档层定义，尚无完整代码实现。
-4. 鉴权和 user scope 未接入：当前接口默认无身份隔离，存在越权风险。
-5. API 契约仍需继续冻结：目前仅完成最小响应结构，错误码与 DTO 仍需在 `packages/shared` 固化。
+1. 当前为内存存储：服务重启即丢数据，不可用于真实环境验证。
+2. 安全链路未接入：审核、脱敏、审计仅在文档层定义，尚无完整代码实现。
+3. 鉴权和 user scope 未接入：当前接口默认无身份隔离，存在越权风险。
+4. API 契约仍需继续冻结：目前仅完成最小响应结构，错误码与 DTO 仍需在 `packages/shared` 固化。
+5. `pnpm --filter @agent/api start` 目前仍有独立的 ESM 启动问题；本次 Day 2 验证使用 `tsx src/server.ts` 完成，不影响健康检查结果，但后续需要单独修复。
 
 ## 10. 快速命令（当前可用）
 在仓库根目录执行：

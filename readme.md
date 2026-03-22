@@ -11,8 +11,8 @@ agent chat 是一个让人们利用 agent 来交友的 agent 项目。目标是�
 ## 当前进度（2026-03-22）
 - `Day 0`：已完成产品/架构梳理，并提前完成 monorepo 骨架、`.env.example`、API 初始化、Web 初始化。
 - `Day 1`：已提前完成 `docs/core-metrics.md`，并验证 `Docker 20.10.21` / `Docker Compose v2.13.0` 可用。
-- `Day 2`：进行中。`infra/docker/docker-compose.yml` 与 `GET /health` 最小实现已存在，但依赖启动和 DB/Redis 连通探针仍待接入。
-- 当前验证结果：`pnpm --filter @agent/api test` 2 条通过，`pnpm typecheck` 通过。
+- `Day 2`：已提前完成。本地 `docker compose` 依赖已启动，`GET /health` 已接入 Postgres/Redis 探针，请求 trace 日志已落地。
+- 当前验证结果：`pnpm --filter @agent/api test` 2 条通过，`pnpm --filter @agent/api typecheck` 通过，手动请求 `/health` 返回 `postgres=ok`、`redis=ok`。
 
 ## Monorepo 结构
 本项目已按 `pnpm workspace` 完成基础骨架：

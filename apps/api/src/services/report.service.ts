@@ -1,5 +1,5 @@
-import type { InMemoryStore } from "./store";
-import type { LatestReport, Session } from "./types";
+import type { InMemoryStore } from "./store.js";
+import type { LatestReport, Session } from "./types.js";
 
 export class ReportService {
   constructor(private readonly store: InMemoryStore) {}

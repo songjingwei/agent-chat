@@ -1,10 +1,10 @@
 import { Hono } from "hono";
 
-import { ApiError } from "../../lib/api-error";
-import { jsonOk } from "../../lib/http";
-import { parseWithSchema } from "../../lib/validation";
-import { latestReportQuerySchema } from "../../schemas/message";
-import type { ReportService } from "../../services/report.service";
+import { ApiError } from "../../lib/api-error.js";
+import { jsonOk } from "../../lib/http.js";
+import { parseWithSchema } from "../../lib/validation.js";
+import { latestReportQuerySchema } from "../../schemas/message.js";
+import type { ReportService } from "../../services/report.service.js";
 
 export const createReportRoutes = (reportService: ReportService) => {
   const routes = new Hono();

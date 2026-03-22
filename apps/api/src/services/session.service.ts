@@ -1,7 +1,7 @@
-import { ApiError } from "../lib/api-error";
-import { createId } from "../lib/id";
-import type { InMemoryStore } from "./store";
-import type { CreateSessionInput, Session, SessionStatus } from "./types";
+import { ApiError } from "../lib/api-error.js";
+import { createId } from "../lib/id.js";
+import type { InMemoryStore } from "./store.js";
+import type { CreateSessionInput, Session, SessionStatus } from "./types.js";
 
 export class SessionService {
   constructor(private readonly store: InMemoryStore) {}

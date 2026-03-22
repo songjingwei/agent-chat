@@ -1,7 +1,7 @@
 import { serve } from "@hono/node-server";
 
-import { apiConfig } from "./config";
-import { createApp } from "./app";
+import { apiConfig } from "./config.js";
+import { createApp } from "./app.js";
 
 const app = createApp();
 

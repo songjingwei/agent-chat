@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 
-import { jsonOk } from "../../lib/http";
-import type { HealthService } from "../../services/health.service";
+import { jsonOk } from "../../lib/http.js";
+import type { HealthService } from "../../services/health.service.js";
 
 export const createHealthRoutes = (healthService: HealthService) => {
   const routes = new Hono();

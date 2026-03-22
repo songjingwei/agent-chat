@@ -1,9 +1,9 @@
 import { Hono } from "hono";
 
-import { jsonOk } from "../../lib/http";
-import { parseJsonBody } from "../../lib/validation";
-import { createHumanMessageBodySchema } from "../../schemas/message";
-import type { MessageService } from "../../services/message.service";
+import { jsonOk } from "../../lib/http.js";
+import { parseJsonBody } from "../../lib/validation.js";
+import { createHumanMessageBodySchema } from "../../schemas/message.js";
+import type { MessageService } from "../../services/message.service.js";
 
 export const createMessageRoutes = (messageService: MessageService) => {
   const routes = new Hono();

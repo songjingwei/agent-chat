@@ -1,10 +1,10 @@
 import { Hono } from "hono";
 
-import { ApiError } from "./lib/api-error";
-import { jsonError } from "./lib/http";
-import { createId } from "./lib/id";
-import { registerRoutes } from "./routes";
-import { createServices, type AppServices } from "./services";
+import { ApiError } from "./lib/api-error.js";
+import { jsonError } from "./lib/http.js";
+import { createId } from "./lib/id.js";
+import { registerRoutes } from "./routes/index.js";
+import { createServices, type AppServices } from "./services/index.js";
 
 const getDurationMs = (startedAt: number) => {
   return Number((performance.now() - startedAt).toFixed(2));
@@ -12,13 +12,15 @@ const getDurationMs = (startedAt: number) => {
 
 export const createApp = (services: AppServices = createServices()) => {
   const app = new Hono();
+  const requestIds = new WeakMap<Request, string>();
+  const requestStartedAts = new WeakMap<Request, number>();
 
   app.use("*", async (c, next) => {
     const requestId = c.req.header("x-request-id") ?? createId("req");
     const startedAt = performance.now();
 
-    c.set("requestId", requestId);
-    c.set("requestStartedAt", startedAt);
+    requestIds.set(c.req.raw, requestId);
+    requestStartedAts.set(c.req.raw, startedAt);
     c.header("x-request-id", requestId);
 
     await next();
@@ -43,10 +45,10 @@ export const createApp = (services: AppServices = createServices()) => {
 
   app.onError((error, c) => {
     const requestId =
-      (c.get("requestId") as string | undefined) ??
+      requestIds.get(c.req.raw) ??
       c.req.header("x-request-id") ??
       "unknown";
-    const startedAt = c.get("requestStartedAt") as number | undefined;
+    const startedAt = requestStartedAts.get(c.req.raw);
     const durationMs = startedAt === undefined ? undefined : getDurationMs(startedAt);
 
     if (error instanceof ApiError) {

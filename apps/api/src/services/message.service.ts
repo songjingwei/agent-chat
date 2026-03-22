@@ -1,8 +1,8 @@
-import { ApiError } from "../lib/api-error";
-import { createId } from "../lib/id";
-import type { InMemoryStore } from "./store";
-import { SessionService } from "./session.service";
-import type { ChatMessage, CreateHumanMessageInput } from "./types";
+import { ApiError } from "../lib/api-error.js";
+import { createId } from "../lib/id.js";
+import type { InMemoryStore } from "./store.js";
+import { SessionService } from "./session.service.js";
+import type { ChatMessage, CreateHumanMessageInput } from "./types.js";
 
 export class MessageService {
   constructor(

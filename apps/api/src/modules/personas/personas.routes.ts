@@ -1,10 +1,10 @@
 import { Hono } from "hono";
 
-import { ApiError } from "../../lib/api-error";
-import { jsonOk } from "../../lib/http";
-import { parseJsonBody, parseWithSchema } from "../../lib/validation";
-import { createPersonaBodySchema, listPersonasQuerySchema } from "../../schemas/persona";
-import type { PersonaService } from "../../services/persona.service";
+import { ApiError } from "../../lib/api-error.js";
+import { jsonOk } from "../../lib/http.js";
+import { parseJsonBody, parseWithSchema } from "../../lib/validation.js";
+import { createPersonaBodySchema, listPersonasQuerySchema } from "../../schemas/persona.js";
+import type { PersonaService } from "../../services/persona.service.js";
 
 export const createPersonaRoutes = (personaService: PersonaService) => {
   const routes = new Hono();

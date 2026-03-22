@@ -5,8 +5,8 @@
 ## 当前状态（As of 2026-03-22）
 - 最小 API 已可运行。
 - `pnpm --filter @agent/api test` 现有 2 条用例通过。
-- `pnpm typecheck` 已通过。
-- `GET /health` 当前仅是应用级健康检查，尚未连到 DB/Redis。
+- `pnpm --filter @agent/api typecheck` 已通过。
+- `GET /health` 已连到 Postgres / Redis TCP 探针。
 
 ## 已实现能力（MVP 初始化）
 - 服务健康检查：`GET /health`

@@ -1,10 +1,10 @@
 import { Hono } from "hono";
 
-import { ApiError } from "../../lib/api-error";
-import { jsonOk } from "../../lib/http";
-import { parseJsonBody, parseWithSchema } from "../../lib/validation";
-import { createSessionBodySchema, listSessionsQuerySchema } from "../../schemas/session";
-import type { SessionService } from "../../services/session.service";
+import { ApiError } from "../../lib/api-error.js";
+import { jsonOk } from "../../lib/http.js";
+import { parseJsonBody, parseWithSchema } from "../../lib/validation.js";
+import { createSessionBodySchema, listSessionsQuerySchema } from "../../schemas/session.js";
+import type { SessionService } from "../../services/session.service.js";
 
 export const createSessionRoutes = (sessionService: SessionService) => {
   const routes = new Hono();
