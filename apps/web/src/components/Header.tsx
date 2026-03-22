@@ -3,9 +3,9 @@ import { Link } from '@tanstack/react-router'
 import { LogOut, Menu, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '#/lib/auth-context'
+import { ConfirmDialog } from './ConfirmDialog'
 import { LanguageSwitcher } from './LanguageSwitcher'
 import Logo from './Logo'
-import { LogoutConfirmDialog } from './LogoutConfirmDialog'
 import ThemeToggle from './ThemeToggle'
 
 const navKeys = [
@@ -176,10 +176,17 @@ export default function Header() {
         )}
       </header>
 
-      <LogoutConfirmDialog
+      <ConfirmDialog
         isOpen={isLogoutConfirmOpen}
         isSubmitting={isLoggingOut}
-        displayName={user?.displayName ?? null}
+        kicker={t('auth.logoutConfirm.kicker')}
+        title={t('auth.logoutConfirm.title')}
+        description={t('auth.logoutConfirm.description', {
+          name: user?.displayName ?? t('app.title'),
+        })}
+        cancelLabel={t('auth.logoutConfirm.cancel')}
+        confirmLabel={t('auth.logoutConfirm.confirm')}
+        confirmingLabel={t('auth.logoutConfirm.confirming')}
         onCancel={handleLogoutCancel}
         onConfirm={handleLogoutConfirm}
       />

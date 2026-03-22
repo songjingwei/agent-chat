@@ -1,11 +1,12 @@
 import { useTranslation, Trans } from 'react-i18next'
+import { Link } from '@tanstack/react-router'
+import { HeartHandshake, Wand2 } from 'lucide-react'
+import { ConfirmDialog } from '#/components/ConfirmDialog'
 import { PersonaCard } from '#/components/PersonaCard'
 import { EmptyState } from '#/components/EmptyState'
 import { ErrorDisplay } from '#/components/ErrorDisplay'
 import { LoadingSkeleton } from '#/components/LoadingSkeleton'
 import { useDiscoveryPlaza } from './useDiscoveryPlaza'
-import { HeartHandshake, Wand2 } from 'lucide-react'
-import { Link } from '@tanstack/react-router'
 
 export function DiscoveryPlaza() {
   const { t } = useTranslation()
@@ -94,44 +95,29 @@ export function DiscoveryPlaza() {
         )}
       </section>
 
-      {/* Confirmation modal */}
-      {selectedTarget && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm fade-in"
-          onClick={cancelSelection}
-        >
-          <div
-            className="island-shell rounded-2xl p-6 max-w-sm w-full rise-in"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-lg font-semibold text-[var(--sea-ink)] mb-2">
-              {t('plaza.startConversation')}
-            </h3>
-            <p className="text-sm text-[var(--sea-ink-soft)] mb-1">
-              <Trans
-                i18nKey="plaza.startConversationDesc"
-                values={{
-                  initiator: myPersona?.displayName ?? '',
-                  target: selectedTarget.displayName,
-                }}
-                components={{ strong: <strong /> }}
-              />
-            </p>
-            <div className="flex gap-2 mt-6">
-              <button onClick={cancelSelection} className="btn-ghost flex-1">
-                {t('plaza.cancel')}
-              </button>
-              <button
-                onClick={confirmStartChat}
-                disabled={isCreatingSession}
-                className="btn-primary flex-1"
-              >
-                {isCreatingSession ? t('plaza.starting') : t('plaza.startChat')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        isOpen={selectedTarget !== null}
+        isSubmitting={isCreatingSession}
+        title={t('plaza.startConversation')}
+        description={
+          selectedTarget ? (
+            <Trans
+              i18nKey="plaza.startConversationDesc"
+              values={{
+                initiator: myPersona?.displayName ?? '',
+                target: selectedTarget.displayName,
+              }}
+              components={{ strong: <strong /> }}
+            />
+          ) : null
+        }
+        cancelLabel={t('plaza.cancel')}
+        confirmLabel={t('plaza.startChat')}
+        confirmingLabel={t('plaza.starting')}
+        onCancel={cancelSelection}
+        onConfirm={confirmStartChat}
+        maxWidthClassName="max-w-sm"
+      />
     </div>
   )
 }
