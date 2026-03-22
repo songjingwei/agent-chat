@@ -21,7 +21,7 @@
 2. 直接连接数据库/队列并写业务数据。
 3. 在前端固化后端鉴权与权限规则（只消费后端契约）。
 
-## 3. 当前真实状态快照（As of 2026-03-21）
+## 3. 当前真实状态快照（As of 2026-03-22）
 ### 代码现状
 1. 已完成 `TanStack Start (React)` 初始化。
 2. 已有基础路由与页面：
@@ -31,14 +31,16 @@
 3. 已有基础组件与样式：
    - `src/components/Header.tsx`
    - `src/components/Footer.tsx`
+   - `src/components/ThemeToggle.tsx`
    - `src/styles.css`
 4. `apps/web/package.json` 已提供可执行脚本：`dev/build/preview/test/typecheck`。
 5. 已引入模板依赖：`@tanstack/react-start`、`@tanstack/react-router`、`tailwindcss`、`vite` 等。
+6. 已补充前端协作文档：`FRONTEND_STANDARDS.md`、`PAGES.md`。
 
 ### 计划状态（来源：`plans/`）
 1. Day 11（2026-04-06）“最小演示 UI”状态：`Not Started`。
 2. Day 12（2026-04-07）“广场与发起会话”状态：`Not Started`。
-3. 前端开发依赖 P0 闭环（Day 7）完成后再重点推进。
+3. 根计划当前状态为：Day 1 `Done`、Day 2 `In Progress`；前端主业务开发仍依赖 P0 闭环完成后再推进。
 
 ## 4. 目标技术栈与前端约定
 1. 框架：`TanStack Start`。
@@ -47,10 +49,19 @@
 4. 语言：`TypeScript`。
 5. 样式：`Tailwind CSS`（模板已接入，可按业务演进调整）。
 
-实现约束：
-1. API DTO 与错误码优先复用 `packages/shared`，避免前后端类型漂移。
-2. 页面级数据请求优先放在 route loader/query hooks，避免 scattered fetch。
-3. UI 不直接拼接后端内部字段，必须通过前端 view model 映射。
+实现约束（必须遵守）：
+1. **UI 与逻辑彻底解耦**：采用 Hook-Component 模式。复杂的逻辑、状态管理和数据获取必须封装在自定义 Hook 中（如 `useComponent.ts`），UI 组件仅负责渲染并接收 props。
+2. **极简 `useEffect` 与 手动优化**：
+   - 严禁滥用 `useEffect`。异步请求必须使用 TanStack Query；交互逻辑应通过事件回调处理；计算逻辑应直接派生。
+   - 禁止手动使用 `useMemo` 或 `useCallback` 进行性能优化。项目依赖 **React Compiler** (React 19+) 进行自动优化。
+3. **全平台适配 (Mobile First)**：所有功能必须同时适配移动端 (320px+) 和桌面端 (1440px+)，优先使用 Tailwind 的响应式前缀，关键容器使用 `page-wrap` 类。
+
+3. **主题与暗色模式**：严禁硬编码颜色值（如 `#fff`）。必须使用 `styles.css` 中定义的 CSS 变量（如 `var(--sea-ink)`），确保在白天/黑夜模式下自动切换。
+4. **类型安全与契约**：API DTO 与错误码优先复用 `packages/shared`，避免前后端类型漂移。
+5. **数据请求规范**：页面级数据请求优先放在 route loader/query hooks，避免 scattered fetch。
+6. **无障碍与语义化**：使用语义化 HTML 标签，为所有交互元素（如无文字按钮）提供 `aria-label`。
+
+详见：`apps/web/FRONTEND_STANDARDS.md`。
 
 ## 5. 目录约定（落地时按此组织）
 建议结构（在 `src/` 下）：
@@ -85,31 +96,28 @@
 9. `GET /sessions/:sessionId/messages`
 10. `GET /reports/latest?personaId=...`
 
-## 7. 页面路线图（MVP）
-### Day 11：最小可演示 UI（P1）
-1. 会话列表页。
-2. 会话详情页（历史回放 + 实时消息占位）。
-3. 人工介入输入框与提交反馈。
-4. 总结查看入口（最近报告）。
+## 7. 页面路线图 (MVP)
+详细页面结构与开发优先级见：`apps/web/PAGES.md`。
 
-### Day 12：广场与发起会话（P1）
-1. 广场列表与基础筛选/排序。
-2. 发起会话入口与状态提示。
-3. 空状态、失败重试、加载骨架屏。
+### 核心开发顺序：
+1. **Day 11 (P0)**: 重点实现 `/personas/create` (创建页) 与 `/sessions/$id` (聊天室)，跑通“创建 -> 自动聊 -> 介入”的 UI 闭环。
+2. **Day 12 (P1)**: 补齐 `/` (广场)、`/sessions` (列表) 和 `/reports/$id` (总结报告)，完善用户流。
+3. **Day 14 (P2)**: 实现基础登录与个人中心，确保多设备数据可访问。
+
 
 ## 8. 前端任务完成定义（Definition of Done）
 一个 `apps/web` 任务只有满足以下条件才算 `Done`：
-1. 路由和页面可访问，关键状态完整（loading/empty/error/success）。
-2. API 调用有类型约束，错误码展示明确。
-3. 至少包含一种测试（组件测试或页面流程测试）。
-4. 无硬编码 mock 残留（除非明确标注并记录移除计划）。
+1. **测试先导与解释**：AI 在添加测试用例前，必须先向人类开发者简要说明：该测试覆盖什么场景、为何重要、预期结果是什么。
+2. **测试少而精**：拒绝冗余测试，优先覆盖核心交互路径（如：表单提交、异步加载、主题切换），避免对基础 UI 属性的过度测试。
+3. 路由和页面可访问，关键状态完整（loading/empty/error/success）。
+4. API 调用有类型约束，错误码展示明确。
 5. 在 `plans/progress-tracker.md` 更新对应日期状态。
-6. 若里程碑变更，补写 `plans/change-log.md`。
 
 ## 9. 风险与注意事项
 1. `apps/api` 当前仍是内存存储实现，前端联调数据不具备持久性。
 2. 实时能力尚未接入，当前应先保证“轮询/刷新”可用兜底。
 3. 接口契约仍在演进，前端需在 `lib` 层集中做错误映射，避免分散改动。
+4. 当前页面仍以模板骨架为主，不应把样式稿或页面规划文档误判为业务功能已实现。
 
 ## 10. 快速命令（当前可用）
 在仓库根目录执行：
@@ -121,7 +129,7 @@ pnpm --filter @agent/web test
 pnpm --filter @agent/web typecheck
 ```
 
-注意：`apps/web` 当前是模板初始化状态，业务页面尚未替换。
+注意：`apps/web` 当前仍是模板初始化状态，业务页面尚未替换；业务页面规划见 `PAGES.md`，实现约束见 `FRONTEND_STANDARDS.md`。
 
 ## 11. 文档维护规则（非常重要）
 每次改动 `apps/web` 时，同步检查是否需要更新本文件：

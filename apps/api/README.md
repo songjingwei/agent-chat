@@ -2,6 +2,12 @@
 
 `@agent/api` 是项目的 API/BFF 层，当前提供一个可运行的最小服务实现（Hono + Zod + in-memory services）。
 
+## 当前状态（As of 2026-03-22）
+- 最小 API 已可运行。
+- `pnpm --filter @agent/api test` 现有 2 条用例通过。
+- `pnpm typecheck` 已通过。
+- `GET /health` 当前仅是应用级健康检查，尚未连到 DB/Redis。
+
 ## 已实现能力（MVP 初始化）
 - 服务健康检查：`GET /health`
 - Persona 基础接口：

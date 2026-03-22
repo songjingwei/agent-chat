@@ -21,7 +21,7 @@
 2. 对话状态机细节与 LLM tool 调用编排（放在 `packages/agent-runtime`）。
 3. 数据库迁移与 schema 主实现（放在 `packages/db`）。
 
-## 3. 当前真实状态快照（As of 2026-03-21）
+## 3. 当前真实状态快照（As of 2026-03-22）
 ### 代码现状
 1. 已完成最小可运行 API 初始化：`Hono + Zod + @hono/node-server + TypeScript + tsx`。
 2. 已实现 `app/server` 入口、模块化路由、统一错误响应和基础校验工具。
@@ -35,12 +35,13 @@
    - `GET /sessions/:sessionId/messages`
    - `GET /reports/latest?personaId=...`
 5. `apps/api` 已具备真实脚本：`dev/build/start/test/typecheck`。
-6. 测试现状：`src/app.test.ts` 有 2 条通过用例（健康检查、persona->session->message->report 主链路）。
+6. 测试现状：`src/app.test.ts` 有 2 条通过用例（健康检查、persona->session->message->report 主链路）；`pnpm typecheck` 已通过。
 
 ### 计划状态（来源：`plans/`）
-1. Day 0（2026-03-21）状态：`Blocked`，阻塞为本机未安装 Docker。
-2. Day 1（2026-03-23）及之后：`Not Started`。
-3. 结论：`apps/api` 已完成“初始化可运行服务”这一步，但 `plans/` 里的里程碑状态还未同步更新。
+1. Day 0（2026-03-21）状态：`Done`。
+2. Day 1（2026-03-23）状态：`Done`，已于 `2026-03-22` 提前完成。
+3. Day 2（2026-03-24）状态：`In Progress`，`docker-compose` 文件和 `GET /health` 最小路由已存在，但依赖探针和 trace 日志未完成。
+4. 结论：`apps/api` 已完成“最小可运行服务 + 基础主链路”阶段，但还不能视为“DB/Redis 已连通”或“异步能力已落地”。
 
 ## 4. 依赖关系与协作面
 ### 上游输入
@@ -63,17 +64,17 @@
 ## 5. API 模块路线图（目标模块已预建目录）
 | 模块 | 目标职责 | 当前接口（已实现） | 来源里程碑 | 当前状态 |
 |---|---|---|---|---|
-| `health` | 服务/依赖健康检查 | `GET /health` | Day 2 | Done |
+| `health` | 服务/依赖健康检查 | `GET /health` | Day 2 | In Progress |
 | `personas` | persona 生成、版本化、人工编辑 | `POST /personas` `GET /personas` `GET /personas/:personaId` | Day 5 | In Progress |
 | `sessions` | 发起会话、查询会话、会话编排入口 | `POST /sessions` `GET /sessions` `GET /sessions/:sessionId` | Day 6 | In Progress |
 | `messages` | 用户介入消息与高权重记忆写入入口 | `POST /sessions/:sessionId/human-message` `GET /sessions/:sessionId/messages` | Day 7 | In Progress |
 | `reports` | 总结与推荐查询 | `GET /reports/latest?personaId=...` | Day 9 | In Progress |
 
-说明：当前接口均为“内存存储版最小实现”，后续需要按里程碑接入 DB、worker、runtime 并补全鉴权与审计。
+说明：当前接口均为“内存存储版最小实现”。`In Progress` 表示“路由已存在，但里程碑定义的持久化、异步、鉴权、审计或依赖探针尚未补齐”。
 
 ## 6. Day-by-Day（只列 API 相关关键项）
-1. Day 1：冻结错误码和响应结构约定，建立 API 启动骨架。
-2. Day 2：完成 `GET /health`，连通 DB/Redis 健康检查与基础 trace 日志。
+1. Day 1：已完成错误码和响应结构约定、API 启动骨架。
+2. Day 2：`GET /health` 已存在；待完成 DB/Redis 健康检查与基础 trace 日志。
 3. Day 3：对接核心表（`profiles`、`agent_personas`、`memory_items`、`chat_sessions`、`chat_messages`、`match_reports`）的 API 访问层。
 4. Day 5：交付 persona 生成/编辑 API（含版本化与审计）。
 5. Day 6：交付会话创建入口并投递 worker 任务，支持消息落表查询。
@@ -93,19 +94,19 @@
 
 ## 8. 接口完成定义（Definition of Done）
 一个 API 任务只有满足以下条件才算 `Done`：
-1. 有明确接口契约（方法、路径、请求/响应 schema、错误码）。
-2. 有参数校验与异常处理（含非法输入测试）。
-3. 有权限/作用域校验（若接口涉及用户数据）。
-4. 有最小测试（单测或集成测试至少一种）。
-5. 在 `plans/progress-tracker.md` 更新状态，并在本文件更新“模块状态”。
-6. 若变更阶段计划，补写 `plans/change-log.md`。
+1. **测试先导与解释**：AI 在添加测试用例前，必须向人类开发者简要说明：该测试覆盖什么场景、为何重要、预期结果是什么。
+2. **测试少而精**：拒绝冗余测试，优先覆盖核心契约、关键业务逻辑和异常边界处理（如非法输入、权限越权），避免对平凡逻辑的过度测试。
+3. 有明确接口契约（方法、路径、请求/响应 schema、错误码）。
+4. 有参数校验与异常处理（含非法输入测试）。
+5. 有权限/作用域校验（若接口涉及用户数据）。
+6. 在 `plans/progress-tracker.md` 更新状态，并在本文件更新“模块状态”。
 
 ## 9. 当前阻塞与风险
-1. 基础设施阻塞：截至 2026-03-21，Docker 不可用会影响 Day 2 依赖连通验证。
+1. 依赖连通未验证：Docker / Docker Compose 已可用，但 Postgres / Redis / MinIO 尚未通过 API 探针接入和验证。
 2. 当前为内存存储：服务重启即丢数据，不可用于真实环境验证。
 3. 安全链路未接入：审核、脱敏、审计仅在文档层定义，尚无完整代码实现。
 4. 鉴权和 user scope 未接入：当前接口默认无身份隔离，存在越权风险。
-5. API 契约仍需冻结：目前仅完成最小响应结构，错误码与 DTO 仍需在 `packages/shared` 固化。
+5. API 契约仍需继续冻结：目前仅完成最小响应结构，错误码与 DTO 仍需在 `packages/shared` 固化。
 
 ## 10. 快速命令（当前可用）
 在仓库根目录执行：
@@ -116,9 +117,10 @@ pnpm --filter @agent/api start
 pnpm --filter @agent/api test
 pnpm --filter @agent/api lint
 pnpm --filter @agent/api typecheck
+docker compose -f infra/docker/docker-compose.yml up -d
 ```
 
-说明：这些脚本已可执行；`dev` 默认监听 `http://localhost:3001`。
+说明：这些脚本已可执行；`dev` 默认监听 `http://localhost:3001`。`docker compose` 命令需在仓库根目录执行。
 
 ## 11. 文档维护规则（非常重要）
 每次改动 `apps/api` 时，同步检查是否需要更新本文件以下内容：

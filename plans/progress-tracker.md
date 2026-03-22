@@ -8,8 +8,8 @@
 | Day | 计划日期 | 今日目标 | 实际结果 | 状态 | 阻塞问题 | 次日第一步 |
 |---|---|---|---|---|---|---|
 | Day 0 | 2026-03-21 | 预备日：理解产品/架构/MVP，检查工具链，整理未知问题清单 | 已完成产品理解、系统分层、Day1-7 依赖、未知问题清单（6 条）、Day 1 风险清单；完成工具链检查（jj/node/pnpm 可用，docker 缺失）；**额外完成**：pnpm monorepo 骨架搭建、`.env.example`、API 初始化（Hono + 7 接口 + 2 测试通过）、Web 初始化（TanStack Start）、各模块 AGENTS.md/README 文档、CLAUDE.md | Done | 无 | 冻结核心指标定义文档 |
-| Day 1 | 2026-03-23 | 定义核心指标、初始化目录、补 `.env.example` | 目录骨架和 `.env.example` 已在 Day 0 提前完成；Docker 已安装确认（v20.10.21）；剩余：核心指标定义文档 | In Progress | 无 | 完成指标定义文档，推进 Day 2 基础设施 |
-| Day 2 | 2026-03-24 | 搭建 docker 依赖与健康检查 |  | Not Started |  |  |
+| Day 1 | 2026-03-23 | 定义核心指标、初始化目录、补 `.env.example` | `docs/core-metrics.md` 已完成并冻结 3 个核心指标；目录骨架和 `.env.example` 已在 Day 0 提前完成；Docker 与 Docker Compose 已验证可用（`20.10.21` / `v2.13.0`）；`pnpm --filter @agent/api test` 2 条通过，`pnpm typecheck` 通过。Day 1 目标已于 `2026-03-22` 提前完成 | Done | 无 | 启动本地依赖并把 `GET /health` 扩展为 DB/Redis 连通检查 |
+| Day 2 | 2026-03-24 | 搭建 docker 依赖与健康检查 | `infra/docker/docker-compose.yml` 已存在；`apps/api` 已实现 `GET /health` 最小版本。待完成：实际启动 Postgres/Redis/MinIO、将健康检查接入 DB/Redis 探针、补基础 trace 日志 | In Progress | 依赖尚未完成实际连通验证 | 运行 `docker compose -f infra/docker/docker-compose.yml up -d` 并补健康检查依赖探针 |
 | Day 3 | 2026-03-25 | 完成核心数据模型与迁移 |  | Not Started |  |  |
 | Day 4 | 2026-03-26 | Runtime 状态机骨架 + 结构化输出 |  | Not Started |  |  |
 | Day 5 | 2026-03-27 | Persona Builder v1 |  | Not Started |  |  |

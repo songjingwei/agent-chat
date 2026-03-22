@@ -2,13 +2,14 @@
 
 `@agent/web` 是项目的前端应用层，已初始化为 `TanStack Start (React)` 工程。
 
-## 当前状态（As of 2026-03-21）
+## 当前状态（As of 2026-03-22）
 - 已完成 TanStack Start 基础脚手架初始化。
 - 当前包含基础路由与页面：
   - `src/routes/__root.tsx`
   - `src/routes/index.tsx`
   - `src/routes/about.tsx`
 - 样式方案为 `Tailwind CSS`（模板默认）。
+- 已补充 `FRONTEND_STANDARDS.md` 与 `PAGES.md`，用于约束后续页面实现。
 - 目前仍是模板 UI，需要按业务需求替换为会话、介入、总结等页面。
 
 ## 目录结构

@@ -3,8 +3,14 @@
 ## 0. 基准信息
 - 参考文档：`readme.md`、`docs/system-architecture.md`、`docs/mvp-implementation-plan.md`、`docs/jujutsu-workflow.md`
 - 计划周期：15 个工作日（MVP）
-- 建议开始日期：`2026-03-23`
+- 实际开始日期：`2026-03-21`
+- 当前状态（`2026-03-22`）：`Day 0 Done`、`Day 1 Done`（提前完成）、`Day 2 In Progress`
 - 目标：在可控成本下完成可演示闭环（创建 agent -> 双 agent 对话 -> 用户介入 -> 总结推荐）
+
+## 0.1 当前进度快照（As of 2026-03-22）
+1. 已完成：monorepo 骨架、`.env.example`、`docs/core-metrics.md`、`infra/docker/docker-compose.yml`、`apps/api` 最小服务、`apps/web` 脚手架。
+2. 已验证：`docker -v` = `20.10.21`、`docker compose version` = `v2.13.0`、`pnpm --filter @agent/api test` 2 条通过、`pnpm typecheck` 通过。
+3. 当前缺口：本地依赖尚未实际拉起，`GET /health` 还未连到 DB/Redis，`packages/db` / `packages/agent-runtime` / `apps/worker` 仍是占位实现。
 
 ## 1. 前置知识（先学会再开工）
 
@@ -25,8 +31,8 @@
 
 ## 2. Day-by-Day 执行计划（Day 1 - Day 15）
 
-1. Day 1：定义 3 个核心指标（`persona_fidelity`、`controllability`、`summary_usefulness`），初始化 monorepo 目录，补 `.env.example`。
-2. Day 2：完成 `docker-compose`（Postgres/Redis/MinIO），实现 API 健康检查。
+1. Day 1（已于 `2026-03-22` 提前完成）：定义 3 个核心指标（`persona_fidelity`、`controllability`、`summary_usefulness`），初始化 monorepo 目录，补 `.env.example`。
+2. Day 2（进行中）：完成 `docker-compose`（Postgres/Redis/MinIO），实现 API 健康检查。
 3. Day 3：实现核心数据表与迁移（`profiles`、`agent_personas`、`memory_items`、`chat_sessions`、`chat_messages`、`match_reports`）。
 4. Day 4：实现 Agent Runtime 状态机骨架、结构化输出、失败兜底。
 5. Day 5：实现 Persona Builder（资料转 persona + 版本化 + 人工编辑）。

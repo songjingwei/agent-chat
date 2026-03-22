@@ -14,6 +14,12 @@
 2. 先本地自托管，后再考虑免费层云服务。
 3. 任何新增服务都必须先回答：不花钱能否替代。
 
+### 1.3 当前进度快照（As of 2026-03-22）
+1. Day 0 已完成且超额交付：monorepo 骨架、`.env.example`、API 初始化、Web 初始化、模块说明文档。
+2. Day 1 已提前完成：`docs/core-metrics.md` 已定义 3 个核心指标；`Docker 20.10.21` 与 `Docker Compose v2.13.0` 已验证可用。
+3. Day 2 进行中：`infra/docker/docker-compose.yml` 与 `GET /health` 已落地，但依赖拉起、DB/Redis 探针和基础 trace 日志仍待补齐。
+4. 当前未完成：核心数据表与迁移、Runtime、Worker、持久化、实时推送、正式鉴权。
+
 ## 2. 优先级定义（最重要任务先完成）
 
 ### P0（必须在前 7 天完成）

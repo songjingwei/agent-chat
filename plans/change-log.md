@@ -11,3 +11,4 @@
 | 2026-03-21 | 增加 Day 0 预备日 | 计划从 Day 1 直接开始 | 新增 `Day 0` 用于学习、环境确认和风险梳理 | 降低新手直接开工失控风险 | 每日执行节奏与进度跟踪 | 否 |
 | 2026-03-21 | 版本控制流程改为 jj 优先 | 计划与指南基于 Git 表述 | 新增 `docs/jujutsu-workflow.md`，并将相关文档改为 `jj` 优先、Git 兼容 | 统一团队工作流，降低历史整理成本 | 贡献规范、学习计划、每日执行清单 | 否 |
 | 2026-03-21 | Day 0 提前完成 Day 1 大部分工作 | Day 1 计划：初始化目录 + `.env.example` + 指标定义 | 目录骨架、`.env.example`、API 初始化、Web 初始化均在 Day 0 完成；Day 1 仅剩指标定义文档 | 学习理解阶段效率较高，顺势完成工程搭建 | Day 0 状态从 `Blocked` 改为 `Done`；Day 1 状态改为 `In Progress` | 否 |
+| 2026-03-22 | Day 1 提前完成并启动 Day 2 | Day 1 状态为 `In Progress`；Day 2 状态为 `Not Started` | Day 1 改为 `Done`；Day 2 改为 `In Progress`，并明确仅剩“依赖启动 + DB/Redis 健康探针 + trace 日志” | `docs/core-metrics.md` 已完成，Docker / Docker Compose 已验证可用，仓库已包含 `docker-compose` 文件和基础 `GET /health` 路由 | 主计划、进度跟踪、Day 1 日报、模块状态文档 | 否 |
