@@ -14,7 +14,7 @@ Agent Chat — an AI-powered social/dating platform where users create personal 
 | `apps/api` | API/BFF layer | Hono, Zod, @hono/node-server |
 | `apps/worker` | Async task worker | BullMQ (scaffold only) |
 | `packages/agent-runtime` | Agent state machine, prompts, memory, tools | OpenAI API (scaffold only) |
-| `packages/db` | DB schema, migrations, repositories | Drizzle ORM + PostgreSQL/pgvector (scaffold only) |
+| `packages/db` | DB schema, migrations, repositories | Drizzle ORM + PostgreSQL 16/pgvector |
 | `packages/shared` | Shared types, DTOs, error codes, constants | (scaffold only) |
 | `infra/docker/` | Local infrastructure | PostgreSQL 16, Redis 7, MinIO |
 
@@ -36,6 +36,12 @@ pnpm --filter @agent/api dev          # API dev server (port 3001)
 pnpm --filter @agent/api test         # API tests (tsx --test, Node native runner)
 pnpm --filter @agent/web test         # Web tests (vitest)
 
+# Database
+pnpm --filter @agent/db db:generate   # Generate migration SQL from schema changes
+pnpm --filter @agent/db db:migrate    # Run pending migrations (staging/production)
+pnpm --filter @agent/db db:push       # Push schema directly (local dev only)
+pnpm --filter @agent/db db:studio     # Open Drizzle Studio
+
 # Infrastructure
 docker compose -f infra/docker/docker-compose.yml up -d
 ```
@@ -53,6 +59,20 @@ docker compose -f infra/docker/docker-compose.yml up -d
 - **Error handling**: Unified `ApiError` wrapper in API. All error responses share the same structure.
 - **Frontend data fetching**: Use TanStack Router loaders and TanStack Query hooks. Centralize API calls in `lib/`, not scattered across components.
 - **Frontend file organization**: `routes/` for pages, `features/` for domain logic, `components/` for reusable UI, `lib/` for API client and utilities.
+
+## Database Conventions
+
+**详细规范见 `packages/db/AGENTS.md`**，以下为顶层约束：
+
+- **Schema 变更必须通过迁移**：用 `db:generate` 生成 SQL 迁移文件，提交到 git。`db:push` 仅限本地开发。
+- **每张表必备字段**：`created_at`、`updated_at`（timestamptz）。
+- **审计字段**：有写入操作的表须包含 `created_by` / `updated_by`（记录操作者 userId）。
+- **软删除**：用户相关核心数据表须有 `deleted_at` 字段，查询默认过滤已删除记录。
+- **主键**：`varchar(64)` 格式 `{prefix}_{uuid_hex}`，禁止自增整数。
+- **外键索引**：所有外键列必须有索引（PostgreSQL 不自动创建）。
+- **枚举**：用 `varchar` + CHECK 约束，不用 PostgreSQL ENUM（迁移困难）。
+- **时间戳**：一律 `timestamptz`，应用层传 UTC。
+- **性能**：分页用 cursor-based，跨表写入必须在事务内，核心查询上线前跑 `EXPLAIN ANALYZE`。
 
 ## Coding Style
 
@@ -74,6 +94,7 @@ docker compose -f infra/docker/docker-compose.yml up -d
 - `plans/progress-tracker.md` — daily status tracking
 - `apps/api/AGENTS.md` — API module guide, endpoint roadmap, constraints
 - `apps/web/AGENTS.md` — frontend module guide, page roadmap, constraints
+- `packages/db/AGENTS.md` — **数据库 schema 设计规范、迁移管理、性能指导、建表检查清单**
 
 ## Important Constraints
 
