@@ -10,6 +10,7 @@
 | Day 0 | 2026-03-21 | 预备日：理解产品/架构/MVP，检查工具链，整理未知问题清单 | 已完成产品理解、系统分层、Day1-7 依赖、未知问题清单（6 条）、Day 1 风险清单；完成工具链检查（jj/node/pnpm 可用，docker 缺失）；**额外完成**：pnpm monorepo 骨架搭建、`.env.example`、API 初始化（Hono + 7 接口 + 2 测试通过）、Web 初始化（TanStack Start）、各模块 AGENTS.md/README 文档、CLAUDE.md | Done | 无 | 冻结核心指标定义文档 |
 | Day 1 | 2026-03-23 | 定义核心指标、初始化目录、补 `.env.example` | `docs/core-metrics.md` 已完成并冻结 3 个核心指标；目录骨架和 `.env.example` 已在 Day 0 提前完成；Docker 与 Docker Compose 已验证可用（`20.10.21` / `v2.13.0`）；`pnpm --filter @agent/api test` 2 条通过，`pnpm typecheck` 通过。Day 1 目标已于 `2026-03-22` 提前完成 | Done | 无 | 启动本地依赖并把 `GET /health` 扩展为 DB/Redis 连通检查 |
 | Day 2 | 2026-03-24 | 搭建 docker 依赖与健康检查 | 已启动 `docker compose` 本地依赖（Postgres/Redis/MinIO）；`GET /health` 已接入 Postgres/Redis TCP 探针并返回 `ok`；API 已补最小 trace 日志（`requestId`、路径、状态码、耗时）；`pnpm --filter @agent/api test` 4 条通过，`pnpm --filter @agent/api typecheck` 通过；手动请求 `/health` 验证通过；**额外完成**：冻结 `apps/api/docs/web-api-contract.md`，为 `GET /sessions` 增加 `userId` 过滤，并补齐 web 联调契约回归测试 | Done | 无 | 开始 Day 3：定义核心数据模型、迁移方案与种子数据边界 |
+| Day 2+ | 2026-03-23 | 前端 SSR 数据预取与认证体系加固 | 将所有 GET 请求迁移至 TanStack Start server functions，5 条路由实现 SSR 数据预取（`ensureQueryData`）；引入 AuthState 状态机（unknown/anonymous/authenticated）实现 SSR 感知的认证解析；access token 同步至 cookie 支持服务端请求认证；API 增加 CORS 中间件与 origin 白名单；补充 auth provider 初始化测试覆盖 | Done | 无 | 开始 Day 3：定义核心数据模型、迁移方案与种子数据边界 |
 | Day 3 | 2026-03-25 | 完成核心数据模型与迁移 |  | Not Started |  |  |
 | Day 4 | 2026-03-26 | Runtime 状态机骨架 + 结构化输出 |  | Not Started |  |  |
 | Day 5 | 2026-03-27 | Persona Builder v1 |  | Not Started |  |  |

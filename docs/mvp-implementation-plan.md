@@ -14,11 +14,13 @@
 2. 先本地自托管，后再考虑免费层云服务。
 3. 任何新增服务都必须先回答：不花钱能否替代。
 
-### 1.3 当前进度快照（As of 2026-03-22）
+### 1.3 当前进度快照（As of 2026-03-23）
 1. Day 0 已完成且超额交付：monorepo 骨架、`.env.example`、API 初始化、Web 初始化、模块说明文档。
-2. Day 1 已提前完成：`docs/core-metrics.md` 已定义 3 个核心指标；`Docker 20.10.21` 与 `Docker Compose v2.13.0` 已验证可用。
-3. Day 2 进行中：`infra/docker/docker-compose.yml` 与 `GET /health` 已落地，但依赖拉起、DB/Redis 探针和基础 trace 日志仍待补齐。
-4. 当前未完成：核心数据表与迁移、Runtime、Worker、持久化、实时推送、正式鉴权。
+2. Day 1 已提前完成：`docs/core-metrics.md` 已定义 3 个核心指标；Docker 与 Docker Compose 已验证可用。
+3. Day 2 已完成：`docker compose` 本地依赖全部启动；`GET /health` 接入 DB/Redis 探针；API 基础 trace 日志；web 联调契约测试。
+4. Day 2+（2026-03-23 额外完成）：前端全部 GET 请求迁移至 TanStack Start server functions + SSR 数据预取；AuthState 状态机（SSR 感知认证）；CORS 中间件；auth provider 测试覆盖。
+5. 当前未完成：核心数据表与迁移、Runtime、Worker、持久化、实时推送。
+6. 进度评估：**超前 1-2 天**，Day 0-2 均提前完成，前端基础设施已具备 SSR 和认证能力。
 
 ## 2. 优先级定义（最重要任务先完成）
 
