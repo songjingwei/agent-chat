@@ -1,12 +1,14 @@
+import { useTranslation, Trans } from 'react-i18next'
 import { PersonaCard } from '#/components/PersonaCard'
 import { EmptyState } from '#/components/EmptyState'
 import { ErrorDisplay } from '#/components/ErrorDisplay'
 import { LoadingSkeleton } from '#/components/LoadingSkeleton'
 import { useDiscoveryPlaza } from './useDiscoveryPlaza'
-import { Users, Sparkles } from 'lucide-react'
+import { HeartHandshake, Wand2 } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 
 export function DiscoveryPlaza() {
+  const { t } = useTranslation()
   const {
     otherPersonas,
     allPersonas,
@@ -24,21 +26,21 @@ export function DiscoveryPlaza() {
     <div>
       {/* Hero */}
       <section className="text-center py-12 sm:py-20 rise-in">
-        <span className="island-kicker">Welcome to</span>
+        <span className="island-kicker">{t('plaza.welcomeTo')}</span>
         <h1 className="display-title text-3xl sm:text-5xl font-bold text-[var(--sea-ink)] mt-3 mb-4">
-          Agent Chat Plaza
+          {t('plaza.title')}
         </h1>
         <p className="text-base sm:text-lg text-[var(--sea-ink-soft)] max-w-md mx-auto mb-8">
-          Create your AI agent, then let it chat with others. Discover personalities, start conversations, and see what happens.
+          {t('plaza.subtitle')}
         </p>
         <div className="flex flex-wrap justify-center gap-3">
           <Link to="/personas/create" className="btn-primary">
-            <Sparkles size={16} />
-            Create Your Agent
+            <Wand2 size={16} />
+            {t('plaza.createYourAgent')}
           </Link>
           {myPersona && (
             <Link to="/sessions" className="btn-ghost">
-              My Sessions
+              {t('plaza.mySessions')}
             </Link>
           )}
         </div>
@@ -55,10 +57,14 @@ export function DiscoveryPlaza() {
       <section className="rise-in" style={{ animationDelay: '120ms' }}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-[var(--sea-ink)]">
-            Discover Agents
+            {t('plaza.discoverAgents')}
           </h2>
-          <span className="text-sm text-[var(--sea-ink-soft)]">
-            {allPersonas.length} agents
+          <span className="text-sm text-[var(--sea-ink-soft)] inline-flex items-center gap-1.5">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+            </span>
+            {t('plaza.agentCount', { count: allPersonas.length })}
           </span>
         </div>
 
@@ -68,10 +74,10 @@ export function DiscoveryPlaza() {
           </div>
         ) : otherPersonas.length === 0 && allPersonas.length === 0 ? (
           <EmptyState
-            icon={<Users size={40} />}
-            title="No agents yet"
-            description="Be the first to create an agent and start the conversation!"
-            action={{ label: 'Create Agent', href: '/personas/create' }}
+            icon={<HeartHandshake size={40} />}
+            title={t('plaza.noAgents')}
+            description={t('plaza.noAgentsDesc')}
+            action={{ label: t('persona.createAgent'), href: '/personas/create' }}
           />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -99,22 +105,28 @@ export function DiscoveryPlaza() {
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-lg font-semibold text-[var(--sea-ink)] mb-2">
-              Start Conversation?
+              {t('plaza.startConversation')}
             </h3>
             <p className="text-sm text-[var(--sea-ink-soft)] mb-1">
-              Your agent <strong>{myPersona?.displayName}</strong> will start
-              chatting with <strong>{selectedTarget.displayName}</strong>.
+              <Trans
+                i18nKey="plaza.startConversationDesc"
+                values={{
+                  initiator: myPersona?.displayName ?? '',
+                  target: selectedTarget.displayName,
+                }}
+                components={{ strong: <strong /> }}
+              />
             </p>
             <div className="flex gap-2 mt-6">
               <button onClick={cancelSelection} className="btn-ghost flex-1">
-                Cancel
+                {t('plaza.cancel')}
               </button>
               <button
                 onClick={confirmStartChat}
                 disabled={isCreatingSession}
                 className="btn-primary flex-1"
               >
-                {isCreatingSession ? 'Starting...' : 'Start Chat'}
+                {isCreatingSession ? t('plaza.starting') : t('plaza.startChat')}
               </button>
             </div>
           </div>

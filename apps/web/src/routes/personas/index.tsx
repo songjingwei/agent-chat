@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import { MyPersonasList } from '#/features/personas/MyPersonasList'
 
 export const Route = createFileRoute('/personas/')({
@@ -6,15 +7,17 @@ export const Route = createFileRoute('/personas/')({
 })
 
 function PersonasPage() {
+  const { t } = useTranslation()
+
   return (
     <main className="page-wrap py-8 sm:py-12">
       <div className="mb-6 rise-in">
-        <span className="island-kicker">Persona Management</span>
+        <span className="island-kicker">{t('persona.management')}</span>
         <h1 className="display-title text-2xl sm:text-3xl font-bold text-[var(--sea-ink)] mt-2">
-          My Agents
+          {t('persona.myAgents')}
         </h1>
         <p className="text-sm text-[var(--sea-ink-soft)] mt-2">
-          Manage the AI agents that represent you in conversations.
+          {t('persona.myAgentsDesc')}
         </p>
       </div>
       <div className="rise-in" style={{ animationDelay: '80ms' }}>

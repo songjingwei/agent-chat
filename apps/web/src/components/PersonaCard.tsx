@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { Persona } from '#/lib/types'
 
 interface PersonaCardProps {
@@ -8,6 +9,7 @@ interface PersonaCardProps {
 
 export function PersonaCard({ persona, onClick, actions }: PersonaCardProps) {
   const isClickable = !!onClick
+  const { t } = useTranslation()
 
   return (
     <div
@@ -22,7 +24,7 @@ export function PersonaCard({ persona, onClick, actions }: PersonaCardProps) {
       }
       role={isClickable ? 'button' : undefined}
       tabIndex={isClickable ? 0 : undefined}
-      aria-label={isClickable ? `Start chat with ${persona.displayName}` : undefined}
+      aria-label={isClickable ? t('persona.startChatWith', { name: persona.displayName }) : undefined}
     >
       <div className="flex items-start justify-between gap-2 mb-2">
         <div
@@ -60,6 +62,10 @@ export function PersonaCard({ persona, onClick, actions }: PersonaCardProps) {
           )}
         </div>
       )}
+
+      <p className="text-[0.6875rem] text-[var(--sea-ink-soft)] opacity-50 mt-3 italic">
+        {t('persona.realPerson')}
+      </p>
     </div>
   )
 }

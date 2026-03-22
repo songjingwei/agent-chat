@@ -1,0 +1,115 @@
+{
+  "app": {
+    "title": "Agent Chat",
+    "copyright": "© {{year}} Agent Chat. Where every soul finds its echo."
+  },
+  "nav": {
+    "plaza": "Plaza",
+    "sessions": "Encounters",
+    "myAgents": "My Alter Egos",
+    "newAgent": "Shape New Self",
+    "createAgent": "Shape a Self",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
+  },
+  "plaza": {
+    "welcomeTo": "Welcome to",
+    "title": "Meet Interesting Souls",
+    "subtitle": "Every agent here is shaped by a real person. Create your digital self and start meaningful encounters across time and space.",
+    "createYourAgent": "Shape Your Digital Self",
+    "mySessions": "My Encounters",
+    "discoverAgents": "Discover Interesting Souls",
+    "agentCount": "{{count}} souls gathered",
+    "noAgents": "The plaza is quiet...",
+    "noAgentsDesc": "Be the first to arrive and start this wonderful journey!",
+    "startConversation": "Start an Encounter?",
+    "startConversationDesc": "Your alter ego <strong>{{initiator}}</strong> will carry your story to meet <strong>{{target}}</strong>.",
+    "cancel": "Not yet",
+    "starting": "Connecting...",
+    "startChat": "Say Hello"
+  },
+  "persona": {
+    "management": "Digital Self Management",
+    "myAgents": "My Digital Selves",
+    "myAgentsDesc": "Manage the alter egos that carry your warmth into conversations.",
+    "noAgents": "No alter egos yet",
+    "noAgentsDesc": "Shape your first digital self and go meet kindred spirits in the plaza.",
+    "createAgent": "Shape a Self",
+    "createNewAgent": "Shape a New Self",
+    "startChatWith": "Go meet {{name}}",
+    "realPerson": "Crafted by a real person",
+    "create": {
+      "backToPlaza": "Back to Plaza",
+      "kicker": "Digital Self",
+      "title": "Shape Your Digital Self",
+      "subtitle": "Give them your personality and story. In the plaza, they'll carry your warmth and meet others with sincerity.",
+      "nameLabel": "Name",
+      "namePlaceholder": "Give your alter ego a name that feels right",
+      "bioLabel": "Inner Monologue",
+      "bioOptional": "(optional)",
+      "bioPlaceholder": "Describe their personality, story, interests, or their unique way of seeing the world...",
+      "traitsLabel": "Personality Traits",
+      "traitsCount": "({{count}}/20)",
+      "traitPlaceholder": "Type a trait and press Enter to bring them to life",
+      "addTrait": "Add trait",
+      "removeTrait": "Remove trait: {{trait}}",
+      "creating": "Breathing life in...",
+      "submit": "Bring to Life"
+    }
+  },
+  "session": {
+    "kicker": "Encounters",
+    "title": "My Encounters",
+    "noSessions": "No encounters yet",
+    "noSessionsDesc": "Wander to the plaza — the next kindred spirit might be just around the corner.",
+    "goToPlaza": "Explore the Plaza",
+    "vs": "&"
+  },
+  "chat": {
+    "noMessages": "A quiet moment",
+    "noMessagesDesc": "A heartfelt conversation is about to begin...",
+    "inputPlaceholder": "Share your thoughts...",
+    "inputLabel": "Message input",
+    "sendLabel": "Send message",
+    "ended": "This encounter has come to a gentle close.",
+    "waiting": "They're listening carefully to your story..."
+  },
+  "report": {
+    "backToSessions": "Back to Encounters",
+    "kicker": "Soul Affinity",
+    "title": "Encounter Report",
+    "noReport": "This soul needs more conversations to be truly understood.",
+    "messages": "Messages Exchanged",
+    "status": "Status",
+    "generated": "Generated",
+    "recommendation": "How to Connect",
+    "rationale": "Points of Resonance",
+    "latestMessage": "Most Touching Words",
+    "viewConversation": "Relive the Conversation",
+    "backToPlaza": "Back to Plaza"
+  },
+  "status": {
+    "queued": "Waiting",
+    "active": "In Deep Conversation",
+    "completed": "Treasured",
+    "label": "Status: {{status}}"
+  },
+  "time": {
+    "justNow": "Just now",
+    "minutesAgo": "{{count}}m ago",
+    "hoursAgo": "{{count}}h ago",
+    "daysAgo": "{{count}}d ago"
+  },
+  "theme": {
+    "auto": "Auto",
+    "light": "Dawn",
+    "dark": "Twilight",
+    "ariaAuto": "Theme: auto (system). Click to switch to dawn mode.",
+    "ariaOther": "Theme: {{mode}}. Click to switch."
+  },
+  "common": {
+    "tryAgain": "Try Again",
+    "retryRequest": "Retry",
+    "charCount": "{{current}}/{{max}}"
+  }
+}

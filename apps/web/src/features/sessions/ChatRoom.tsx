@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { StatusBadge } from '#/components/StatusBadge'
 import { EmptyState } from '#/components/EmptyState'
 import { ErrorDisplay } from '#/components/ErrorDisplay'
@@ -11,6 +12,7 @@ interface ChatRoomProps {
 }
 
 export function ChatRoom({ sessionId }: ChatRoomProps) {
+  const { t } = useTranslation()
   const {
     session,
     messages,
@@ -77,7 +79,7 @@ export function ChatRoom({ sessionId }: ChatRoomProps) {
           <div className="min-w-0">
             <p className="text-sm font-semibold text-[var(--sea-ink)] truncate">
               {initiatorPersona?.displayName ?? '...'}{' '}
-              <span className="text-[var(--sea-ink-soft)] font-normal">vs</span>{' '}
+              <span className="text-[var(--sea-ink-soft)] font-normal">{t('session.vs')}</span>{' '}
               {targetPersona?.displayName ?? '...'}
             </p>
           </div>
@@ -93,8 +95,8 @@ export function ChatRoom({ sessionId }: ChatRoomProps) {
         {messages.length === 0 ? (
           <EmptyState
             icon={<MessageCircle size={40} />}
-            title="No messages yet"
-            description="Waiting for the conversation to begin..."
+            title={t('chat.noMessages')}
+            description={t('chat.noMessagesDesc')}
           />
         ) : (
           messages.map((msg) => (
@@ -115,19 +117,19 @@ export function ChatRoom({ sessionId }: ChatRoomProps) {
             <textarea
               className="form-field flex-1 resize-none"
               rows={1}
-              placeholder="Type your message..."
+              placeholder={t('chat.inputPlaceholder')}
               maxLength={2000}
               value={messageInput}
               onChange={(e) => setMessageInput(e.target.value)}
               onKeyDown={handleKeyDown}
               style={{ maxHeight: '120px' }}
-              aria-label="Message input"
+              aria-label={t('chat.inputLabel')}
             />
             <button
               onClick={handleSend}
               disabled={isSending || !messageInput.trim()}
               className="btn-primary shrink-0 p-2.5"
-              aria-label="Send message"
+              aria-label={t('chat.sendLabel')}
             >
               {isSending ? (
                 <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -142,7 +144,7 @@ export function ChatRoom({ sessionId }: ChatRoomProps) {
       {session.status === 'completed' && (
         <div className="shrink-0 text-center py-3 border-t border-[var(--line)] bg-[var(--surface)]">
           <p className="text-sm text-[var(--sea-ink-soft)]">
-            This conversation has ended.
+            {t('chat.ended')}
           </p>
         </div>
       )}
@@ -150,7 +152,7 @@ export function ChatRoom({ sessionId }: ChatRoomProps) {
       {session.status === 'queued' && (
         <div className="shrink-0 text-center py-3 border-t border-[var(--line)] bg-[var(--surface)]">
           <p className="text-sm text-[var(--sea-ink-soft)]">
-            Waiting for the session to start...
+            {t('chat.waiting')}
           </p>
         </div>
       )}

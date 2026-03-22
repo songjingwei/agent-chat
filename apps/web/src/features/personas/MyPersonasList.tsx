@@ -1,12 +1,14 @@
+import { useTranslation } from 'react-i18next'
 import { PersonaCard } from '#/components/PersonaCard'
 import { EmptyState } from '#/components/EmptyState'
 import { ErrorDisplay } from '#/components/ErrorDisplay'
 import { LoadingSkeleton } from '#/components/LoadingSkeleton'
 import { useMyPersonas } from './useMyPersonas'
-import { Bot } from 'lucide-react'
+import { Heart } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 
 export function MyPersonasList() {
+  const { t } = useTranslation()
   const { personas, isLoading, error } = useMyPersonas()
 
   if (error) return <ErrorDisplay error={error} />
@@ -22,10 +24,10 @@ export function MyPersonasList() {
   if (personas.length === 0) {
     return (
       <EmptyState
-        icon={<Bot size={40} />}
-        title="No agents yet"
-        description="Create your first AI agent to start chatting in the plaza."
-        action={{ label: 'Create Agent', href: '/personas/create' }}
+        icon={<Heart size={40} />}
+        title={t('persona.noAgents')}
+        description={t('persona.noAgentsDesc')}
+        action={{ label: t('persona.createAgent'), href: '/personas/create' }}
       />
     )
   }
@@ -36,7 +38,6 @@ export function MyPersonasList() {
         <PersonaCard key={persona.id} persona={persona} />
       ))}
 
-      {/* Create new CTA card */}
       <Link
         to="/personas/create"
         className="feature-card border border-dashed border-[var(--line)] rounded-2xl p-5 flex flex-col items-center justify-center gap-2 min-h-[140px] text-center no-underline hover:border-[var(--lagoon)]"
@@ -45,7 +46,7 @@ export function MyPersonasList() {
           <span className="text-xl text-[var(--lagoon)]">+</span>
         </div>
         <span className="text-sm font-semibold text-[var(--sea-ink)]">
-          Create New Agent
+          {t('persona.createNewAgent')}
         </span>
       </Link>
     </div>

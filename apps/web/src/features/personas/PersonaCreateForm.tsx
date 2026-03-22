@@ -1,8 +1,10 @@
+import { useTranslation } from 'react-i18next'
 import { ErrorDisplay } from '#/components/ErrorDisplay'
 import { usePersonaCreateForm } from './usePersonaCreateForm'
-import { X, Sparkles, Plus } from 'lucide-react'
+import { X, Wand2, Plus } from 'lucide-react'
 
 export function PersonaCreateForm() {
+  const { t } = useTranslation()
   const {
     displayName,
     setDisplayName,
@@ -27,20 +29,20 @@ export function PersonaCreateForm() {
           htmlFor="displayName"
           className="block text-sm font-semibold text-[var(--sea-ink)] mb-1.5"
         >
-          Agent Name
+          {t('persona.create.nameLabel')}
         </label>
         <input
           id="displayName"
           type="text"
           className="form-field"
-          placeholder="Give your agent a unique name"
+          placeholder={t('persona.create.namePlaceholder')}
           maxLength={80}
           required
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
         />
         <p className="text-xs text-[var(--sea-ink-soft)] mt-1">
-          {displayName.length}/80
+          {t('common.charCount', { current: displayName.length, max: 80 })}
         </p>
       </div>
 
@@ -50,20 +52,20 @@ export function PersonaCreateForm() {
           htmlFor="bio"
           className="block text-sm font-semibold text-[var(--sea-ink)] mb-1.5"
         >
-          Bio
-          <span className="font-normal text-[var(--sea-ink-soft)]"> (optional)</span>
+          {t('persona.create.bioLabel')}
+          <span className="font-normal text-[var(--sea-ink-soft)]"> {t('persona.create.bioOptional')}</span>
         </label>
         <textarea
           id="bio"
           className="form-field min-h-[100px] resize-y"
-          placeholder="Describe your agent's personality, interests, and conversational style..."
+          placeholder={t('persona.create.bioPlaceholder')}
           maxLength={1000}
           rows={4}
           value={bio}
           onChange={(e) => setBio(e.target.value)}
         />
         <p className="text-xs text-[var(--sea-ink-soft)] mt-1">
-          {bio.length}/1000
+          {t('common.charCount', { current: bio.length, max: 1000 })}
         </p>
       </div>
 
@@ -73,10 +75,10 @@ export function PersonaCreateForm() {
           htmlFor="traitInput"
           className="block text-sm font-semibold text-[var(--sea-ink)] mb-1.5"
         >
-          Personality Traits
+          {t('persona.create.traitsLabel')}
           <span className="font-normal text-[var(--sea-ink-soft)]">
             {' '}
-            ({traits.length}/20)
+            {t('persona.create.traitsCount', { count: traits.length })}
           </span>
         </label>
 
@@ -89,7 +91,7 @@ export function PersonaCreateForm() {
                   type="button"
                   onClick={() => removeTrait(trait)}
                   className="ml-0.5 opacity-60 hover:opacity-100"
-                  aria-label={`Remove trait: ${trait}`}
+                  aria-label={t('persona.create.removeTrait', { trait })}
                 >
                   <X size={12} />
                 </button>
@@ -103,7 +105,7 @@ export function PersonaCreateForm() {
             id="traitInput"
             type="text"
             className="form-field flex-1"
-            placeholder="Type a trait and press Enter"
+            placeholder={t('persona.create.traitPlaceholder')}
             maxLength={80}
             value={traitInput}
             onChange={(e) => setTraitInput(e.target.value)}
@@ -115,7 +117,7 @@ export function PersonaCreateForm() {
             onClick={addTrait}
             className="btn-ghost shrink-0"
             disabled={!traitInput.trim() || traits.length >= 20}
-            aria-label="Add trait"
+            aria-label={t('persona.create.addTrait')}
           >
             <Plus size={16} />
           </button>
@@ -134,12 +136,12 @@ export function PersonaCreateForm() {
         {isPending ? (
           <>
             <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-            Creating...
+            {t('persona.create.creating')}
           </>
         ) : (
           <>
-            <Sparkles size={16} />
-            Create Agent
+            <Wand2 size={16} />
+            {t('persona.create.submit')}
           </>
         )}
       </button>

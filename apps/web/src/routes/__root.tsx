@@ -6,6 +6,8 @@ import {
 } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
+import { useTranslation } from 'react-i18next'
+import '#/lib/i18n'
 import Footer from '../components/Footer'
 import Header from '../components/Header'
 
@@ -33,6 +35,11 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     ],
     links: [
       {
+        rel: 'icon',
+        type: 'image/svg+xml',
+        href: '/logo.svg',
+      },
+      {
         rel: 'stylesheet',
         href: appCss,
       },
@@ -43,9 +50,10 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   const { queryClient } = Route.useRouteContext()
+  const { i18n } = useTranslation()
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={i18n.language} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <HeadContent />

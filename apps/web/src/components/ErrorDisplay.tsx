@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { ApiRequestError } from '#/lib/api-client'
 
 interface ErrorDisplayProps {
@@ -6,6 +7,8 @@ interface ErrorDisplayProps {
 }
 
 export function ErrorDisplay({ error, onRetry }: ErrorDisplayProps) {
+  const { t } = useTranslation()
+
   if (!error) return null
 
   const code = error instanceof ApiRequestError ? error.code : 'UNKNOWN_ERROR'
@@ -23,9 +26,9 @@ export function ErrorDisplay({ error, onRetry }: ErrorDisplayProps) {
         <button
           onClick={onRetry}
           className="btn-ghost mt-3 text-xs"
-          aria-label="Retry request"
+          aria-label={t('common.retryRequest')}
         >
-          Try Again
+          {t('common.tryAgain')}
         </button>
       )}
     </div>

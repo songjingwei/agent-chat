@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { StatusBadge } from '#/components/StatusBadge'
 import { ErrorDisplay } from '#/components/ErrorDisplay'
 import { LoadingSkeleton } from '#/components/LoadingSkeleton'
@@ -10,6 +11,7 @@ interface ReportViewProps {
 }
 
 export function ReportView({ personaId }: ReportViewProps) {
+  const { t } = useTranslation()
   const { report, isLoading, error } = useReport(personaId)
 
   if (error) return <ErrorDisplay error={error} />
@@ -27,7 +29,7 @@ export function ReportView({ personaId }: ReportViewProps) {
       <div className="island-shell rounded-2xl p-6 text-center">
         <FileText size={36} className="mx-auto text-[var(--sea-ink-soft)] opacity-40 mb-3" />
         <p className="text-sm text-[var(--sea-ink-soft)]">
-          No report available for this persona yet.
+          {t('report.noReport')}
         </p>
       </div>
     )
@@ -47,18 +49,18 @@ export function ReportView({ personaId }: ReportViewProps) {
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <StatCard
           icon={<MessageSquare size={18} />}
-          label="Messages"
+          label={t('report.messages')}
           value={String(report.totalMessages)}
         />
         <StatCard
           icon={<TrendingUp size={18} />}
-          label="Status"
+          label={t('report.status')}
           value={<StatusBadge status={report.sessionStatus} />}
         />
         <div className="col-span-2 sm:col-span-1">
           <StatCard
             icon={<FileText size={18} />}
-            label="Generated"
+            label={t('report.generated')}
             value={generatedDate}
           />
         </div>
@@ -66,7 +68,7 @@ export function ReportView({ personaId }: ReportViewProps) {
 
       {/* Recommendation */}
       <div className="island-shell rounded-2xl p-6">
-        <h3 className="island-kicker mb-3">Recommendation</h3>
+        <h3 className="island-kicker mb-3">{t('report.recommendation')}</h3>
         <p className="text-base text-[var(--sea-ink)] leading-relaxed">
           {report.recommendation}
         </p>
@@ -74,7 +76,7 @@ export function ReportView({ personaId }: ReportViewProps) {
 
       {/* Rationale */}
       <div className="island-shell rounded-2xl p-6">
-        <h3 className="island-kicker mb-3">Rationale</h3>
+        <h3 className="island-kicker mb-3">{t('report.rationale')}</h3>
         <p className="text-sm text-[var(--sea-ink-soft)] leading-relaxed">
           {report.rationale}
         </p>
@@ -83,7 +85,7 @@ export function ReportView({ personaId }: ReportViewProps) {
       {/* Latest message preview */}
       {report.latestMessagePreview && (
         <div className="island-shell rounded-2xl p-6">
-          <h3 className="island-kicker mb-3">Latest Message</h3>
+          <h3 className="island-kicker mb-3">{t('report.latestMessage')}</h3>
           <p className="text-sm text-[var(--sea-ink)] italic">
             "{report.latestMessagePreview}"
           </p>
@@ -97,10 +99,10 @@ export function ReportView({ personaId }: ReportViewProps) {
           params={{ id: report.sessionId }}
           className="btn-primary"
         >
-          View Conversation
+          {t('report.viewConversation')}
         </Link>
         <Link to="/" className="btn-ghost">
-          Back to Plaza
+          {t('report.backToPlaza')}
         </Link>
       </div>
     </div>

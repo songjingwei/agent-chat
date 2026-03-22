@@ -1,9 +1,10 @@
+import { useTranslation } from 'react-i18next'
 import type { SessionStatus } from '#/lib/types'
 
-const statusConfig: Record<SessionStatus, { label: string; className: string }> = {
-  queued: { label: 'Queued', className: 'status-badge status-badge--queued' },
-  active: { label: 'Active', className: 'status-badge status-badge--active' },
-  completed: { label: 'Completed', className: 'status-badge status-badge--completed' },
+const statusClassMap: Record<SessionStatus, string> = {
+  queued: 'status-badge status-badge--queued',
+  active: 'status-badge status-badge--active',
+  completed: 'status-badge status-badge--completed',
 }
 
 interface StatusBadgeProps {
@@ -11,14 +12,16 @@ interface StatusBadgeProps {
 }
 
 export function StatusBadge({ status }: StatusBadgeProps) {
-  const config = statusConfig[status]
+  const { t } = useTranslation()
+  const label = t(`status.${status}`)
+
   return (
-    <span className={config.className} aria-label={`Status: ${config.label}`}>
+    <span className={statusClassMap[status]} aria-label={t('status.label', { status: label })}>
       <span
         className="inline-block h-1.5 w-1.5 rounded-full"
         style={{ background: 'currentColor' }}
       />
-      {config.label}
+      {label}
     </span>
   )
 }
