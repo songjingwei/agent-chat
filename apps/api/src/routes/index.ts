@@ -1,7 +1,9 @@
-import type { Hono } from "hono";
+import { Hono } from "hono";
 
 import { apiConfig } from "../config.js";
 import { jsonOk } from "../lib/http.js";
+import { authMiddleware } from "../middleware/auth.js";
+import { createAuthRoutes } from "../modules/auth/auth.routes.js";
 import { createHealthRoutes } from "../modules/health/health.routes.js";
 import { createMessageRoutes } from "../modules/messages/messages.routes.js";
 import { createPersonaRoutes } from "../modules/personas/personas.routes.js";
@@ -10,6 +12,7 @@ import { createSessionRoutes } from "../modules/sessions/sessions.routes.js";
 import type { AppServices } from "../services/index.js";
 
 export const registerRoutes = (app: Hono, services: AppServices) => {
+  // Public routes
   app.get("/", (c) => {
     return jsonOk(c, {
       service: apiConfig.serviceName,
@@ -19,8 +22,14 @@ export const registerRoutes = (app: Hono, services: AppServices) => {
   });
 
   app.route("/", createHealthRoutes(services.healthService));
-  app.route("/", createPersonaRoutes(services.personaService));
-  app.route("/", createSessionRoutes(services.sessionService));
-  app.route("/", createMessageRoutes(services.messageService));
-  app.route("/", createReportRoutes(services.reportService));
+  app.route("/", createAuthRoutes(services.authService));
+
+  // Protected routes — require JWT
+  const protectedApp = new Hono();
+  protectedApp.use("*", authMiddleware);
+  protectedApp.route("/", createPersonaRoutes(services.personaService));
+  protectedApp.route("/", createSessionRoutes(services.sessionService));
+  protectedApp.route("/", createMessageRoutes(services.messageService));
+  protectedApp.route("/", createReportRoutes(services.reportService));
+  app.route("/", protectedApp);
 };

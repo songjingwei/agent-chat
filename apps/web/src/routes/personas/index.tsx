@@ -1,8 +1,13 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { MyPersonasList } from '#/features/personas/MyPersonasList'
 
 export const Route = createFileRoute('/personas/')({
+  beforeLoad: ({ context }) => {
+    if (!context.auth.isAuthenticated) {
+      throw redirect({ to: '/login' })
+    }
+  },
   component: PersonasPage,
 })
 

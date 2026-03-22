@@ -3,6 +3,7 @@ import {
   HeadContent,
   Scripts,
   createRootRouteWithContext,
+  useRouter,
 } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
@@ -11,6 +12,8 @@ import '#/lib/i18n'
 import Footer from '../components/Footer'
 import Header from '../components/Header'
 import { NotFound } from '../components/NotFound'
+import { AuthProvider, useAuth } from '../lib/auth-context'
+import type { AuthUser } from '../lib/types'
 
 import appCss from '../styles.css?url'
 
@@ -18,6 +21,10 @@ const THEME_INIT_SCRIPT = `(function(){try{var stored=window.localStorage.getIte
 
 interface RouterContext {
   queryClient: QueryClient
+  auth: {
+    isAuthenticated: boolean
+    user: AuthUser | null
+  }
 }
 
 export const Route = createRootRouteWithContext<RouterContext>()({
@@ -50,6 +57,25 @@ export const Route = createRootRouteWithContext<RouterContext>()({
   notFoundComponent: () => <NotFound />,
 })
 
+function InnerApp({ children }: { children: React.ReactNode }) {
+  const auth = useAuth()
+  const router = useRouter()
+
+  // Keep router context in sync with auth state
+  router.options.context.auth = {
+    isAuthenticated: auth.isAuthenticated,
+    user: auth.user,
+  }
+
+  return (
+    <>
+      <Header />
+      {children}
+      <Footer />
+    </>
+  )
+}
+
 function RootDocument({ children }: { children: React.ReactNode }) {
   const { queryClient } = Route.useRouteContext()
   const { i18n } = useTranslation()
@@ -62,9 +88,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-[rgba(79,184,178,0.24)]">
         <QueryClientProvider client={queryClient}>
-          <Header />
-          {children}
-          <Footer />
+          <AuthProvider>
+            <InnerApp>{children}</InnerApp>
+          </AuthProvider>
         </QueryClientProvider>
         <TanStackDevtools
           config={{

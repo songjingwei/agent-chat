@@ -12,5 +12,4 @@ export const createSessionBodySchema = z
 
 export const listSessionsQuerySchema = z.object({
   personaId: z.string().min(1).optional(),
-  userId: z.string().min(1).max(128).optional(),
 });

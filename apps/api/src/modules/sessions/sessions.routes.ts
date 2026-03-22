@@ -17,9 +17,10 @@ export const createSessionRoutes = (sessionService: SessionService) => {
 
   routes.get("/sessions", (c) => {
     const query = parseWithSchema(listSessionsQuerySchema, c.req.query());
+    const userId = c.get("userId");
     const items = sessionService.list({
       personaId: query.personaId,
-      userId: query.userId,
+      userId,
     });
 
     return jsonOk(c, {

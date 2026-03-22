@@ -9,14 +9,28 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as RegisterRouteImport } from './routes/register'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SessionsIndexRouteImport } from './routes/sessions/index'
 import { Route as PersonasIndexRouteImport } from './routes/personas/index'
 import { Route as SessionsIdRouteImport } from './routes/sessions/$id'
 import { Route as ReportsIdRouteImport } from './routes/reports/$id'
+import { Route as PersonasQuizRouteImport } from './routes/personas/quiz'
+import { Route as PersonasMirrorChatRouteImport } from './routes/personas/mirror-chat'
 import { Route as PersonasCreateRouteImport } from './routes/personas/create'
 
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
@@ -47,6 +61,16 @@ const ReportsIdRoute = ReportsIdRouteImport.update({
   path: '/reports/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PersonasQuizRoute = PersonasQuizRouteImport.update({
+  id: '/personas/quiz',
+  path: '/personas/quiz',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PersonasMirrorChatRoute = PersonasMirrorChatRouteImport.update({
+  id: '/personas/mirror-chat',
+  path: '/personas/mirror-chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PersonasCreateRoute = PersonasCreateRouteImport.update({
   id: '/personas/create',
   path: '/personas/create',
@@ -56,7 +80,11 @@ const PersonasCreateRoute = PersonasCreateRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
   '/personas/create': typeof PersonasCreateRoute
+  '/personas/mirror-chat': typeof PersonasMirrorChatRoute
+  '/personas/quiz': typeof PersonasQuizRoute
   '/reports/$id': typeof ReportsIdRoute
   '/sessions/$id': typeof SessionsIdRoute
   '/personas/': typeof PersonasIndexRoute
@@ -65,7 +93,11 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
   '/personas/create': typeof PersonasCreateRoute
+  '/personas/mirror-chat': typeof PersonasMirrorChatRoute
+  '/personas/quiz': typeof PersonasQuizRoute
   '/reports/$id': typeof ReportsIdRoute
   '/sessions/$id': typeof SessionsIdRoute
   '/personas': typeof PersonasIndexRoute
@@ -75,7 +107,11 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
   '/personas/create': typeof PersonasCreateRoute
+  '/personas/mirror-chat': typeof PersonasMirrorChatRoute
+  '/personas/quiz': typeof PersonasQuizRoute
   '/reports/$id': typeof ReportsIdRoute
   '/sessions/$id': typeof SessionsIdRoute
   '/personas/': typeof PersonasIndexRoute
@@ -86,7 +122,11 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
+    | '/login'
+    | '/register'
     | '/personas/create'
+    | '/personas/mirror-chat'
+    | '/personas/quiz'
     | '/reports/$id'
     | '/sessions/$id'
     | '/personas/'
@@ -95,7 +135,11 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/login'
+    | '/register'
     | '/personas/create'
+    | '/personas/mirror-chat'
+    | '/personas/quiz'
     | '/reports/$id'
     | '/sessions/$id'
     | '/personas'
@@ -104,7 +148,11 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/about'
+    | '/login'
+    | '/register'
     | '/personas/create'
+    | '/personas/mirror-chat'
+    | '/personas/quiz'
     | '/reports/$id'
     | '/sessions/$id'
     | '/personas/'
@@ -114,7 +162,11 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  LoginRoute: typeof LoginRoute
+  RegisterRoute: typeof RegisterRoute
   PersonasCreateRoute: typeof PersonasCreateRoute
+  PersonasMirrorChatRoute: typeof PersonasMirrorChatRoute
+  PersonasQuizRoute: typeof PersonasQuizRoute
   ReportsIdRoute: typeof ReportsIdRoute
   SessionsIdRoute: typeof SessionsIdRoute
   PersonasIndexRoute: typeof PersonasIndexRoute
@@ -123,6 +175,20 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/about': {
       id: '/about'
       path: '/about'
@@ -165,6 +231,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReportsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/personas/quiz': {
+      id: '/personas/quiz'
+      path: '/personas/quiz'
+      fullPath: '/personas/quiz'
+      preLoaderRoute: typeof PersonasQuizRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/personas/mirror-chat': {
+      id: '/personas/mirror-chat'
+      path: '/personas/mirror-chat'
+      fullPath: '/personas/mirror-chat'
+      preLoaderRoute: typeof PersonasMirrorChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/personas/create': {
       id: '/personas/create'
       path: '/personas/create'
@@ -178,7 +258,11 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  LoginRoute: LoginRoute,
+  RegisterRoute: RegisterRoute,
   PersonasCreateRoute: PersonasCreateRoute,
+  PersonasMirrorChatRoute: PersonasMirrorChatRoute,
+  PersonasQuizRoute: PersonasQuizRoute,
   ReportsIdRoute: ReportsIdRoute,
   SessionsIdRoute: SessionsIdRoute,
   PersonasIndexRoute: PersonasIndexRoute,

@@ -1,16 +1,18 @@
 import { useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useCreatePersona } from './useCreatePersona'
-import { getOrCreateUserId } from '#/lib/userId'
+import { useAuth } from '#/lib/auth-context'
 
 export function usePersonaCreateForm() {
-  const [displayName, setDisplayName] = useState('')
+  const { user } = useAuth()
   const [bio, setBio] = useState('')
   const [traits, setTraits] = useState<string[]>([])
   const [traitInput, setTraitInput] = useState('')
 
   const navigate = useNavigate()
   const mutation = useCreatePersona()
+
+  const displayName = user?.displayName ?? ''
 
   function addTrait() {
     const trimmed = traitInput.trim()
@@ -32,12 +34,11 @@ export function usePersonaCreateForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!displayName.trim()) return
+    if (!displayName) return
 
     mutation.mutate(
       {
-        userId: getOrCreateUserId(),
-        displayName: displayName.trim(),
+        displayName,
         bio: bio.trim() || undefined,
         traits,
       },
@@ -51,7 +52,6 @@ export function usePersonaCreateForm() {
 
   return {
     displayName,
-    setDisplayName,
     bio,
     setBio,
     traits,

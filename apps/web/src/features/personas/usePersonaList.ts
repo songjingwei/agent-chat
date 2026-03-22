@@ -2,10 +2,10 @@ import { useQuery } from '@tanstack/react-query'
 import { listPersonas } from '#/lib/api-client'
 import { queryKeys } from '#/lib/query-keys'
 
-export function usePersonaList(userId?: string) {
+export function usePersonaList() {
   const query = useQuery({
-    queryKey: queryKeys.personas.list(userId),
-    queryFn: () => listPersonas(userId),
+    queryKey: queryKeys.personas.list(),
+    queryFn: () => listPersonas(),
   })
 
   return {

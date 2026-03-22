@@ -42,4 +42,10 @@ export const apiConfig = {
     process.env.HEALTHCHECK_TIMEOUT_MS,
     DEFAULT_HEALTHCHECK_TIMEOUT_MS,
   ),
+  jwtSecret: process.env.JWT_SECRET ?? "dev-jwt-secret-change-in-production",
+  jwtAccessExpiresIn: parsePositiveInt(process.env.JWT_ACCESS_EXPIRES_IN, 900),
+  jwtRefreshExpiresIn: parsePositiveInt(
+    process.env.JWT_REFRESH_EXPIRES_IN,
+    604800,
+  ),
 } as const;

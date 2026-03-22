@@ -1,13 +1,12 @@
 import { useTranslation } from 'react-i18next'
 import { ErrorDisplay } from '#/components/ErrorDisplay'
 import { usePersonaCreateForm } from './usePersonaCreateForm'
-import { X, Wand2, Plus } from 'lucide-react'
+import { X, Wand2, Plus, User } from 'lucide-react'
 
 export function PersonaCreateForm() {
   const { t } = useTranslation()
   const {
     displayName,
-    setDisplayName,
     bio,
     setBio,
     traits,
@@ -23,26 +22,19 @@ export function PersonaCreateForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Display Name */}
+      {/* Display Name (read-only, from user account) */}
       <div>
-        <label
-          htmlFor="displayName"
-          className="block text-sm font-semibold text-[var(--sea-ink)] mb-1.5"
-        >
+        <label className="block text-sm font-semibold text-[var(--sea-ink)] mb-1.5">
           {t('persona.create.nameLabel')}
         </label>
-        <input
-          id="displayName"
-          type="text"
-          className="form-field"
-          placeholder={t('persona.create.namePlaceholder')}
-          maxLength={80}
-          required
-          value={displayName}
-          onChange={(e) => setDisplayName(e.target.value)}
-        />
-        <p className="text-xs text-[var(--sea-ink-soft)] mt-1">
-          {t('common.charCount', { current: displayName.length, max: 80 })}
+        <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-[10px] border border-[var(--line)] bg-[var(--surface)]">
+          <User size={16} className="text-[var(--sea-ink-soft)] shrink-0" />
+          <span className="text-[0.9375rem] text-[var(--sea-ink)] font-medium">
+            {displayName}
+          </span>
+        </div>
+        <p className="text-xs text-[var(--sea-ink-soft)] mt-1 opacity-60">
+          {t('persona.create.nameFromAccount')}
         </p>
       </div>
 
@@ -131,7 +123,7 @@ export function PersonaCreateForm() {
       <button
         type="submit"
         className="btn-primary w-full"
-        disabled={isPending || !displayName.trim()}
+        disabled={isPending || !displayName}
       >
         {isPending ? (
           <>

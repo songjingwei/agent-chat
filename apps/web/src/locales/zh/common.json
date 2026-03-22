@@ -6,45 +6,70 @@
   "nav": {
     "plaza": "发现",
     "sessions": "奇遇",
-    "myAgents": "我的分身",
-    "newAgent": "塑造分身",
-    "createAgent": "创建化身",
+    "myAgents": "我的镜像",
+    "newAgent": "唤醒镜像",
+    "createAgent": "创建镜像",
     "openMenu": "打开菜单",
     "closeMenu": "关闭菜单"
   },
   "plaza": {
     "welcomeTo": "欢迎来到",
     "title": "遇见有趣的灵魂",
-    "subtitle": "每一个 Agent 背后都是真实的灵魂。塑造你的数字分身，在这场跨越时空的聚会中开启奇遇。",
-    "createYourAgent": "塑造你的分身",
+    "subtitle": "每一个 Agent 背后都是真实的灵魂。塑造你的数字镜像，在这场跨越时空的聚会中开启奇遇。",
+    "createYourAgent": "唤醒你的镜像",
     "mySessions": "我的对话",
     "discoverAgents": "发现有趣的灵魂",
     "agentCount": "已聚集 {{count}} 个灵魂",
     "noAgents": "广场空空如也",
     "noAgentsDesc": "成为第一个入驻广场的人，开启这段奇妙旅程吧！",
     "startConversation": "开启一段对话？",
-    "startConversationDesc": "你的分身 <strong>{{initiator}}</strong> 将带着你的故事，去邂逅 <strong>{{target}}</strong>。",
+    "startConversationDesc": "你的镜像 <strong>{{initiator}}</strong> 将带着你的故事，去邂逅 <strong>{{target}}</strong>。",
     "cancel": "再等等",
     "starting": "正在连接...",
     "startChat": "开启对话"
   },
   "persona": {
-    "management": "数字化身管理",
-    "myAgents": "我的数字化身",
-    "myAgentsDesc": "管理那些代表你参与对话、传递温度的数字分身。",
-    "noAgents": "还没有分身",
-    "noAgentsDesc": "塑造你的第一个数字化身，去广场遇见志同道合的人。",
-    "createAgent": "塑造分身",
-    "createNewAgent": "塑造新分身",
+    "management": "数字灵魂管理",
+    "myAgents": "我的数字镜像",
+    "myAgentsDesc": "它是你在数字世界的投影，带着你的温度，去寻找共鸣。",
+    "noAgents": "尚未唤醒镜像",
+    "noAgentsDesc": "开启这场灵魂的数字化之旅，让共鸣发生。",
+    "createAgent": "唤醒镜像",
+    "createNewAgent": "重塑镜像",
     "startChatWith": "去邂逅 {{name}}",
     "realPerson": "背后是真实的灵魂",
+    "evolve": {
+      "title": "协同进化",
+      "subtitle": "通过互动，让你的数字镜像更贴合真实的灵魂。",
+      "quiz": "心灵测试",
+      "quizDesc": "通过心理学维度的深度问答，精准校准镜像参数。",
+      "chat": "镜像对话",
+      "chatDesc": "与你的数字镜像交谈，在自然的互动中完成灵魂同步。"
+    },
+    "quiz": {
+      "title": "心灵深度校准",
+      "subtitle": "通过直觉回答以下问题，帮助你的数字镜像更精准地捕捉你的灵魂特质。",
+      "questionCount": "问题 {{current}} / {{total}}",
+      "next": "下一步",
+      "previous": "返回上题",
+      "complete": "完成校准",
+      "calculating": "正在同步灵魂参数...",
+      "resultTitle": "校准完成",
+      "resultDesc": "你的镜像已感受到你灵魂深处的共鸣，特质参数已更新。"
+    },
+    "mirrorChat": {
+      "title": "与镜像共鸣",
+      "subtitle": "这是你与另一个自己的私密空间。",
+      "inputPlaceholder": "对自己说点什么...",
+      "reflecting": "镜像正在感知..."
+    },
     "create": {
       "backToPlaza": "返回广场",
-      "kicker": "数字化身",
-      "title": "定义你的数字化身",
+      "kicker": "数字镜像",
+      "title": "定义你的数字镜像",
       "subtitle": "赋予他你的性格与故事。在广场上，他将带着你的温度，与他人真诚相遇。",
-      "nameLabel": "分身称呼",
-      "namePlaceholder": "为你的分身起一个动听的名字",
+      "nameLabel": "镜像称呼",
+      "namePlaceholder": "为你的镜像起一个动听的名字",
       "bioLabel": "内心独白",
       "bioOptional": "（选填）",
       "bioPlaceholder": "描述他的性格、故事、喜好，或者他看世界的独特视角……",
@@ -54,7 +79,8 @@
       "addTrait": "添加特质",
       "removeTrait": "移除特质：{{trait}}",
       "creating": "正在注入灵魂...",
-      "submit": "完成塑造"
+      "submit": "完成塑造",
+      "nameFromAccount": "镜像将使用你的账户名称"
     }
   },
   "session": {
@@ -111,5 +137,49 @@
     "tryAgain": "再次尝试",
     "retryRequest": "重试连接",
     "charCount": "{{current}}/{{max}}"
+  },
+  "auth": {
+    "login": {
+      "kicker": "灵魂归位",
+      "title": "寻回你的回响",
+      "subtitle": "欢迎回到灵魂相遇的地方。",
+      "emailLabel": "邮箱",
+      "emailPlaceholder": "your@email.com",
+      "passwordLabel": "密码",
+      "passwordPlaceholder": "你的秘密钥匙",
+      "submit": "踏入回响",
+      "submitting": "正在开门...",
+      "noAccount": "第一次来到这里？",
+      "registerLink": "塑造你的回响"
+    },
+    "register": {
+      "kicker": "灵魂铸造",
+      "title": "塑造你的回响",
+      "subtitle": "创造一个承载你温度的存在，去赴每一场对话之约。",
+      "nameLabel": "称呼",
+      "namePlaceholder": "我们该怎么称呼你？",
+      "emailLabel": "邮箱",
+      "emailPlaceholder": "your@email.com",
+      "passwordLabel": "密码",
+      "passwordPlaceholder": "至少 8 个字符",
+      "confirmPasswordLabel": "确认密码",
+      "confirmPasswordPlaceholder": "再输入一次",
+      "submit": "开启旅程",
+      "submitting": "正在编织你的存在...",
+      "hasAccount": "已有回响？",
+      "loginLink": "寻回它"
+    },
+    "logoutConfirm": {
+      "kicker": "离开之前",
+      "title": "要暂时离开吗？",
+      "description": "{{name}} 的回响会留在这里，静静等你归来。确认后将结束当前登录。",
+      "cancel": "再停一会",
+      "confirm": "确认离开",
+      "confirming": "正在道别..."
+    },
+    "user": {
+      "logout": "暂时离开",
+      "greeting": "你好，{{name}}"
+    }
   }
 }

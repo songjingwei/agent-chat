@@ -1,10 +1,15 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { ReportView } from '#/features/reports/ReportView'
 import { ArrowLeft } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/reports/$id')({
+  beforeLoad: ({ context }) => {
+    if (!context.auth.isAuthenticated) {
+      throw redirect({ to: '/login' })
+    }
+  },
   component: ReportPage,
 })
 

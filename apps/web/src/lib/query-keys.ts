@@ -1,8 +1,10 @@
 export const queryKeys = {
+  auth: {
+    me: ['auth', 'me'] as const,
+  },
   personas: {
     all: ['personas'] as const,
-    list: (userId?: string) =>
-      [...queryKeys.personas.all, 'list', { userId }] as const,
+    list: () => [...queryKeys.personas.all, 'list'] as const,
     detail: (id: string) =>
       [...queryKeys.personas.all, 'detail', id] as const,
   },

@@ -1,6 +1,29 @@
 interface LoadingSkeletonProps {
-  variant?: 'card' | 'list-item' | 'message'
+  variant?: 'card' | 'list-item' | 'message' | 'mirror'
   count?: number
+}
+
+function SkeletonMirror() {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 space-y-8 w-full max-w-md mx-auto">
+      {/* 中心能量球 */}
+      <div className="relative">
+        <div className="skeleton h-48 w-48 rounded-full opacity-40 animate-pulse bg-[var(--lagoon)]" />
+        <div className="absolute inset-0 rounded-full border-2 border-[var(--lagoon)] animate-ping opacity-20" />
+      </div>
+      
+      <div className="space-y-4 w-full px-4 text-center">
+        <div className="skeleton h-6 w-1/3 mx-auto" />
+        <div className="skeleton h-3 w-full" />
+        <div className="skeleton h-3 w-5/6 mx-auto" />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 w-full px-4">
+        <div className="skeleton h-12 rounded-2xl" />
+        <div className="skeleton h-12 rounded-2xl" />
+      </div>
+    </div>
+  )
 }
 
 function SkeletonCard() {
@@ -44,6 +67,7 @@ const variants = {
   card: SkeletonCard,
   'list-item': SkeletonListItem,
   message: SkeletonMessage,
+  mirror: SkeletonMirror,
 }
 
 export function LoadingSkeleton({ variant = 'card', count = 1 }: LoadingSkeletonProps) {

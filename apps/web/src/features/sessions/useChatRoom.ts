@@ -3,7 +3,7 @@ import { useSessionDetail } from './useSessionDetail'
 import { useMessages } from '#/features/messages/useMessages'
 import { useSendMessage } from '#/features/messages/useSendMessage'
 import { usePersonaDetail } from '#/features/personas/usePersonaDetail'
-import { getOrCreateUserId } from '#/lib/userId'
+import { useAuth } from '#/lib/auth-context'
 
 export function useChatRoom(sessionId: string) {
   const [messageInput, setMessageInput] = useState('')
@@ -24,7 +24,8 @@ export function useChatRoom(sessionId: string) {
     isLoading: targetLoading,
   } = usePersonaDetail(session?.targetPersonaId ?? '')
 
-  const userId = typeof window !== 'undefined' ? getOrCreateUserId() : ''
+  const { user } = useAuth()
+  const userId = user?.id ?? ''
 
   const myPersonaId =
     initiatorPersona?.userId === userId

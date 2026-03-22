@@ -1,12 +1,19 @@
+import { getAccessToken, getRefreshToken, setTokens, clearTokens } from './auth-tokens'
 import type {
   ApiResponse,
+  AuthResponse,
+  AuthTokens,
+  AuthUser,
   ChatMessage,
   CreateHumanMessageInput,
   CreatePersonaInput,
   CreateSessionInput,
   LatestReport,
   ListResponse,
+  LoginInput,
   Persona,
+  RefreshInput,
+  RegisterInput,
   Session,
 } from './types'
 
@@ -24,13 +31,44 @@ export class ApiRequestError extends Error {
   }
 }
 
+let isRefreshing = false
+let refreshPromise: Promise<AuthTokens> | null = null
+
+async function doRefresh(): Promise<AuthTokens> {
+  const refreshToken = getRefreshToken()
+  if (!refreshToken) {
+    throw new ApiRequestError('AUTH_UNAUTHORIZED', 'No refresh token available.')
+  }
+
+  const res = await fetch(`${API_BASE}/auth/refresh`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refreshToken }),
+  })
+
+  const json = (await res.json()) as ApiResponse<AuthTokens>
+  if (!json.success) {
+    throw new ApiRequestError(json.error.code, json.error.message, json.error.details)
+  }
+
+  return json.data
+}
+
 async function request<T>(
   method: 'GET' | 'POST' | 'PUT' | 'DELETE',
   path: string,
   body?: unknown,
+  skipAuth = false,
 ): Promise<T> {
   const url = `${API_BASE}${path}`
   const headers: Record<string, string> = {}
+
+  if (!skipAuth) {
+    const token = getAccessToken()
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+  }
 
   if (body !== undefined) {
     headers['Content-Type'] = 'application/json'
@@ -45,6 +83,31 @@ async function request<T>(
   const json = (await res.json()) as ApiResponse<T>
 
   if (!json.success) {
+    // Try token refresh on expired access token
+    if (json.error.code === 'AUTH_TOKEN_EXPIRED' && !skipAuth) {
+      if (!isRefreshing) {
+        isRefreshing = true
+        refreshPromise = doRefresh()
+          .then((tokens) => {
+            setTokens(tokens.accessToken, tokens.refreshToken)
+            return tokens
+          })
+          .catch((err) => {
+            clearTokens()
+            window.location.href = '/login'
+            throw err
+          })
+          .finally(() => {
+            isRefreshing = false
+            refreshPromise = null
+          })
+      }
+
+      await refreshPromise
+      // Retry original request with new token
+      return request<T>(method, path, body, false)
+    }
+
     throw new ApiRequestError(
       json.error.code,
       json.error.message,
@@ -55,14 +118,38 @@ async function request<T>(
   return json.data
 }
 
+// Auth
+export function registerUser(input: RegisterInput) {
+  return request<AuthResponse>('POST', '/auth/register', input, true)
+}
+
+export function loginUser(input: LoginInput) {
+  return request<AuthResponse>('POST', '/auth/login', input, true)
+}
+
+export function logoutUser(input: RefreshInput) {
+  return request<{ message: string }>('POST', '/auth/logout', input)
+}
+
+export function refreshTokens(input: RefreshInput) {
+  return request<AuthTokens>('POST', '/auth/refresh', input, true)
+}
+
+export function getCurrentUser() {
+  return request<AuthUser>('GET', '/auth/me')
+}
+
 // Personas
 export function createPersona(input: CreatePersonaInput) {
   return request<Persona>('POST', '/personas', input)
 }
 
-export function listPersonas(userId?: string) {
-  const params = userId ? `?userId=${encodeURIComponent(userId)}` : ''
-  return request<ListResponse<Persona>>('GET', `/personas${params}`)
+export function listPersonas() {
+  return request<ListResponse<Persona>>('GET', '/personas')
+}
+
+export function listAllPersonas() {
+  return request<ListResponse<Persona>>('GET', '/personas')
 }
 
 export function getPersona(id: string) {

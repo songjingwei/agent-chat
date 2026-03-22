@@ -1,7 +1,12 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 import { ChatRoom } from '#/features/sessions/ChatRoom'
 
 export const Route = createFileRoute('/sessions/$id')({
+  beforeLoad: ({ context }) => {
+    if (!context.auth.isAuthenticated) {
+      throw redirect({ to: '/login' })
+    }
+  },
   component: ChatRoomPage,
 })
 

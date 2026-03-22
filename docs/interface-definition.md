@@ -58,10 +58,9 @@
 
 - `GET /`
   - 返回服务元数据：`service`、`status`、`version`
-  - 当前返回的是应用级就绪状态，不包含 DB/Redis 探针
 - `GET /health`
-  - 返回最小健康状态
-  - 当前仅能证明 API 进程可响应，请勿误判为“依赖连通已完成”
+  - 返回详细健康状态
+  - **已实现**：包含 Postgres 和 Redis 的 TCP 探测结果（`postgres=ok`, `redis=ok`）
 
 ### 3.2 Personas
 
@@ -114,9 +113,6 @@
   - 当前：未实现
 - `GET /reports/:id`
   - 目标：查看特定报告详情
-  - 当前：未实现
-- `GET /health` 的 DB/Redis 细粒度探针
-  - 目标：返回依赖连通状态
   - 当前：未实现
 - Worker 入队、出队、重试、幂等状态查询
   - 当前：未实现

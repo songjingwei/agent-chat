@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import jwt from "jsonwebtoken";
 
 import { createApp } from "./app.js";
+import { apiConfig } from "./config.js";
 import { HealthService } from "./services/health.service.js";
 import { createServices } from "./services/index.js";
 
@@ -22,6 +24,19 @@ const createTestApp = () => {
   return createApp(createServices({ healthService }));
 };
 
+const createTestToken = (userId: string) => {
+  return jwt.sign(
+    { sub: userId, email: `${userId}@test.com` },
+    apiConfig.jwtSecret,
+    { expiresIn: 3600 },
+  );
+};
+
+const authHeaders = (userId: string) => ({
+  "content-type": "application/json",
+  authorization: `Bearer ${createTestToken(userId)}`,
+});
+
 test("GET /health should return ok", async () => {
   const app = createTestApp();
   const response = await app.request("/health");
@@ -41,9 +56,8 @@ test("persona/session/message/report flow should work", async () => {
 
   const personaAResponse = await app.request("/personas", {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: authHeaders("user-a"),
     body: JSON.stringify({
-      userId: "user-a",
       displayName: "Alice",
       traits: ["curious", "kind"],
     }),
@@ -51,9 +65,8 @@ test("persona/session/message/report flow should work", async () => {
 
   const personaBResponse = await app.request("/personas", {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: authHeaders("user-b"),
     body: JSON.stringify({
-      userId: "user-b",
       displayName: "Bob",
       traits: ["calm"],
     }),
@@ -67,7 +80,7 @@ test("persona/session/message/report flow should work", async () => {
 
   const sessionResponse = await app.request("/sessions", {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: authHeaders("user-a"),
     body: JSON.stringify({
       initiatorPersonaId: personaAJson.data.id,
       targetPersonaId: personaBJson.data.id,
@@ -82,7 +95,7 @@ test("persona/session/message/report flow should work", async () => {
     `/sessions/${sessionJson.data.id}/human-message`,
     {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: authHeaders("user-a"),
       body: JSON.stringify({
         authorPersonaId: personaAJson.data.id,
         content: "你好，很高兴认识你。",
@@ -94,6 +107,7 @@ test("persona/session/message/report flow should work", async () => {
 
   const reportResponse = await app.request(
     `/reports/latest?personaId=${personaAJson.data.id}`,
+    { headers: { authorization: `Bearer ${createTestToken("user-a")}` } },
   );
 
   assert.equal(reportResponse.status, 200);
@@ -110,9 +124,8 @@ test("GET /sessions should support userId filtering for web session list", async
   const createPersona = async (userId: string, displayName: string) => {
     const response = await app.request("/personas", {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: authHeaders(userId),
       body: JSON.stringify({
-        userId,
         displayName,
         traits: [],
       }),
@@ -126,10 +139,10 @@ test("GET /sessions should support userId filtering for web session list", async
   const personaBJson = await createPersona("user-b", "Bob");
   const personaCJson = await createPersona("user-c", "Carol");
 
-  const createSession = async (initiatorPersonaId: string, targetPersonaId: string) => {
+  const createSession = async (userId: string, initiatorPersonaId: string, targetPersonaId: string) => {
     const response = await app.request("/sessions", {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: authHeaders(userId),
       body: JSON.stringify({
         initiatorPersonaId,
         targetPersonaId,
@@ -140,10 +153,13 @@ test("GET /sessions should support userId filtering for web session list", async
     return response.json();
   };
 
-  await createSession(personaAJson.data.id, personaBJson.data.id);
-  await createSession(personaBJson.data.id, personaCJson.data.id);
+  await createSession("user-a", personaAJson.data.id, personaBJson.data.id);
+  await createSession("user-b", personaBJson.data.id, personaCJson.data.id);
 
-  const response = await app.request("/sessions?userId=user-a");
+  // user-a should only see sessions involving their personas
+  const response = await app.request("/sessions", {
+    headers: { authorization: `Bearer ${createTestToken("user-a")}` },
+  });
   assert.equal(response.status, 200);
 
   const body = await response.json();
@@ -154,8 +170,11 @@ test("GET /sessions should support userId filtering for web session list", async
 
 test("web contract should return stable 404 errors for missing messages/report resources", async () => {
   const app = createTestApp();
+  const token = createTestToken("user-test");
 
-  const missingMessagesResponse = await app.request("/sessions/ses_missing/messages");
+  const missingMessagesResponse = await app.request("/sessions/ses_missing/messages", {
+    headers: { authorization: `Bearer ${token}` },
+  });
   assert.equal(missingMessagesResponse.status, 404);
 
   const missingMessagesJson = await missingMessagesResponse.json();
@@ -164,10 +183,22 @@ test("web contract should return stable 404 errors for missing messages/report r
 
   const missingReportResponse = await app.request(
     "/reports/latest?personaId=prs_missing",
+    { headers: { authorization: `Bearer ${token}` } },
   );
   assert.equal(missingReportResponse.status, 404);
 
   const missingReportJson = await missingReportResponse.json();
   assert.equal(missingReportJson.success, false);
   assert.equal(missingReportJson.error.code, "PERSONA_NOT_FOUND");
+});
+
+test("unauthenticated requests to protected routes should return 401", async () => {
+  const app = createTestApp();
+
+  const response = await app.request("/personas");
+  assert.equal(response.status, 401);
+
+  const body = await response.json();
+  assert.equal(body.success, false);
+  assert.equal(body.error.code, "AUTH_UNAUTHORIZED");
 });

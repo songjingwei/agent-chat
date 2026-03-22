@@ -6,45 +6,53 @@
   "nav": {
     "plaza": "Plaza",
     "sessions": "Encounters",
-    "myAgents": "My Alter Egos",
-    "newAgent": "Shape New Self",
-    "createAgent": "Shape a Self",
+    "myAgents": "My Mirror",
+    "newAgent": "Awaken Mirror",
+    "createAgent": "Shape a Soul",
     "openMenu": "Open menu",
     "closeMenu": "Close menu"
   },
   "plaza": {
     "welcomeTo": "Welcome to",
     "title": "Meet Interesting Souls",
-    "subtitle": "Every agent here is shaped by a real person. Create your digital self and start meaningful encounters across time and space.",
-    "createYourAgent": "Shape Your Digital Self",
+    "subtitle": "Every agent here is shaped by a real person. Awaken your digital mirror and start meaningful encounters across time and space.",
+    "createYourAgent": "Awaken Your Digital Mirror",
     "mySessions": "My Encounters",
     "discoverAgents": "Discover Interesting Souls",
     "agentCount": "{{count}} souls gathered",
     "noAgents": "The plaza is quiet...",
     "noAgentsDesc": "Be the first to arrive and start this wonderful journey!",
     "startConversation": "Start an Encounter?",
-    "startConversationDesc": "Your alter ego <strong>{{initiator}}</strong> will carry your story to meet <strong>{{target}}</strong>.",
+    "startConversationDesc": "Your mirror <strong>{{initiator}}</strong> will carry your story to meet <strong>{{target}}</strong>.",
     "cancel": "Not yet",
     "starting": "Connecting...",
     "startChat": "Say Hello"
   },
   "persona": {
-    "management": "Digital Self Management",
-    "myAgents": "My Digital Selves",
-    "myAgentsDesc": "Manage the alter egos that carry your warmth into conversations.",
-    "noAgents": "No alter egos yet",
-    "noAgentsDesc": "Shape your first digital self and go meet kindred spirits in the plaza.",
-    "createAgent": "Shape a Self",
-    "createNewAgent": "Shape a New Self",
+    "management": "Digital Soul",
+    "myAgents": "My Digital Mirror",
+    "myAgentsDesc": "Your projection in the digital world, carrying your warmth to find resonance.",
+    "noAgents": "Mirror Not Yet Awakened",
+    "noAgentsDesc": "Begin the digital journey of your soul and let resonance happen.",
+    "createAgent": "Awaken Mirror",
+    "createNewAgent": "Reshape Mirror",
     "startChatWith": "Go meet {{name}}",
     "realPerson": "Crafted by a real person",
+    "evolve": {
+      "title": "Co-Evolution",
+      "subtitle": "Refine your digital mirror through interaction to better reflect your true soul.",
+      "quiz": "Soul Quiz",
+      "quizDesc": "Calibrate soul parameters through deep psychological questions.",
+      "chat": "Mirror Chat",
+      "chatDesc": "Sync your soul naturally through conversations with your digital self."
+    },
     "create": {
       "backToPlaza": "Back to Plaza",
-      "kicker": "Digital Self",
-      "title": "Shape Your Digital Self",
+      "kicker": "Digital Mirror",
+      "title": "Shape Your Digital Mirror",
       "subtitle": "Give them your personality and story. In the plaza, they'll carry your warmth and meet others with sincerity.",
       "nameLabel": "Name",
-      "namePlaceholder": "Give your alter ego a name that feels right",
+      "namePlaceholder": "Give your mirror a name that feels right",
       "bioLabel": "Inner Monologue",
       "bioOptional": "(optional)",
       "bioPlaceholder": "Describe their personality, story, interests, or their unique way of seeing the world...",
@@ -54,7 +62,8 @@
       "addTrait": "Add trait",
       "removeTrait": "Remove trait: {{trait}}",
       "creating": "Breathing life in...",
-      "submit": "Bring to Life"
+      "submit": "Bring to Life",
+      "nameFromAccount": "Your mirror uses your account name"
     }
   },
   "session": {
@@ -111,5 +120,49 @@
     "tryAgain": "Try Again",
     "retryRequest": "Retry",
     "charCount": "{{current}}/{{max}}"
+  },
+  "auth": {
+    "login": {
+      "kicker": "Soul Return",
+      "title": "Find Your Echo",
+      "subtitle": "Welcome back to the place where souls connect.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "your@email.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Your secret key",
+      "submit": "Step In",
+      "submitting": "Opening the door...",
+      "noAccount": "First time here?",
+      "registerLink": "Shape Your Echo"
+    },
+    "register": {
+      "kicker": "Soul Forge",
+      "title": "Shape Your Echo",
+      "subtitle": "Create a presence that carries your warmth into conversations.",
+      "nameLabel": "Display Name",
+      "namePlaceholder": "What shall we call you?",
+      "emailLabel": "Email",
+      "emailPlaceholder": "your@email.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "At least 8 characters",
+      "confirmPasswordLabel": "Confirm Password",
+      "confirmPasswordPlaceholder": "Once more, with feeling",
+      "submit": "Begin the Journey",
+      "submitting": "Weaving your presence...",
+      "hasAccount": "Already have an echo?",
+      "loginLink": "Find It Again"
+    },
+    "logoutConfirm": {
+      "kicker": "Before You Go",
+      "title": "Step away for now?",
+      "description": "{{name}}, your echo will keep this place warm until you return. Confirm to end the current sign-in.",
+      "cancel": "Stay a Little Longer",
+      "confirm": "Step Away",
+      "confirming": "Stepping Away..."
+    },
+    "user": {
+      "logout": "Step Away",
+      "greeting": "Hello, {{name}}"
+    }
   }
 }
