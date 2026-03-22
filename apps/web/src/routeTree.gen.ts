@@ -11,6 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SessionsIndexRouteImport } from './routes/sessions/index'
+import { Route as PersonasIndexRouteImport } from './routes/personas/index'
+import { Route as SessionsIdRouteImport } from './routes/sessions/$id'
+import { Route as ReportsIdRouteImport } from './routes/reports/$id'
+import { Route as PersonasCreateRouteImport } from './routes/personas/create'
 
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
@@ -22,31 +27,98 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SessionsIndexRoute = SessionsIndexRouteImport.update({
+  id: '/sessions/',
+  path: '/sessions/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PersonasIndexRoute = PersonasIndexRouteImport.update({
+  id: '/personas/',
+  path: '/personas/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SessionsIdRoute = SessionsIdRouteImport.update({
+  id: '/sessions/$id',
+  path: '/sessions/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsIdRoute = ReportsIdRouteImport.update({
+  id: '/reports/$id',
+  path: '/reports/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PersonasCreateRoute = PersonasCreateRouteImport.update({
+  id: '/personas/create',
+  path: '/personas/create',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/personas/create': typeof PersonasCreateRoute
+  '/reports/$id': typeof ReportsIdRoute
+  '/sessions/$id': typeof SessionsIdRoute
+  '/personas/': typeof PersonasIndexRoute
+  '/sessions/': typeof SessionsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/personas/create': typeof PersonasCreateRoute
+  '/reports/$id': typeof ReportsIdRoute
+  '/sessions/$id': typeof SessionsIdRoute
+  '/personas': typeof PersonasIndexRoute
+  '/sessions': typeof SessionsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/personas/create': typeof PersonasCreateRoute
+  '/reports/$id': typeof ReportsIdRoute
+  '/sessions/$id': typeof SessionsIdRoute
+  '/personas/': typeof PersonasIndexRoute
+  '/sessions/': typeof SessionsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about'
+  fullPaths:
+    | '/'
+    | '/about'
+    | '/personas/create'
+    | '/reports/$id'
+    | '/sessions/$id'
+    | '/personas/'
+    | '/sessions/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about'
-  id: '__root__' | '/' | '/about'
+  to:
+    | '/'
+    | '/about'
+    | '/personas/create'
+    | '/reports/$id'
+    | '/sessions/$id'
+    | '/personas'
+    | '/sessions'
+  id:
+    | '__root__'
+    | '/'
+    | '/about'
+    | '/personas/create'
+    | '/reports/$id'
+    | '/sessions/$id'
+    | '/personas/'
+    | '/sessions/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  PersonasCreateRoute: typeof PersonasCreateRoute
+  ReportsIdRoute: typeof ReportsIdRoute
+  SessionsIdRoute: typeof SessionsIdRoute
+  PersonasIndexRoute: typeof PersonasIndexRoute
+  SessionsIndexRoute: typeof SessionsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -65,12 +137,52 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sessions/': {
+      id: '/sessions/'
+      path: '/sessions'
+      fullPath: '/sessions/'
+      preLoaderRoute: typeof SessionsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/personas/': {
+      id: '/personas/'
+      path: '/personas'
+      fullPath: '/personas/'
+      preLoaderRoute: typeof PersonasIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sessions/$id': {
+      id: '/sessions/$id'
+      path: '/sessions/$id'
+      fullPath: '/sessions/$id'
+      preLoaderRoute: typeof SessionsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports/$id': {
+      id: '/reports/$id'
+      path: '/reports/$id'
+      fullPath: '/reports/$id'
+      preLoaderRoute: typeof ReportsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/personas/create': {
+      id: '/personas/create'
+      path: '/personas/create'
+      fullPath: '/personas/create'
+      preLoaderRoute: typeof PersonasCreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  PersonasCreateRoute: PersonasCreateRoute,
+  ReportsIdRoute: ReportsIdRoute,
+  SessionsIdRoute: SessionsIdRoute,
+  PersonasIndexRoute: PersonasIndexRoute,
+  SessionsIndexRoute: SessionsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

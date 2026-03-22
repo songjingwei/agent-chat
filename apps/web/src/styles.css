@@ -257,3 +257,183 @@ a {
     transform: translateY(0);
   }
 }
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.24; }
+}
+
+.fade-in {
+  animation: fade-in 320ms ease both;
+}
+
+/* ---------- Form fields ---------- */
+.form-field {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-strong);
+  color: var(--sea-ink);
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  outline: none;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.form-field::placeholder {
+  color: var(--sea-ink-soft);
+  opacity: 0.6;
+}
+
+.form-field:focus {
+  border-color: var(--lagoon);
+  box-shadow: 0 0 0 3px rgba(79, 184, 178, 0.18);
+}
+
+/* ---------- Status badges ---------- */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.status-badge--queued {
+  background: rgba(245, 180, 60, 0.16);
+  color: #b8860b;
+}
+
+.status-badge--active {
+  background: rgba(79, 184, 128, 0.16);
+  color: var(--palm);
+}
+
+.status-badge--completed {
+  background: rgba(100, 120, 130, 0.14);
+  color: var(--sea-ink-soft);
+}
+
+:root[data-theme="dark"] .status-badge--queued,
+:root:not([data-theme="light"]) .status-badge--queued {
+  background: rgba(245, 180, 60, 0.12);
+  color: #f5b43c;
+}
+
+:root[data-theme="dark"] .status-badge--active,
+:root:not([data-theme="light"]) .status-badge--active {
+  background: rgba(110, 200, 154, 0.14);
+  color: var(--palm);
+}
+
+/* ---------- Chat bubbles ---------- */
+.message-bubble {
+  max-width: 80%;
+  padding: 0.625rem 0.875rem;
+  border-radius: 14px;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  animation: fade-in 320ms ease both;
+}
+
+.message-bubble--mine {
+  margin-left: auto;
+  background: linear-gradient(135deg, var(--lagoon), var(--lagoon-deep));
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+
+.message-bubble--other {
+  margin-right: auto;
+  background: var(--surface-strong);
+  border: 1px solid var(--line);
+  border-bottom-left-radius: 4px;
+}
+
+/* ---------- Skeleton pulse ---------- */
+.skeleton {
+  background: linear-gradient(90deg, var(--surface) 0%, var(--surface-strong) 50%, var(--surface) 100%);
+  background-size: 200% 100%;
+  animation: pulse-soft 1.6s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* ---------- Trait chip ---------- */
+.trait-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.625rem;
+  border: 1px solid var(--chip-line);
+  border-radius: 9999px;
+  background: var(--chip-bg);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--sea-ink);
+}
+
+/* ---------- Primary button ---------- */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.5rem;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--lagoon), var(--lagoon-deep));
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 180ms ease, box-shadow 180ms ease, opacity 180ms ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(79, 184, 178, 0.28);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ---------- Ghost/secondary button ---------- */
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.125rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--sea-ink);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 180ms ease, border-color 180ms ease;
+}
+
+.btn-ghost:hover {
+  background: var(--link-bg-hover);
+  border-color: var(--lagoon);
+}

@@ -6,8 +6,8 @@ import type { HealthService } from "../../services/health.service";
 export const createHealthRoutes = (healthService: HealthService) => {
   const routes = new Hono();
 
-  routes.get("/health", (c) => {
-    return jsonOk(c, healthService.getStatus());
+  routes.get("/health", async (c) => {
+    return jsonOk(c, await healthService.getStatus());
   });
 
   return routes;

@@ -13,10 +13,16 @@ export interface AppServices {
   reportService: ReportService;
 }
 
-export const createServices = (): AppServices => {
+export interface CreateServicesOptions {
+  healthService?: HealthService;
+}
+
+export const createServices = (
+  options: CreateServicesOptions = {},
+): AppServices => {
   const store = createInMemoryStore();
 
-  const healthService = new HealthService();
+  const healthService = options.healthService ?? new HealthService();
   const personaService = new PersonaService(store);
   const sessionService = new SessionService(store);
   const messageService = new MessageService(store, sessionService);

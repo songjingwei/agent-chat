@@ -23,24 +23,41 @@
 
 ## 3. 当前真实状态快照（As of 2026-03-22）
 ### 代码现状
-1. 已完成 `TanStack Start (React)` 初始化。
-2. 已有基础路由与页面：
-   - `src/routes/__root.tsx`
-   - `src/routes/index.tsx`
-   - `src/routes/about.tsx`
-3. 已有基础组件与样式：
-   - `src/components/Header.tsx`
-   - `src/components/Footer.tsx`
+1. 已完成 `TanStack Start (React)` 初始化 + `@tanstack/react-query` 集成。
+2. 已实现全部 MVP 页面路由：
+   - `src/routes/__root.tsx` — 根布局（含 QueryClientProvider）
+   - `src/routes/index.tsx` — 广场页（Discovery Plaza）
+   - `src/routes/personas/create.tsx` — 创建 Agent 页（P0）
+   - `src/routes/personas/index.tsx` — 我的 Agent 列表
+   - `src/routes/sessions/$id.tsx` — 聊天室（P0）
+   - `src/routes/sessions/index.tsx` — 会话列表
+   - `src/routes/reports/$id.tsx` — 对话报告
+   - `src/routes/about.tsx` — 关于页（模板保留）
+3. 已建立基础设施层：
+   - `src/lib/api-client.ts` — API 请求封装（通过 Vite proxy → localhost:3001）
+   - `src/lib/types.ts` — 前端类型定义（镜像 API 类型）
+   - `src/lib/query-keys.ts` — TanStack Query key 工厂
+   - `src/lib/userId.ts` — localStorage 用户 ID（auth P2 前临时方案）
+4. 已建立 feature 模块：
+   - `src/features/personas/` — useCreatePersona, usePersonaList, usePersonaDetail, useMyPersonas, usePersonaCreateForm, useDiscoveryPlaza, PersonaCreateForm, DiscoveryPlaza, MyPersonasList
+   - `src/features/sessions/` — useSessionDetail, useSessionList, useCreateSession, useChatRoom, ChatRoom, SessionList
+   - `src/features/messages/` — useMessages, useSendMessage
+   - `src/features/reports/` — useReport, ReportView
+5. 已建立共享组件：
+   - `src/components/Header.tsx` — 已更新为 Agent Chat 品牌 + 业务导航
+   - `src/components/Footer.tsx` — 已更新为 Agent Chat 品牌
    - `src/components/ThemeToggle.tsx`
-   - `src/styles.css`
-4. `apps/web/package.json` 已提供可执行脚本：`dev/build/preview/test/typecheck`。
-5. 已引入模板依赖：`@tanstack/react-start`、`@tanstack/react-router`、`tailwindcss`、`vite` 等。
-6. 已补充前端协作文档：`FRONTEND_STANDARDS.md`、`PAGES.md`。
+   - `src/components/PersonaCard.tsx` — 可复用 persona 卡片
+   - `src/components/StatusBadge.tsx` — 会话状态标签
+   - `src/components/EmptyState.tsx` — 空状态组件
+   - `src/components/ErrorDisplay.tsx` — 错误展示组件
+   - `src/components/LoadingSkeleton.tsx` — 加载骨架屏
+6. 样式系统已扩展：form-field、message-bubble、status-badge、trait-chip、btn-primary、btn-ghost、skeleton 等 CSS 类。
 
-### 计划状态（来源：`plans/`）
-1. Day 11（2026-04-06）“最小演示 UI”状态：`Not Started`。
-2. Day 12（2026-04-07）“广场与发起会话”状态：`Not Started`。
-3. 根计划当前状态为：Day 1 `Done`、Day 2 `In Progress`；前端主业务开发仍依赖 P0 闭环完成后再推进。
+### 计划状态
+1. P0 核心闭环（创建 Agent + 聊天室）：`Done`。
+2. P1 体验补齐（广场 + 列表 + 报告）：`Done`。
+3. P2 账户与设置（登录）：`Not Started`。
 
 ## 4. 目标技术栈与前端约定
 1. 框架：`TanStack Start`。
