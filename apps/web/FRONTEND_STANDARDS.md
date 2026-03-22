@@ -73,6 +73,37 @@ export const Counter = ({ count, onIncrement }: CounterProps) => (
 
 ---
 
+## 6. Visual & Soulful Design Language (Mandatory)
+
+All new components and pages must adhere to the "Soulful Echo" design system.
+
+### 6.1 Design Philosophy
+- **Empathy & Humanity**: Avoid robotic/technical copy. Use literary and evocative Chinese (e.g., "寻觅", "回响", "归途", "奇遇").
+- **Minimalist Depth**: Use glassmorphism (backdrop-blur) and subtle background glows (Glows) instead of flat, solid colors.
+- **Quiet Elegance**: Focus on light-weight typography, generous letter-spacing, and smooth transitions.
+
+### 6.2 Visual Tokens
+- **Containers**: Use `backdrop-blur-md`, `bg-white/[0.03]`, and `border-white/10` (1px subtle border).
+- **Accents**: Use gradients from `Orange-400` to `Rose-400` (with varying opacities) for primary actions.
+- **Ambient Glows**: Use absolute-positioned divs with `bg-primary/10` or `bg-orange-500/10` and `blur-[120px]` for background depth.
+- **Typography**:
+  - **Hero Titles**: `font-extralight`, `tracking-[0.2em]`, `text-white/90`.
+  - **Subtitles**: `text-white/50`, `font-light`, `leading-relaxed`.
+  - **Interactive Text**: `tracking-widest`, `font-light`.
+
+### 6.3 Animation Standards
+- **Entry**: Always use `animate-in fade-in` with `duration-700` or `1000`.
+- **Feedback**: Subtle hover effects (e.g., `hover:scale-[1.02]`, `hover:bg-white/[0.05]`) rather than harsh color changes.
+
+### 6.4 AI Enforcement
+When generating code or designing UI for this project, you **MUST**:
+1. Check if the component evokes the "quiet & soulful" aesthetic.
+2. Avoid using default high-contrast Tailwind colors. Use opacities (e.g., `/60`, `/10`) for a softer feel.
+3. Prioritize human-centric, poetic Chinese copy for all user-facing strings.
+4. Ensure every page has a "breathing room" with sufficient padding and logical flow.
+
+---
+
 ## 5. Enforcement for AI Agents
 When generating code for this project, you **MUST**:
 1. Check `styles.css` for available variables before adding new styles.

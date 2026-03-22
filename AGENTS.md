@@ -31,6 +31,7 @@ Contributors now validate both docs and runnable scaffolds:
 - Markdown: use clear ATX headings (`##`, `###`) and concise, actionable sections.
 - Filenames: use kebab-case (for example, `mvp-implementation-plan.md`).
 - TypeScript (planned stack): use 2-space indentation, `camelCase` for variables/functions, `PascalCase` for types/classes, and keep API schemas explicit with `zod`.
+- **Frontend Design (Mandatory)**: All frontend UI/UX development MUST strictly follow the **"Soulful Echo"** design system defined in `apps/web/FRONTEND_STANDARDS.md`. This includes typography, color palettes, animations, and poetic Chinese copy.
 
 ## Testing Guidelines (Lean & Impactful)
 **Principle: Quality over Quantity. These guidelines apply to ALL modules (apps/* and packages/*). Tests must be lean, fast, and highly intentional.**

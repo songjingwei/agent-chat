@@ -60,6 +60,7 @@ docker compose -f infra/docker/docker-compose.yml up -d
 - `camelCase` for variables/functions, `PascalCase` for types/classes/components
 - `kebab-case` for filenames and directories
 - Components: `PascalCase.tsx`; hooks/utils: `camelCase.ts`
+- **Frontend Design (Critical)**: Always reference and strictly follow **`apps/web/FRONTEND_STANDARDS.md`** for UI implementation. Use "Soulful Echo" visual tokens, poetic Chinese copy, and specific animation standards.
 
 ## Commit Conventions
 

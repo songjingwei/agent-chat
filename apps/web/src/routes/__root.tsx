@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next'
 import '#/lib/i18n'
 import Footer from '../components/Footer'
 import Header from '../components/Header'
+import { NotFound } from '../components/NotFound'
 
 import appCss from '../styles.css?url'
 
@@ -46,6 +47,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     ],
   }),
   shellComponent: RootDocument,
+  notFoundComponent: () => <NotFound />,
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
