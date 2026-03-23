@@ -6,19 +6,12 @@ import { parseJsonBody } from "../../lib/validation.js";
 import { createPersonaBodySchema } from "../../schemas/persona.js";
 import type { PersonaService } from "../../services/persona.service.js";
 
-export const createPersonaRoutes = (personaService: PersonaService) => {
+/** Public read routes — no auth required */
+export const createPersonaPublicRoutes = (personaService: PersonaService) => {
   const routes = new Hono();
 
-  routes.post("/personas", async (c) => {
-    const body = await parseJsonBody(c, createPersonaBodySchema);
-    const userId = c.get("userId");
-    const persona = personaService.create({ ...body, userId });
-    return jsonOk(c, persona, 201);
-  });
-
   routes.get("/personas", (c) => {
-    const userId = c.get("userId");
-    const items = personaService.list(userId);
+    const items = personaService.list();
 
     return jsonOk(c, {
       items,
@@ -35,6 +28,20 @@ export const createPersonaRoutes = (personaService: PersonaService) => {
     }
 
     return jsonOk(c, persona);
+  });
+
+  return routes;
+};
+
+/** Protected write routes — require auth */
+export const createPersonaRoutes = (personaService: PersonaService) => {
+  const routes = new Hono();
+
+  routes.post("/personas", async (c) => {
+    const body = await parseJsonBody(c, createPersonaBodySchema);
+    const userId = c.get("userId");
+    const persona = personaService.create({ ...body, userId });
+    return jsonOk(c, persona, 201);
   });
 
   return routes;

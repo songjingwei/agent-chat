@@ -6,7 +6,7 @@ import { authMiddleware } from "../middleware/auth.js";
 import { createAuthRoutes } from "../modules/auth/auth.routes.js";
 import { createHealthRoutes } from "../modules/health/health.routes.js";
 import { createMessageRoutes } from "../modules/messages/messages.routes.js";
-import { createPersonaRoutes } from "../modules/personas/personas.routes.js";
+import { createPersonaPublicRoutes, createPersonaRoutes } from "../modules/personas/personas.routes.js";
 import { createReportRoutes } from "../modules/reports/reports.routes.js";
 import { createSessionRoutes } from "../modules/sessions/sessions.routes.js";
 import type { AppServices } from "../services/index.js";
@@ -23,6 +23,7 @@ export const registerRoutes = (app: Hono, services: AppServices) => {
 
   app.route("/", createHealthRoutes(services.healthService));
   app.route("/", createAuthRoutes(services.authService));
+  app.route("/", createPersonaPublicRoutes(services.personaService));
 
   // Protected routes — require JWT
   const protectedApp = new Hono();

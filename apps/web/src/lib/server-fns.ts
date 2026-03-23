@@ -1,8 +1,19 @@
 import { createServerFn } from '@tanstack/react-start'
-import { getRequest } from '@tanstack/react-start/server'
-import { getAccessTokenFromCookie } from './auth-tokens'
+import {
+  deleteCookie,
+  getRequest,
+  setCookie,
+} from '@tanstack/react-start/server'
+import {
+  COOKIE_ACCESS_TOKEN_KEY,
+  COOKIE_REFRESH_TOKEN_KEY,
+  getAccessTokenFromCookie,
+  getRefreshTokenFromCookie,
+} from './auth-tokens'
+import { requestWithRefresh } from './server-request'
 import type {
   ApiResponse,
+  AuthTokens,
   AuthUser,
   ChatMessage,
   LatestReport,
@@ -12,27 +23,114 @@ import type {
 } from './types'
 
 const API_URL = process.env.API_URL || 'http://localhost:3001'
+const AUTH_TOKEN_EXPIRED = 'AUTH_TOKEN_EXPIRED'
+const COOKIE_OPTIONS = {
+  path: '/',
+  sameSite: 'lax' as const,
+}
 
-function getTokenFromRequest(): string | null {
+interface RequestAuthState {
+  accessToken: string | null
+  refreshToken: string | null
+}
+
+const requestAuthState = new WeakMap<Request, RequestAuthState>()
+
+function getOrCreateRequestAuthState(): RequestAuthState {
   const request = getRequest()
+  const existing = requestAuthState.get(request)
+  if (existing) {
+    return existing
+  }
+
   const cookie = request.headers.get('cookie') || ''
-  return getAccessTokenFromCookie(cookie)
+  const initialState = {
+    accessToken: getAccessTokenFromCookie(cookie),
+    refreshToken: getRefreshTokenFromCookie(cookie),
+  }
+  requestAuthState.set(request, initialState)
+  return initialState
+}
+
+function syncRequestAuthState(tokens: AuthTokens): void {
+  requestAuthState.set(getRequest(), {
+    accessToken: tokens.accessToken,
+    refreshToken: tokens.refreshToken,
+  })
+}
+
+function clearRequestAuthState(): void {
+  requestAuthState.set(getRequest(), {
+    accessToken: null,
+    refreshToken: null,
+  })
+}
+
+function persistAuthCookies(tokens: AuthTokens): void {
+  setCookie(COOKIE_ACCESS_TOKEN_KEY, tokens.accessToken, COOKIE_OPTIONS)
+  setCookie(COOKIE_REFRESH_TOKEN_KEY, tokens.refreshToken, COOKIE_OPTIONS)
+}
+
+function clearAuthCookies(): void {
+  deleteCookie(COOKIE_ACCESS_TOKEN_KEY, COOKIE_OPTIONS)
+  deleteCookie(COOKIE_REFRESH_TOKEN_KEY, COOKIE_OPTIONS)
+}
+
+async function readApiResponse<T>(res: Response): Promise<ApiResponse<T>> {
+  return (await res.json()) as ApiResponse<T>
+}
+
+async function refreshServerTokens(): Promise<AuthTokens> {
+  const { refreshToken } = getOrCreateRequestAuthState()
+  if (!refreshToken) {
+    clearRequestAuthState()
+    clearAuthCookies()
+    throw new Error('No refresh token available.')
+  }
+
+  const res = await fetch(`${API_URL}/auth/refresh`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refreshToken }),
+  })
+
+  const json = await readApiResponse<AuthTokens>(res)
+  if (!json.success) {
+    clearRequestAuthState()
+    clearAuthCookies()
+    throw new Error(json.error.message)
+  }
+
+  syncRequestAuthState(json.data)
+  persistAuthCookies(json.data)
+  return json.data
 }
 
 async function serverRequest<T>(path: string): Promise<T> {
-  const token = getTokenFromRequest()
-  const headers: Record<string, string> = {}
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`
-  }
+  return requestWithRefresh<T>({
+    execute: async (accessToken) => {
+      const effectiveToken =
+        accessToken ?? getOrCreateRequestAuthState().accessToken
+      const headers: Record<string, string> = {}
+      if (effectiveToken) {
+        headers.Authorization = `Bearer ${effectiveToken}`
+      }
 
-  const res = await fetch(`${API_URL}${path}`, { headers })
-  const json = (await res.json()) as ApiResponse<T>
+      const res = await fetch(`${API_URL}${path}`, { headers })
+      const json = await readApiResponse<T>(res)
 
-  if (!json.success) {
-    throw new Error(json.error.message)
-  }
-  return json.data
+      if (json.success) {
+        return json
+      }
+
+      if (json.error.code !== AUTH_TOKEN_EXPIRED) {
+        return json
+      }
+
+      return json
+    },
+    refreshTokens: refreshServerTokens,
+  })
 }
 
 // Personas
