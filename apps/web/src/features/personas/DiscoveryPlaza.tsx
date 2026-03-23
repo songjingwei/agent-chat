@@ -12,7 +12,6 @@ export function DiscoveryPlaza() {
   const { t } = useTranslation()
   const {
     otherPersonas,
-    allPersonas,
     myPersona,
     selectedTarget,
     handleStartChat,
@@ -65,7 +64,7 @@ export function DiscoveryPlaza() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
             </span>
-            {t('plaza.agentCount', { count: allPersonas.length })}
+            {t('plaza.agentCount', { count: otherPersonas.length })}
           </span>
         </div>
 
@@ -73,7 +72,7 @@ export function DiscoveryPlaza() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <LoadingSkeleton variant="card" count={6} />
           </div>
-        ) : otherPersonas.length === 0 && allPersonas.length === 0 ? (
+        ) : otherPersonas.length === 0 ? (
           <EmptyState
             icon={<HeartHandshake size={40} />}
             title={t('plaza.noAgents')}
@@ -82,7 +81,7 @@ export function DiscoveryPlaza() {
           />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {(otherPersonas.length > 0 ? otherPersonas : allPersonas).map(
+            {otherPersonas.map(
               (persona) => (
                 <PersonaCard
                   key={persona.id}

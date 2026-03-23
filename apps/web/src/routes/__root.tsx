@@ -5,6 +5,7 @@ import {
   Scripts,
   createRootRouteWithContext,
   useRouter,
+  useMatchRoute,
 } from '@tanstack/react-router'
 import { ReactQueryDevtoolsPanel } from '@tanstack/react-query-devtools'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
@@ -13,6 +14,7 @@ import { useTranslation } from 'react-i18next'
 import '#/lib/i18n'
 import Footer from '../components/Footer'
 import Header from '../components/Header'
+import { ErrorPage } from '../components/ErrorPage'
 import { NotFound } from '../components/NotFound'
 import { AuthProvider, useAuth } from '../lib/auth-context'
 import {
@@ -67,12 +69,14 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     ],
   }),
   shellComponent: RootDocument,
+  errorComponent: ErrorPage,
   notFoundComponent: () => <NotFound />,
 })
 
 function InnerApp({ children }: { children: React.ReactNode }) {
   const auth = useAuth()
   const router = useRouter()
+  const matchRoute = useMatchRoute()
 
   // Keep router context in sync with auth state
   router.options.context.auth = {
@@ -81,11 +85,13 @@ function InnerApp({ children }: { children: React.ReactNode }) {
     user: auth.user,
   }
 
+  const isChatPage = !!matchRoute({ to: '/sessions/$id', fuzzy: true })
+
   return (
     <>
       <Header />
       {children}
-      <Footer />
+      {!isChatPage && <Footer />}
     </>
   )
 }

@@ -1,5 +1,6 @@
 import { useNavigate } from '@tanstack/react-router'
 import { usePersonaList } from './usePersonaList'
+import { useMyPersonas } from './useMyPersonas'
 import { useCreateSession } from '#/features/sessions/useCreateSession'
 import { useAuth } from '#/lib/auth-context'
 import type { Persona } from '#/lib/types'
@@ -11,7 +12,7 @@ export function useDiscoveryPlaza() {
   const { user } = useAuth()
 
   const { personas: allPersonas, isLoading: allLoading, error: allError } = usePersonaList()
-  const { personas: myPersonas, isLoading: myLoading } = usePersonaList()
+  const { personas: myPersonas, isLoading: myLoading } = useMyPersonas()
 
   const createSession = useCreateSession()
 

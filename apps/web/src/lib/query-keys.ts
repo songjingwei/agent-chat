@@ -5,6 +5,7 @@ export const queryKeys = {
   personas: {
     all: ['personas'] as const,
     list: () => [...queryKeys.personas.all, 'list'] as const,
+    mine: () => [...queryKeys.personas.all, 'mine'] as const,
     detail: (id: string) =>
       [...queryKeys.personas.all, 'detail', id] as const,
   },

@@ -8,7 +8,7 @@ export function ErrorPage({ error, reset }: ErrorComponentProps) {
   const isDev = import.meta.env.DEV
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center min-h-[60vh] px-4 text-center relative overflow-hidden">
+    <main className="page-wrap flex-1 flex flex-col items-center justify-center min-h-[60vh] px-4 py-12 text-center relative overflow-hidden">
       {/* 背景装饰：柔和光晕 */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-red-500/8 blur-[120px] rounded-full pointer-events-none" />
       <div className="absolute top-1/3 right-1/4 w-48 h-48 bg-orange-500/5 blur-[80px] rounded-full pointer-events-none" />
@@ -63,6 +63,6 @@ export function ErrorPage({ error, reset }: ErrorComponentProps) {
           </Link>
         </div>
       </div>
-    </div>
+    </main>
   )
 }

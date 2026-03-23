@@ -55,43 +55,46 @@ export function ChatRoom({ sessionId }: ChatRoomProps) {
   return (
     <div className="flex flex-col" style={{ height: 'calc(100dvh - 64px)' }}>
       {/* Top bar */}
-      <header className="flex items-center justify-between gap-3 px-4 py-3 border-b border-[var(--line)] bg-[var(--header-bg)] backdrop-blur-sm shrink-0">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="flex -space-x-2">
-            {[initiatorPersona, targetPersona].map(
-              (p) =>
-                p && (
-                  <div
-                    key={p.id}
-                    className="h-8 w-8 rounded-full flex items-center justify-center text-white text-xs font-bold ring-2 ring-[var(--header-bg)]"
-                    style={{
-                      background: p.id === myPersonaId
-                        ? 'linear-gradient(135deg, var(--lagoon), var(--lagoon-deep))'
-                        : 'linear-gradient(135deg, var(--palm), var(--lagoon-deep))',
-                    }}
-                    title={p.displayName}
-                  >
-                    {p.displayName.charAt(0).toUpperCase()}
-                  </div>
-                ),
-            )}
+      <header className="border-b border-[var(--line)] bg-[var(--header-bg)] backdrop-blur-sm shrink-0 px-4 py-3">
+        <div className="flex items-center justify-between gap-3 max-w-3xl mx-auto">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex -space-x-2">
+              {[initiatorPersona, targetPersona].map(
+                (p) =>
+                  p && (
+                    <div
+                      key={p.id}
+                      className="h-8 w-8 rounded-full flex items-center justify-center text-white text-xs font-bold ring-2 ring-[var(--header-bg)]"
+                      style={{
+                        background: p.id === myPersonaId
+                          ? 'linear-gradient(135deg, var(--lagoon), var(--lagoon-deep))'
+                          : 'linear-gradient(135deg, var(--palm), var(--lagoon-deep))',
+                      }}
+                      title={p.displayName}
+                    >
+                      {p.displayName.charAt(0).toUpperCase()}
+                    </div>
+                  ),
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-[var(--sea-ink)] truncate">
+                {initiatorPersona?.displayName ?? '...'}{' '}
+                <span className="text-[var(--sea-ink-soft)] font-normal">{t('session.vs')}</span>{' '}
+                {targetPersona?.displayName ?? '...'}
+              </p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-[var(--sea-ink)] truncate">
-              {initiatorPersona?.displayName ?? '...'}{' '}
-              <span className="text-[var(--sea-ink-soft)] font-normal">{t('session.vs')}</span>{' '}
-              {targetPersona?.displayName ?? '...'}
-            </p>
-          </div>
+          <StatusBadge status={session.status} />
         </div>
-        <StatusBadge status={session.status} />
       </header>
 
       {/* Messages */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto p-4 space-y-3"
+        className="flex-1 overflow-y-auto p-4"
       >
+        <div className="max-w-3xl mx-auto space-y-3">
         {messages.length === 0 ? (
           <EmptyState
             icon={<MessageCircle size={40} />}
@@ -108,6 +111,7 @@ export function ChatRoom({ sessionId }: ChatRoomProps) {
             />
           ))
         )}
+        </div>
       </div>
 
       {/* Input area */}

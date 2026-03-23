@@ -1,6 +1,16 @@
-import { usePersonaList } from './usePersonaList'
+import { useQuery } from '@tanstack/react-query'
+import { fetchMyPersonas } from '#/lib/server-fns'
+import { queryKeys } from '#/lib/query-keys'
 
 export function useMyPersonas() {
-  const { personas, isLoading, error } = usePersonaList()
-  return { personas, isLoading, error }
+  const query = useQuery({
+    queryKey: queryKeys.personas.mine(),
+    queryFn: () => fetchMyPersonas(),
+  })
+
+  return {
+    personas: query.data?.items ?? [],
+    isLoading: query.isLoading,
+    error: query.error,
+  }
 }

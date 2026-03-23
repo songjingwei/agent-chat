@@ -37,6 +37,12 @@ export const createPersonaPublicRoutes = (personaService: PersonaService) => {
 export const createPersonaRoutes = (personaService: PersonaService) => {
   const routes = new Hono();
 
+  routes.get("/my/personas", async (c) => {
+    const userId = c.get("userId");
+    const items = await personaService.list(userId);
+    return jsonOk(c, { items, total: items.length });
+  });
+
   routes.post("/personas", async (c) => {
     const body = await parseJsonBody(c, createPersonaBodySchema);
     const userId = c.get("userId");

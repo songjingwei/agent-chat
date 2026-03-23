@@ -351,7 +351,7 @@ a {
 
 /* ---------- Chat bubbles ---------- */
 .message-bubble {
-  max-width: 80%;
+  max-width: 75%;
   padding: 0.625rem 0.875rem;
   border-radius: 14px;
   font-size: 0.9375rem;

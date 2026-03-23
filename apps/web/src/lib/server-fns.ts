@@ -140,6 +140,12 @@ export const fetchPersonas = createServerFn({ method: 'GET' }).handler(
   },
 )
 
+export const fetchMyPersonas = createServerFn({ method: 'GET' }).handler(
+  async () => {
+    return serverRequest<ListResponse<Persona>>('/my/personas')
+  },
+)
+
 export const fetchPersona = createServerFn({ method: 'GET' })
   .inputValidator((id: string) => id)
   .handler(async ({ data: id }) => {
