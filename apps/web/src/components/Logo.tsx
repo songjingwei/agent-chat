@@ -4,7 +4,7 @@ interface LogoProps {
 }
 
 /**
- * Agent Chat logo — representing souls connecting and resonances through digital agents.
+ * 爱增聊 logo — representing souls connecting and resonances through digital agents.
  * Modern warm gradient with two overlapping organic shapes.
  */
 export default function Logo({ size = 24, className }: LogoProps) {

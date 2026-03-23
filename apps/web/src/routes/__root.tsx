@@ -1,3 +1,4 @@
+import React from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import {
   HeadContent,
@@ -50,7 +51,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: 'Agent Chat',
+        title: '爱增聊',
       },
     ],
     links: [
@@ -92,7 +93,11 @@ function InnerApp({ children }: { children: React.ReactNode }) {
 function RootDocument({ children }: { children: React.ReactNode }) {
   const { queryClient } = Route.useRouteContext()
   const { auth } = Route.useLoaderData()
-  const { i18n } = useTranslation()
+  const { t, i18n } = useTranslation()
+
+  React.useEffect(() => {
+    document.title = t('app.title')
+  }, [i18n.language, t])
 
   return (
     <html lang={i18n.language} suppressHydrationWarning>

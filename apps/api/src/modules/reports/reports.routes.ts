@@ -9,9 +9,9 @@ import type { ReportService } from "../../services/report.service.js";
 export const createReportRoutes = (reportService: ReportService) => {
   const routes = new Hono();
 
-  routes.get("/reports/latest", (c) => {
+  routes.get("/reports/latest", async (c) => {
     const query = parseWithSchema(latestReportQuerySchema, c.req.query());
-    const report = reportService.getLatestByPersona(query.personaId);
+    const report = await reportService.getLatestByPersona(query.personaId);
 
     if (!report) {
       throw new ApiError(404, "REPORT_NOT_FOUND", `No report found for persona: ${query.personaId}`);

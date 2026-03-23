@@ -116,6 +116,14 @@
     "ariaAuto": "Theme: auto (system). Click to switch to dawn mode.",
     "ariaOther": "Theme: {{mode}}. Click to switch."
   },
+  "error": {
+    "page": {
+      "title": "Lost in Transit",
+      "description": "Something unexpected disrupted the connection.\nDon't worry — every detour is a chance to find a new path.",
+      "retry": "Try Again",
+      "home": "Back to Home"
+    }
+  },
   "common": {
     "tryAgain": "Try Again",
     "retryRequest": "Retry",

@@ -7,7 +7,6 @@ import { MessageService } from "./message.service.js";
 import { PersonaService } from "./persona.service.js";
 import { ReportService } from "./report.service.js";
 import { SessionService } from "./session.service.js";
-import { createInMemoryStore } from "./store.js";
 
 export interface AppServices {
   healthService: HealthService;
@@ -25,7 +24,6 @@ export interface CreateServicesOptions {
 export const createServices = (
   options: CreateServicesOptions = {},
 ): AppServices => {
-  const store = createInMemoryStore();
   const db = createDbClient(apiConfig.databaseUrl);
 
   const healthService = options.healthService ?? new HealthService();
@@ -34,10 +32,10 @@ export const createServices = (
     jwtAccessExpiresIn: apiConfig.jwtAccessExpiresIn,
     jwtRefreshExpiresIn: apiConfig.jwtRefreshExpiresIn,
   });
-  const personaService = new PersonaService(store);
-  const sessionService = new SessionService(store);
-  const messageService = new MessageService(store, sessionService);
-  const reportService = new ReportService(store);
+  const personaService = new PersonaService(db);
+  const sessionService = new SessionService(db);
+  const messageService = new MessageService(db, sessionService);
+  const reportService = new ReportService(db);
 
   return {
     healthService,

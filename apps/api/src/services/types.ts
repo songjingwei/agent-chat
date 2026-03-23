@@ -23,7 +23,7 @@ export interface ChatMessage {
   id: string;
   sessionId: string;
   authorPersonaId: string;
-  role: "human";
+  role: "agent" | "human" | "system";
   content: string;
   createdAt: string;
 }

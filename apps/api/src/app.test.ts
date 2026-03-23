@@ -1,9 +1,8 @@
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import test from "node:test";
-import jwt from "jsonwebtoken";
 
 import { createApp } from "./app.js";
-import { apiConfig } from "./config.js";
 import { HealthService } from "./services/health.service.js";
 import { createServices } from "./services/index.js";
 
@@ -24,18 +23,37 @@ const createTestApp = () => {
   return createApp(createServices({ healthService }));
 };
 
-const createTestToken = (userId: string) => {
-  return jwt.sign(
-    { sub: userId, email: `${userId}@test.com` },
-    apiConfig.jwtSecret,
-    { expiresIn: 3600 },
-  );
-};
-
-const authHeaders = (userId: string) => ({
+const authHeaders = (accessToken: string) => ({
   "content-type": "application/json",
-  authorization: `Bearer ${createTestToken(userId)}`,
+  authorization: `Bearer ${accessToken}`,
 });
+
+const registerTestUser = async (
+  app: ReturnType<typeof createTestApp>,
+  label: string,
+) => {
+  const email = `${label}-${randomUUID()}@test.local`;
+  const password = "Passw0rd!123456";
+  const displayName = `${label}-display`;
+
+  const response = await app.request("/auth/register", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      email,
+      password,
+      displayName,
+    }),
+  });
+  assert.equal(response.status, 201);
+
+  const payload = await response.json();
+  return {
+    userId: payload.data.user.id as string,
+    accessToken: payload.data.tokens.accessToken as string,
+    refreshToken: payload.data.tokens.refreshToken as string,
+  };
+};
 
 test("GET /health should return ok", async () => {
   const app = createTestApp();
@@ -53,10 +71,12 @@ test("GET /health should return ok", async () => {
 
 test("persona/session/message/report flow should work", async () => {
   const app = createTestApp();
+  const userA = await registerTestUser(app, "user-a");
+  const userB = await registerTestUser(app, "user-b");
 
   const personaAResponse = await app.request("/personas", {
     method: "POST",
-    headers: authHeaders("user-a"),
+    headers: authHeaders(userA.accessToken),
     body: JSON.stringify({
       displayName: "Alice",
       traits: ["curious", "kind"],
@@ -65,7 +85,7 @@ test("persona/session/message/report flow should work", async () => {
 
   const personaBResponse = await app.request("/personas", {
     method: "POST",
-    headers: authHeaders("user-b"),
+    headers: authHeaders(userB.accessToken),
     body: JSON.stringify({
       displayName: "Bob",
       traits: ["calm"],
@@ -80,7 +100,7 @@ test("persona/session/message/report flow should work", async () => {
 
   const sessionResponse = await app.request("/sessions", {
     method: "POST",
-    headers: authHeaders("user-a"),
+    headers: authHeaders(userA.accessToken),
     body: JSON.stringify({
       initiatorPersonaId: personaAJson.data.id,
       targetPersonaId: personaBJson.data.id,
@@ -95,7 +115,7 @@ test("persona/session/message/report flow should work", async () => {
     `/sessions/${sessionJson.data.id}/human-message`,
     {
       method: "POST",
-      headers: authHeaders("user-a"),
+      headers: authHeaders(userA.accessToken),
       body: JSON.stringify({
         authorPersonaId: personaAJson.data.id,
         content: "你好，很高兴认识你。",
@@ -107,7 +127,7 @@ test("persona/session/message/report flow should work", async () => {
 
   const reportResponse = await app.request(
     `/reports/latest?personaId=${personaAJson.data.id}`,
-    { headers: { authorization: `Bearer ${createTestToken("user-a")}` } },
+    { headers: { authorization: `Bearer ${userA.accessToken}` } },
   );
 
   assert.equal(reportResponse.status, 200);
@@ -120,11 +140,14 @@ test("persona/session/message/report flow should work", async () => {
 
 test("GET /sessions should support userId filtering for web session list", async () => {
   const app = createTestApp();
+  const userA = await registerTestUser(app, "sessions-a");
+  const userB = await registerTestUser(app, "sessions-b");
+  const userC = await registerTestUser(app, "sessions-c");
 
-  const createPersona = async (userId: string, displayName: string) => {
+  const createPersona = async (accessToken: string, displayName: string) => {
     const response = await app.request("/personas", {
       method: "POST",
-      headers: authHeaders(userId),
+      headers: authHeaders(accessToken),
       body: JSON.stringify({
         displayName,
         traits: [],
@@ -135,14 +158,18 @@ test("GET /sessions should support userId filtering for web session list", async
     return response.json();
   };
 
-  const personaAJson = await createPersona("user-a", "Alice");
-  const personaBJson = await createPersona("user-b", "Bob");
-  const personaCJson = await createPersona("user-c", "Carol");
+  const personaAJson = await createPersona(userA.accessToken, "Alice");
+  const personaBJson = await createPersona(userB.accessToken, "Bob");
+  const personaCJson = await createPersona(userC.accessToken, "Carol");
 
-  const createSession = async (userId: string, initiatorPersonaId: string, targetPersonaId: string) => {
+  const createSession = async (
+    accessToken: string,
+    initiatorPersonaId: string,
+    targetPersonaId: string,
+  ) => {
     const response = await app.request("/sessions", {
       method: "POST",
-      headers: authHeaders(userId),
+      headers: authHeaders(accessToken),
       body: JSON.stringify({
         initiatorPersonaId,
         targetPersonaId,
@@ -153,12 +180,20 @@ test("GET /sessions should support userId filtering for web session list", async
     return response.json();
   };
 
-  await createSession("user-a", personaAJson.data.id, personaBJson.data.id);
-  await createSession("user-b", personaBJson.data.id, personaCJson.data.id);
+  await createSession(
+    userA.accessToken,
+    personaAJson.data.id,
+    personaBJson.data.id,
+  );
+  await createSession(
+    userB.accessToken,
+    personaBJson.data.id,
+    personaCJson.data.id,
+  );
 
   // user-a should only see sessions involving their personas
   const response = await app.request("/sessions", {
-    headers: { authorization: `Bearer ${createTestToken("user-a")}` },
+    headers: { authorization: `Bearer ${userA.accessToken}` },
   });
   assert.equal(response.status, 200);
 
@@ -170,10 +205,10 @@ test("GET /sessions should support userId filtering for web session list", async
 
 test("web contract should return stable 404 errors for missing messages/report resources", async () => {
   const app = createTestApp();
-  const token = createTestToken("user-test");
+  const user = await registerTestUser(app, "missing-resource-user");
 
   const missingMessagesResponse = await app.request("/sessions/ses_missing/messages", {
-    headers: { authorization: `Bearer ${token}` },
+    headers: { authorization: `Bearer ${user.accessToken}` },
   });
   assert.equal(missingMessagesResponse.status, 404);
 
@@ -183,7 +218,7 @@ test("web contract should return stable 404 errors for missing messages/report r
 
   const missingReportResponse = await app.request(
     "/reports/latest?personaId=prs_missing",
-    { headers: { authorization: `Bearer ${token}` } },
+    { headers: { authorization: `Bearer ${user.accessToken}` } },
   );
   assert.equal(missingReportResponse.status, 404);
 
@@ -195,7 +230,7 @@ test("web contract should return stable 404 errors for missing messages/report r
 test("unauthenticated requests to protected routes should return 401", async () => {
   const app = createTestApp();
 
-  const response = await app.request("/personas");
+  const response = await app.request("/sessions");
   assert.equal(response.status, 401);
 
   const body = await response.json();

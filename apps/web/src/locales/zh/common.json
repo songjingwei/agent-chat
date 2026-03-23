@@ -1,7 +1,7 @@
 {
   "app": {
-    "title": "Agent Chat",
-    "copyright": "© {{year}} Agent Chat. 让每个灵魂都有回响。"
+    "title": "爱增聊",
+    "copyright": "© {{year}} 爱增聊. 让每个灵魂都有回响。"
   },
   "nav": {
     "plaza": "发现",
@@ -132,6 +132,14 @@
     "dark": "静谧",
     "ariaAuto": "主题模式：随心（跟随系统）。点击切换为晨曦模式。",
     "ariaOther": "主题模式：{{mode}}。点击切换模式。"
+  },
+  "error": {
+    "page": {
+      "title": "灵魂迷途",
+      "description": "在数字的洪流中，一缕回响意外迷失了方向。\n别担心，每一次迷途都是重新出发的契机。",
+      "retry": "再寻一次",
+      "home": "回到起点"
+    }
   },
   "common": {
     "tryAgain": "再次尝试",

@@ -1,17 +1,21 @@
+import { asc, count, eq } from "drizzle-orm";
+
+import type { DbClient } from "@agent/db";
+import { chatMessages } from "@agent/db";
+
 import { ApiError } from "../lib/api-error.js";
-import { createId } from "../lib/id.js";
-import type { InMemoryStore } from "./store.js";
 import { SessionService } from "./session.service.js";
+import { createId } from "../lib/id.js";
 import type { ChatMessage, CreateHumanMessageInput } from "./types.js";
 
 export class MessageService {
   constructor(
-    private readonly store: InMemoryStore,
+    private readonly db: DbClient,
     private readonly sessionService: SessionService,
   ) {}
 
-  createHumanMessage(input: CreateHumanMessageInput): ChatMessage {
-    const session = this.sessionService.getById(input.sessionId);
+  async createHumanMessage(input: CreateHumanMessageInput): Promise<ChatMessage> {
+    const session = await this.sessionService.getById(input.sessionId);
     if (!session) {
       throw new ApiError(404, "SESSION_NOT_FOUND", `Session not found: ${input.sessionId}`);
     }
@@ -28,29 +32,57 @@ export class MessageService {
       );
     }
 
-    const message: ChatMessage = {
-      id: createId("msg"),
-      sessionId: input.sessionId,
-      authorPersonaId: input.authorPersonaId,
-      role: "human",
-      content: input.content,
-      createdAt: new Date().toISOString(),
-    };
+    const countRows = await this.db
+      .select({ total: count() })
+      .from(chatMessages)
+      .where(eq(chatMessages.sessionId, input.sessionId));
+    const round = Number(countRows[0]?.total ?? 0) + 1;
 
-    const messages = this.store.messagesBySession.get(input.sessionId) ?? [];
-    messages.push(message);
-    this.store.messagesBySession.set(input.sessionId, messages);
-    this.sessionService.updateStatus(input.sessionId, "active");
+    const createdRows = await this.db
+      .insert(chatMessages)
+      .values({
+        id: createId("msg"),
+        sessionId: input.sessionId,
+        senderPersonaId: input.authorPersonaId,
+        role: "human",
+        content: input.content,
+        round,
+      })
+      .returning();
 
-    return message;
+    await this.sessionService.updateStatus(input.sessionId, "active");
+    return mapMessage(createdRows[0]!);
   }
 
-  listBySession(sessionId: string): ChatMessage[] {
-    const session = this.sessionService.getById(sessionId);
+  async listBySession(sessionId: string): Promise<ChatMessage[]> {
+    const session = await this.sessionService.getById(sessionId);
     if (!session) {
       throw new ApiError(404, "SESSION_NOT_FOUND", `Session not found: ${sessionId}`);
     }
 
-    return this.store.messagesBySession.get(sessionId) ?? [];
+    const rows = await this.db
+      .select()
+      .from(chatMessages)
+      .where(eq(chatMessages.sessionId, sessionId))
+      .orderBy(asc(chatMessages.createdAt));
+    return rows.map(mapMessage);
   }
+}
+
+function mapMessage(row: typeof chatMessages.$inferSelect): ChatMessage {
+  return {
+    id: row.id,
+    sessionId: row.sessionId,
+    authorPersonaId: row.senderPersonaId,
+    role: mapMessageRole(row.role),
+    content: row.content,
+    createdAt: row.createdAt.toISOString(),
+  };
+}
+
+function mapMessageRole(role: string): ChatMessage["role"] {
+  if (role === "agent" || role === "human" || role === "system") {
+    return role;
+  }
+  return "system";
 }

@@ -10,8 +10,8 @@ import type { PersonaService } from "../../services/persona.service.js";
 export const createPersonaPublicRoutes = (personaService: PersonaService) => {
   const routes = new Hono();
 
-  routes.get("/personas", (c) => {
-    const items = personaService.list();
+  routes.get("/personas", async (c) => {
+    const items = await personaService.list();
 
     return jsonOk(c, {
       items,
@@ -19,9 +19,9 @@ export const createPersonaPublicRoutes = (personaService: PersonaService) => {
     });
   });
 
-  routes.get("/personas/:personaId", (c) => {
+  routes.get("/personas/:personaId", async (c) => {
     const personaId = c.req.param("personaId");
-    const persona = personaService.getById(personaId);
+    const persona = await personaService.getById(personaId);
 
     if (!persona) {
       throw new ApiError(404, "PERSONA_NOT_FOUND", `Persona not found: ${personaId}`);
@@ -40,7 +40,7 @@ export const createPersonaRoutes = (personaService: PersonaService) => {
   routes.post("/personas", async (c) => {
     const body = await parseJsonBody(c, createPersonaBodySchema);
     const userId = c.get("userId");
-    const persona = personaService.create({ ...body, userId });
+    const persona = await personaService.create({ ...body, userId });
     return jsonOk(c, persona, 201);
   });
 

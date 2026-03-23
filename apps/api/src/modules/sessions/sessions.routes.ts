@@ -11,14 +11,14 @@ export const createSessionRoutes = (sessionService: SessionService) => {
 
   routes.post("/sessions", async (c) => {
     const body = await parseJsonBody(c, createSessionBodySchema);
-    const session = sessionService.create(body);
+    const session = await sessionService.create(body);
     return jsonOk(c, session, 201);
   });
 
-  routes.get("/sessions", (c) => {
+  routes.get("/sessions", async (c) => {
     const query = parseWithSchema(listSessionsQuerySchema, c.req.query());
     const userId = c.get("userId");
-    const items = sessionService.list({
+    const items = await sessionService.list({
       personaId: query.personaId,
       userId,
     });
@@ -29,9 +29,9 @@ export const createSessionRoutes = (sessionService: SessionService) => {
     });
   });
 
-  routes.get("/sessions/:sessionId", (c) => {
+  routes.get("/sessions/:sessionId", async (c) => {
     const sessionId = c.req.param("sessionId");
-    const session = sessionService.getById(sessionId);
+    const session = await sessionService.getById(sessionId);
 
     if (!session) {
       throw new ApiError(404, "SESSION_NOT_FOUND", `Session not found: ${sessionId}`);
