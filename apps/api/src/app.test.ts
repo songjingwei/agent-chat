@@ -5,8 +5,13 @@ import test from "node:test";
 import { createApp } from "./app.js";
 import { HealthService } from "./services/health.service.js";
 import { createServices } from "./services/index.js";
+import type { RuntimeService } from "./services/runtime.service.js";
 
-const createTestApp = () => {
+interface CreateTestAppOptions {
+  runtimeService?: RuntimeService;
+}
+
+const createTestApp = (options: CreateTestAppOptions = {}) => {
   const healthService = new HealthService({
     postgresProbe: async () => ({
       status: "ok",
@@ -20,7 +25,12 @@ const createTestApp = () => {
     }),
   });
 
-  return createApp(createServices({ healthService }));
+  return createApp(
+    createServices({
+      healthService,
+      runtimeService: options.runtimeService,
+    }),
+  );
 };
 
 const authHeaders = (accessToken: string) => ({
@@ -138,6 +148,102 @@ test("persona/session/message/report flow should work", async () => {
   assert.equal(reportJson.data.totalMessages, 1);
 });
 
+test("POST /sessions/:id/human-message should append one runtime agent reply when runtime is available", async () => {
+  const runtimeService = {
+    generateTurn: async () => {
+      return {
+        sessionId: "ses_runtime",
+        status: "ok",
+        attempts: 1,
+        usedFallback: false,
+        message: {
+          role: "agent" as const,
+          content: "你好，我也很高兴认识你。",
+          intent: "empathize" as const,
+          tone: "warm" as const,
+          shouldEndSession: false,
+        },
+        memoryWrites: [],
+        promptMeta: {
+          tokenEstimate: 100,
+          includedMessages: 1,
+          includedMemories: 0,
+        },
+        modelMeta: {
+          model: "mock-runtime",
+          latencyMs: 10,
+          promptTokens: 20,
+          completionTokens: 10,
+        },
+        transitions: [],
+      };
+    },
+  } as RuntimeService;
+
+  const app = createTestApp({ runtimeService });
+  const userA = await registerTestUser(app, "runtime-a");
+  const userB = await registerTestUser(app, "runtime-b");
+
+  const personaAResponse = await app.request("/personas", {
+    method: "POST",
+    headers: authHeaders(userA.accessToken),
+    body: JSON.stringify({
+      displayName: "Alice",
+      traits: ["curious"],
+    }),
+  });
+  const personaBResponse = await app.request("/personas", {
+    method: "POST",
+    headers: authHeaders(userB.accessToken),
+    body: JSON.stringify({
+      displayName: "Bob",
+      traits: ["calm"],
+    }),
+  });
+  assert.equal(personaAResponse.status, 201);
+  assert.equal(personaBResponse.status, 201);
+
+  const personaAJson = await personaAResponse.json();
+  const personaBJson = await personaBResponse.json();
+
+  const sessionResponse = await app.request("/sessions", {
+    method: "POST",
+    headers: authHeaders(userA.accessToken),
+    body: JSON.stringify({
+      initiatorPersonaId: personaAJson.data.id,
+      targetPersonaId: personaBJson.data.id,
+    }),
+  });
+  assert.equal(sessionResponse.status, 201);
+  const sessionJson = await sessionResponse.json();
+
+  const messageResponse = await app.request(
+    `/sessions/${sessionJson.data.id}/human-message`,
+    {
+      method: "POST",
+      headers: authHeaders(userA.accessToken),
+      body: JSON.stringify({
+        authorPersonaId: personaAJson.data.id,
+        content: "你好，很高兴认识你。",
+      }),
+    },
+  );
+  assert.equal(messageResponse.status, 201);
+
+  const listResponse = await app.request(
+    `/sessions/${sessionJson.data.id}/messages`,
+    { headers: { authorization: `Bearer ${userA.accessToken}` } },
+  );
+  assert.equal(listResponse.status, 200);
+  const listJson = await listResponse.json();
+  assert.equal(listJson.success, true);
+  assert.equal(listJson.data.total, 2);
+  assert.equal(listJson.data.items[0].role, "human");
+  assert.equal(listJson.data.items[1].role, "agent");
+  assert.equal(listJson.data.items[1].authorPersonaId, personaBJson.data.id);
+  assert.equal(listJson.data.items[1].content, "你好，我也很高兴认识你。");
+});
+
 test("GET /sessions should support userId filtering for web session list", async () => {
   const app = createTestApp();
   const userA = await registerTestUser(app, "sessions-a");
@@ -225,6 +331,57 @@ test("web contract should return stable 404 errors for missing messages/report r
   const missingReportJson = await missingReportResponse.json();
   assert.equal(missingReportJson.success, false);
   assert.equal(missingReportJson.error.code, "PERSONA_NOT_FOUND");
+});
+
+test("GET /personas should support plaza pagination and exclude current user", async () => {
+  const app = createTestApp();
+  const userA = await registerTestUser(app, "plaza-a");
+  const userB = await registerTestUser(app, "plaza-b");
+  const userC = await registerTestUser(app, "plaza-c");
+
+  const createPersona = async (accessToken: string, displayName: string) => {
+    const response = await app.request("/personas", {
+      method: "POST",
+      headers: authHeaders(accessToken),
+      body: JSON.stringify({
+        displayName,
+        traits: [],
+      }),
+    });
+    assert.equal(response.status, 201);
+    return response.json();
+  };
+
+  await createPersona(userA.accessToken, "A");
+  await createPersona(userB.accessToken, "B");
+  await createPersona(userC.accessToken, "C");
+
+  const firstPageResponse = await app.request(
+    `/personas?excludeUserId=${userA.userId}&limit=1`,
+  );
+  assert.equal(firstPageResponse.status, 200);
+
+  const firstPageBody = await firstPageResponse.json();
+  assert.equal(firstPageBody.success, true);
+  assert.equal(firstPageBody.data.items.length, 1);
+  assert.ok(firstPageBody.data.total >= 2);
+  assert.ok(firstPageBody.data.nextCursor);
+  assert.notEqual(firstPageBody.data.items[0].userId, userA.userId);
+
+  const secondPageResponse = await app.request(
+    `/personas?excludeUserId=${userA.userId}&limit=1&cursor=${encodeURIComponent(firstPageBody.data.nextCursor)}`,
+  );
+  assert.equal(secondPageResponse.status, 200);
+
+  const secondPageBody = await secondPageResponse.json();
+  assert.equal(secondPageBody.success, true);
+  assert.equal(secondPageBody.data.items.length, 1);
+  assert.ok(secondPageBody.data.total >= 2);
+  assert.notEqual(secondPageBody.data.items[0].userId, userA.userId);
+  assert.notEqual(
+    secondPageBody.data.items[0].id,
+    firstPageBody.data.items[0].id,
+  );
 });
 
 test("unauthenticated requests to protected routes should return 401", async () => {

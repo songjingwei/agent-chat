@@ -12,6 +12,12 @@ export function DiscoveryPlaza() {
   const { t } = useTranslation()
   const {
     otherPersonas,
+    total,
+    currentPage,
+    hasPrevPage,
+    hasNextPage,
+    goToPrevPage,
+    goToNextPage,
     myPersona,
     selectedTarget,
     handleStartChat,
@@ -66,7 +72,7 @@ export function DiscoveryPlaza() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
             </span>
-            {t('plaza.agentCount', { count: otherPersonas.length })}
+            {t('plaza.agentCount', { count: total })}
           </span>
         </div>
 
@@ -82,17 +88,40 @@ export function DiscoveryPlaza() {
             action={{ label: t('persona.createAgent'), href: '/personas/create' }}
           />
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {otherPersonas.map(
-              (persona) => (
-                <PersonaCard
-                  key={persona.id}
-                  persona={persona}
-                  onClick={() => handleStartChat(persona)}
-                />
-              ),
-            )}
-          </div>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {otherPersonas.map(
+                (persona) => (
+                  <PersonaCard
+                    key={persona.id}
+                    persona={persona}
+                    onClick={() => handleStartChat(persona)}
+                  />
+                ),
+              )}
+            </div>
+            <div className="mt-6 flex items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={goToPrevPage}
+                disabled={!hasPrevPage || isLoading}
+                className="btn-ghost px-4 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {t('plaza.prevPage')}
+              </button>
+              <span className="text-sm text-[var(--sea-ink-soft)]">
+                {t('plaza.pageLabel', { page: currentPage })}
+              </span>
+              <button
+                type="button"
+                onClick={goToNextPage}
+                disabled={!hasNextPage || isLoading}
+                className="btn-ghost px-4 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {t('plaza.nextPage')}
+              </button>
+            </div>
+          </>
         )}
       </section>
 

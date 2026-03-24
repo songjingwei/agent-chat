@@ -10,10 +10,13 @@ interface PersonaCardProps {
 export function PersonaCard({ persona, onClick, actions }: PersonaCardProps) {
   const isClickable = !!onClick
   const { t } = useTranslation()
+  const displayName = persona.displayName.trim() || t('persona.untitled')
+  const bio = persona.bio?.trim()
+  const hasTraits = persona.traits.length > 0
 
   return (
     <div
-      className={`feature-card border border-[var(--line)] rounded-2xl p-5 rise-in ${isClickable ? 'cursor-pointer' : ''}`}
+      className={`feature-card border border-[var(--line)] rounded-2xl p-4 rise-in h-full min-h-[176px] flex flex-col ${isClickable ? 'cursor-pointer' : ''}`}
       onClick={onClick}
       onKeyDown={
         isClickable
@@ -24,46 +27,52 @@ export function PersonaCard({ persona, onClick, actions }: PersonaCardProps) {
       }
       role={isClickable ? 'button' : undefined}
       tabIndex={isClickable ? 0 : undefined}
-      aria-label={isClickable ? t('persona.startChatWith', { name: persona.displayName }) : undefined}
+      aria-label={isClickable ? t('persona.startChatWith', { name: displayName }) : undefined}
     >
-      <div className="flex items-start justify-between gap-2 mb-2">
+      <div className="flex items-start justify-between gap-2 mb-1.5">
         <div
-          className="h-10 w-10 rounded-full shrink-0 flex items-center justify-center text-white font-bold text-sm"
+          className="h-9 w-9 rounded-full shrink-0 flex items-center justify-center text-white font-bold text-xs"
           style={{
             background: `linear-gradient(135deg, var(--lagoon), var(--palm))`,
           }}
         >
-          {persona.displayName.charAt(0).toUpperCase()}
+          {displayName.charAt(0).toUpperCase() || '?'}
         </div>
         {actions && <div className="flex gap-1">{actions}</div>}
       </div>
 
       <h3 className="font-semibold text-[var(--sea-ink)] text-base mb-1">
-        {persona.displayName}
+        {displayName}
       </h3>
 
-      {persona.bio && (
-        <p className="text-sm text-[var(--sea-ink-soft)] line-clamp-2 mb-3">
-          {persona.bio}
-        </p>
-      )}
+      <p
+        className={`text-sm text-[var(--sea-ink-soft)] line-clamp-2 h-9 mb-2 ${bio ? '' : 'opacity-60 italic'}`}
+      >
+        {bio || t('persona.bioFallback')}
+      </p>
 
-      {persona.traits.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {persona.traits.slice(0, 5).map((trait) => (
-            <span key={trait} className="trait-chip">
-              {trait}
-            </span>
-          ))}
-          {persona.traits.length > 5 && (
-            <span className="trait-chip opacity-60">
-              +{persona.traits.length - 5}
-            </span>
-          )}
-        </div>
-      )}
+      <div className="flex flex-wrap content-start gap-1 h-8 overflow-hidden">
+        {hasTraits ? (
+          <>
+            {persona.traits.slice(0, 5).map((trait) => (
+              <span key={trait} className="trait-chip">
+                {trait}
+              </span>
+            ))}
+            {persona.traits.length > 5 && (
+              <span className="trait-chip opacity-60">
+                +{persona.traits.length - 5}
+              </span>
+            )}
+          </>
+        ) : (
+          <span className="trait-chip opacity-60">
+            {t('persona.traitsFallback')}
+          </span>
+        )}
+      </div>
 
-      <p className="text-[0.6875rem] text-[var(--sea-ink-soft)] opacity-50 mt-3 italic">
+      <p className="text-[0.6875rem] text-[var(--sea-ink-soft)] opacity-50 mt-auto pt-1 italic">
         {t('persona.realPerson')}
       </p>
     </div>

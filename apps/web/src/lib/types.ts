@@ -93,6 +93,7 @@ export interface CreateHumanMessageInput {
 export interface ListResponse<T> {
   items: T[]
   total: number
+  nextCursor?: string | null
 }
 
 export interface SuccessEnvelope<T> {

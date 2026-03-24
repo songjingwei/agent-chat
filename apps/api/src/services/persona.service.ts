@@ -1,11 +1,16 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull, lt, ne, or, sql } from "drizzle-orm";
 
 import type { DbClient } from "@agent/db";
 import { agentPersonas, users } from "@agent/db";
 
 import { ApiError } from "../lib/api-error.js";
 import { createId } from "../lib/id.js";
-import type { CreatePersonaInput, Persona } from "./types.js";
+import type {
+  CreatePersonaInput,
+  ListPublicPersonasInput,
+  ListPublicPersonasResult,
+  Persona,
+} from "./types.js";
 
 export class PersonaService {
   constructor(private readonly db: DbClient) {}
@@ -65,6 +70,57 @@ export class PersonaService {
     return rows.map(mapPersona);
   }
 
+  async listPublic(input: ListPublicPersonasInput): Promise<ListPublicPersonasResult> {
+    const cursor = parsePersonaCursor(input.cursor);
+    const limit = Math.min(Math.max(input.limit, 1), 50);
+    const baseConditions = [
+      isNull(agentPersonas.deletedAt),
+      eq(agentPersonas.status, "active"),
+    ];
+
+    if (input.excludeUserId) {
+      baseConditions.push(ne(agentPersonas.userId, input.excludeUserId));
+    }
+
+    const cursorCondition = cursor
+      ? or(
+        lt(agentPersonas.updatedAt, cursor.updatedAt),
+        and(
+          eq(agentPersonas.updatedAt, cursor.updatedAt),
+          lt(agentPersonas.id, cursor.id),
+        ),
+      )
+      : undefined;
+
+    const conditions = cursorCondition
+      ? [...baseConditions, cursorCondition]
+      : baseConditions;
+
+    const rows = await this.db
+      .select()
+      .from(agentPersonas)
+      .where(and(...conditions))
+      .orderBy(desc(agentPersonas.updatedAt), desc(agentPersonas.id))
+      .limit(limit + 1);
+
+    const itemsRows = rows.slice(0, limit);
+    const hasNextPage = rows.length > limit;
+    const nextCursor = hasNextPage
+      ? encodePersonaCursor(itemsRows[itemsRows.length - 1]!)
+      : null;
+
+    const totalRows = await this.db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(agentPersonas)
+      .where(and(...baseConditions));
+
+    return {
+      items: itemsRows.map(mapPersona),
+      total: totalRows[0]?.count ?? 0,
+      nextCursor,
+    };
+  }
+
   async exists(personaId: string): Promise<boolean> {
     const rows = await this.db
       .select({ id: agentPersonas.id })
@@ -72,6 +128,40 @@ export class PersonaService {
       .where(and(eq(agentPersonas.id, personaId), isNull(agentPersonas.deletedAt)))
       .limit(1);
     return rows.length > 0;
+  }
+}
+
+function encodePersonaCursor(row: typeof agentPersonas.$inferSelect) {
+  const payload = JSON.stringify({
+    updatedAt: row.updatedAt.toISOString(),
+    id: row.id,
+  });
+  return Buffer.from(payload, "utf8").toString("base64url");
+}
+
+function parsePersonaCursor(cursor?: string) {
+  if (!cursor) {
+    return null;
+  }
+
+  try {
+    const decoded = Buffer.from(cursor, "base64url").toString("utf8");
+    const parsed = JSON.parse(decoded) as { updatedAt?: string; id?: string };
+    if (!parsed.updatedAt || !parsed.id) {
+      throw new Error("Missing cursor fields.");
+    }
+
+    const updatedAt = new Date(parsed.updatedAt);
+    if (Number.isNaN(updatedAt.getTime())) {
+      throw new Error("Invalid updatedAt.");
+    }
+
+    return {
+      updatedAt,
+      id: parsed.id,
+    };
+  } catch {
+    throw new ApiError(400, "VALIDATION_ERROR", "Invalid cursor.");
   }
 }
 

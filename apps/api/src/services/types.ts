@@ -46,6 +46,18 @@ export interface CreatePersonaInput {
   traits: string[];
 }
 
+export interface ListPublicPersonasInput {
+  cursor?: string | undefined;
+  limit: number;
+  excludeUserId?: string | undefined;
+}
+
+export interface ListPublicPersonasResult {
+  items: Persona[];
+  total: number;
+  nextCursor: string | null;
+}
+
 export interface CreateSessionInput {
   initiatorPersonaId: string;
   targetPersonaId: string;
@@ -60,4 +72,11 @@ export interface CreateHumanMessageInput {
   sessionId: string;
   authorPersonaId: string;
   content: string;
+}
+
+export interface CreateAgentMessageInput {
+  sessionId: string;
+  authorPersonaId: string;
+  content: string;
+  metadata?: Record<string, unknown> | undefined;
 }

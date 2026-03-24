@@ -151,8 +151,25 @@ export function createPersona(input: CreatePersonaInput) {
   return request<Persona>('POST', '/personas', input)
 }
 
-export function listPersonas() {
-  return request<ListResponse<Persona>>('GET', '/personas')
+export function listPersonas(input?: {
+  cursor?: string
+  limit?: number
+  excludeUserId?: string
+}) {
+  const params = new URLSearchParams()
+
+  if (input?.cursor) {
+    params.set('cursor', input.cursor)
+  }
+  if (input?.limit) {
+    params.set('limit', String(input.limit))
+  }
+  if (input?.excludeUserId) {
+    params.set('excludeUserId', input.excludeUserId)
+  }
+
+  const query = params.toString()
+  return request<ListResponse<Persona>>('GET', query ? `/personas?${query}` : '/personas')
 }
 
 export function listAllPersonas() {

@@ -2,8 +2,11 @@ import { Hono } from "hono";
 
 import { ApiError } from "../../lib/api-error.js";
 import { jsonOk } from "../../lib/http.js";
-import { parseJsonBody } from "../../lib/validation.js";
-import { createPersonaBodySchema } from "../../schemas/persona.js";
+import { parseJsonBody, parseWithSchema } from "../../lib/validation.js";
+import {
+  createPersonaBodySchema,
+  listPublicPersonasQuerySchema,
+} from "../../schemas/persona.js";
 import type { PersonaService } from "../../services/persona.service.js";
 
 /** Public read routes — no auth required */
@@ -11,12 +14,9 @@ export const createPersonaPublicRoutes = (personaService: PersonaService) => {
   const routes = new Hono();
 
   routes.get("/personas", async (c) => {
-    const items = await personaService.list();
-
-    return jsonOk(c, {
-      items,
-      total: items.length,
-    });
+    const query = parseWithSchema(listPublicPersonasQuerySchema, c.req.query());
+    const result = await personaService.listPublic(query);
+    return jsonOk(c, result);
   });
 
   routes.get("/personas/:personaId", async (c) => {

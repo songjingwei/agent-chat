@@ -34,6 +34,12 @@ interface RequestAuthState {
   refreshToken: string | null
 }
 
+interface FetchPersonasInput {
+  cursor?: string
+  limit?: number
+  excludeUserId?: string
+}
+
 const requestAuthState = new WeakMap<Request, RequestAuthState>()
 
 function getOrCreateRequestAuthState(): RequestAuthState {
@@ -134,11 +140,29 @@ async function serverRequest<T>(path: string): Promise<T> {
 }
 
 // Personas
-export const fetchPersonas = createServerFn({ method: 'GET' }).handler(
-  async () => {
-    return serverRequest<ListResponse<Persona>>('/personas')
-  },
-)
+export const fetchPersonas = createServerFn({ method: 'GET' })
+  .inputValidator((input?: FetchPersonasInput) => ({
+    cursor: input?.cursor,
+    limit: input?.limit,
+    excludeUserId: input?.excludeUserId,
+  }))
+  .handler(async ({ data: input }) => {
+    const params = new URLSearchParams()
+
+    if (input.cursor) {
+      params.set('cursor', input.cursor)
+    }
+    if (input.limit) {
+      params.set('limit', String(input.limit))
+    }
+    if (input.excludeUserId) {
+      params.set('excludeUserId', input.excludeUserId)
+    }
+
+    const query = params.toString()
+    const path = query ? `/personas?${query}` : '/personas'
+    return serverRequest<ListResponse<Persona>>(path)
+  })
 
 export const fetchMyPersonas = createServerFn({ method: 'GET' }).handler(
   async () => {

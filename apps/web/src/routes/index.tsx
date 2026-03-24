@@ -5,9 +5,11 @@ import { fetchPersonas } from '#/lib/server-fns'
 
 export const Route = createFileRoute('/')({
   loader: async ({ context }) => {
+    const excludeUserId = context.auth.user?.id
+    const listInput = { excludeUserId, limit: 24 }
     await context.queryClient.ensureQueryData({
-      queryKey: queryKeys.personas.list(),
-      queryFn: () => fetchPersonas(),
+      queryKey: queryKeys.personas.list(listInput),
+      queryFn: () => fetchPersonas({ data: listInput }),
     })
   },
   component: HomePage,
