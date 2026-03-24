@@ -2,6 +2,11 @@ import { createClient } from "redis";
 
 const DEFAULT_CACHE_KEY = "plaza:personas:active_total:v1";
 const DEFAULT_CACHE_TTL_SECONDS = 60;
+const DEFAULT_CONNECT_TIMEOUT_MS = 1_000;
+const DEFAULT_RECONNECT_BASE_DELAY_MS = 100;
+const DEFAULT_RECONNECT_MAX_DELAY_MS = 5_000;
+const DEFAULT_RECONNECT_MAX_ATTEMPTS = 50;
+const DEFAULT_RECONNECT_JITTER_MS = 200;
 
 export interface PersonaTotalCache {
   getActiveTotal(): Promise<number | null>;
@@ -18,6 +23,7 @@ interface RedisCacheClient {
   ): Promise<unknown>;
   del(key: string): Promise<number>;
   on(event: "error", listener: (error: unknown) => void): unknown;
+  on(event: "ready", listener: () => void): unknown;
   connect(): Promise<unknown>;
 }
 
@@ -91,8 +97,19 @@ export const createRedisPersonaTotalCache = (
   const client = createClient({
     url: options.redisUrl,
     socket: {
-      connectTimeout: 500,
-      reconnectStrategy: false,
+      connectTimeout: DEFAULT_CONNECT_TIMEOUT_MS,
+      reconnectStrategy: (retries) => {
+        if (retries >= DEFAULT_RECONNECT_MAX_ATTEMPTS) {
+          return new Error("Reached max Redis reconnect attempts.");
+        }
+
+        const exponentialDelay = Math.min(
+          DEFAULT_RECONNECT_BASE_DELAY_MS * (2 ** retries),
+          DEFAULT_RECONNECT_MAX_DELAY_MS,
+        );
+        const jitter = Math.floor(Math.random() * DEFAULT_RECONNECT_JITTER_MS);
+        return exponentialDelay + jitter;
+      },
     },
   });
   let hasLoggedError = false;
@@ -112,6 +129,12 @@ export const createRedisPersonaTotalCache = (
 
   client.on("error", (error) => {
     logRedisErrorOnce("persona_total_cache_redis_error", error);
+  });
+  client.on("ready", () => {
+    if (hasLoggedError) {
+      console.info("[cache] persona_total_cache_redis_recovered");
+      hasLoggedError = false;
+    }
   });
 
   void client.connect().catch((error) => {
