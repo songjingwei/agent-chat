@@ -5,8 +5,13 @@ import { and, desc, eq, isNull, ne, sql } from "drizzle-orm";
 import type { DbClient } from "@agent/db";
 import { agentPersonas, users } from "@agent/db";
 
+import { apiConfig } from "../config.js";
 import { ApiError } from "../lib/api-error.js";
 import { createId } from "../lib/id.js";
+import {
+  createRedisPersonaTotalCache,
+  type PersonaTotalCache,
+} from "./persona-total-cache.service.js";
 import type {
   CreatePersonaInput,
   ListPublicPersonasInput,
@@ -14,8 +19,24 @@ import type {
   Persona,
 } from "./types.js";
 
+interface PersonaServiceOptions {
+  totalCache?: PersonaTotalCache | null;
+}
+
 export class PersonaService {
-  constructor(private readonly db: DbClient) {}
+  readonly #totalCache: PersonaTotalCache | null;
+
+  constructor(private readonly db: DbClient, options: PersonaServiceOptions = {}) {
+    const disableCache = process.env.NODE_ENV === "test";
+    this.#totalCache =
+      options.totalCache === undefined
+        ? disableCache
+          ? null
+          : createRedisPersonaTotalCache({
+            redisUrl: apiConfig.redisUrl,
+          })
+        : options.totalCache;
+  }
 
   async create(input: CreatePersonaInput): Promise<Persona> {
     const userRows = await this.db
@@ -44,6 +65,8 @@ export class PersonaService {
         updatedAt: now,
       })
       .returning();
+
+    await this.tryInvalidateActiveTotalCache();
 
     return mapPersona(createdRows[0]!);
   }
@@ -77,13 +100,14 @@ export class PersonaService {
     const cursor = parsePersonaCursor(input.cursor, seed);
     const limit = Math.min(Math.max(input.limit, 1), 50);
     const sortKeyExpr = sql<string>`md5(${agentPersonas.id} || ':' || ${seed})`;
-    const baseConditions = [
+    const totalConditions = [
       isNull(agentPersonas.deletedAt),
       eq(agentPersonas.status, "active"),
     ];
+    const listConditions = [...totalConditions];
 
     if (input.excludeUserId) {
-      baseConditions.push(ne(agentPersonas.userId, input.excludeUserId));
+      listConditions.push(ne(agentPersonas.userId, input.excludeUserId));
     }
 
     const cursorCondition = cursor
@@ -91,8 +115,8 @@ export class PersonaService {
       : undefined;
 
     const conditions = cursorCondition
-      ? [...baseConditions, cursorCondition]
-      : baseConditions;
+      ? [...listConditions, cursorCondition]
+      : listConditions;
 
     const rows = await this.db
       .select()
@@ -107,14 +131,12 @@ export class PersonaService {
       ? encodePersonaCursor(itemsRows[itemsRows.length - 1]!, seed)
       : null;
 
-    const totalRows = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(agentPersonas)
-      .where(and(...baseConditions));
+    const cachedTotal = await this.readCachedActiveTotal();
+    const total = cachedTotal ?? (await this.readAndCacheActiveTotal());
 
     return {
       items: itemsRows.map(mapPersona),
-      total: totalRows[0]?.count ?? 0,
+      total,
       nextCursor,
     };
   }
@@ -126,6 +148,52 @@ export class PersonaService {
       .where(and(eq(agentPersonas.id, personaId), isNull(agentPersonas.deletedAt)))
       .limit(1);
     return rows.length > 0;
+  }
+
+  private async readAndCacheActiveTotal() {
+    const totalRows = await this.db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(agentPersonas)
+      .where(
+        and(
+          isNull(agentPersonas.deletedAt),
+          eq(agentPersonas.status, "active"),
+        ),
+      );
+
+    const total = totalRows[0]?.count ?? 0;
+    if (this.#totalCache) {
+      try {
+        await this.#totalCache.setActiveTotal(total);
+      } catch {
+        // Ignore cache write failures and fall back to database reads.
+      }
+    }
+    return total;
+  }
+
+  private async readCachedActiveTotal() {
+    if (!this.#totalCache) {
+      return null;
+    }
+
+    try {
+      return await this.#totalCache.getActiveTotal();
+    } catch {
+      return null;
+    }
+  }
+
+  private async tryInvalidateActiveTotalCache() {
+    if (!this.#totalCache) {
+      return;
+    }
+
+    try {
+      await this.#totalCache.invalidateActiveTotal();
+    } catch {
+      // Ignore cache invalidation failures and rely on TTL fallback.
+    }
   }
 }
 
