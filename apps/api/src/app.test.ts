@@ -355,9 +355,10 @@ test("GET /personas should support plaza pagination and exclude current user", a
   await createPersona(userA.accessToken, "A");
   await createPersona(userB.accessToken, "B");
   await createPersona(userC.accessToken, "C");
+  const seed = "plaza-test-seed";
 
   const firstPageResponse = await app.request(
-    `/personas?excludeUserId=${userA.userId}&limit=1`,
+    `/personas?excludeUserId=${userA.userId}&limit=1&seed=${seed}`,
   );
   assert.equal(firstPageResponse.status, 200);
 
@@ -369,7 +370,7 @@ test("GET /personas should support plaza pagination and exclude current user", a
   assert.notEqual(firstPageBody.data.items[0].userId, userA.userId);
 
   const secondPageResponse = await app.request(
-    `/personas?excludeUserId=${userA.userId}&limit=1&cursor=${encodeURIComponent(firstPageBody.data.nextCursor)}`,
+    `/personas?excludeUserId=${userA.userId}&limit=1&seed=${seed}&cursor=${encodeURIComponent(firstPageBody.data.nextCursor)}`,
   );
   assert.equal(secondPageResponse.status, 200);
 

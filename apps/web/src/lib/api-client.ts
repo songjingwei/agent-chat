@@ -155,6 +155,7 @@ export function listPersonas(input?: {
   cursor?: string
   limit?: number
   excludeUserId?: string
+  seed?: string
 }) {
   const params = new URLSearchParams()
 
@@ -166,6 +167,9 @@ export function listPersonas(input?: {
   }
   if (input?.excludeUserId) {
     params.set('excludeUserId', input.excludeUserId)
+  }
+  if (input?.seed) {
+    params.set('seed', input.seed)
   }
 
   const query = params.toString()

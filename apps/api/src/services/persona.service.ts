@@ -1,4 +1,6 @@
-import { and, desc, eq, isNull, lt, ne, or, sql } from "drizzle-orm";
+import { createHash } from "node:crypto";
+
+import { and, desc, eq, isNull, ne, sql } from "drizzle-orm";
 
 import type { DbClient } from "@agent/db";
 import { agentPersonas, users } from "@agent/db";
@@ -71,8 +73,10 @@ export class PersonaService {
   }
 
   async listPublic(input: ListPublicPersonasInput): Promise<ListPublicPersonasResult> {
-    const cursor = parsePersonaCursor(input.cursor);
+    const seed = input.seed;
+    const cursor = parsePersonaCursor(input.cursor, seed);
     const limit = Math.min(Math.max(input.limit, 1), 50);
+    const sortKeyExpr = sql<string>`md5(${agentPersonas.id} || ':' || ${seed})`;
     const baseConditions = [
       isNull(agentPersonas.deletedAt),
       eq(agentPersonas.status, "active"),
@@ -83,13 +87,7 @@ export class PersonaService {
     }
 
     const cursorCondition = cursor
-      ? or(
-        lt(agentPersonas.updatedAt, cursor.updatedAt),
-        and(
-          eq(agentPersonas.updatedAt, cursor.updatedAt),
-          lt(agentPersonas.id, cursor.id),
-        ),
-      )
+      ? sql`(${sortKeyExpr} < ${cursor.sortKey} OR (${sortKeyExpr} = ${cursor.sortKey} AND ${agentPersonas.id} < ${cursor.id}))`
       : undefined;
 
     const conditions = cursorCondition
@@ -100,13 +98,13 @@ export class PersonaService {
       .select()
       .from(agentPersonas)
       .where(and(...conditions))
-      .orderBy(desc(agentPersonas.updatedAt), desc(agentPersonas.id))
+      .orderBy(sql`${sortKeyExpr} DESC`, desc(agentPersonas.id))
       .limit(limit + 1);
 
     const itemsRows = rows.slice(0, limit);
     const hasNextPage = rows.length > limit;
     const nextCursor = hasNextPage
-      ? encodePersonaCursor(itemsRows[itemsRows.length - 1]!)
+      ? encodePersonaCursor(itemsRows[itemsRows.length - 1]!, seed)
       : null;
 
     const totalRows = await this.db
@@ -131,38 +129,45 @@ export class PersonaService {
   }
 }
 
-function encodePersonaCursor(row: typeof agentPersonas.$inferSelect) {
+function encodePersonaCursor(row: typeof agentPersonas.$inferSelect, seed: string) {
   const payload = JSON.stringify({
-    updatedAt: row.updatedAt.toISOString(),
+    sortKey: computePersonaSortKey(row.id, seed),
     id: row.id,
+    seed,
   });
   return Buffer.from(payload, "utf8").toString("base64url");
 }
 
-function parsePersonaCursor(cursor?: string) {
+function parsePersonaCursor(cursor: string | undefined, seed: string) {
   if (!cursor) {
     return null;
   }
 
   try {
     const decoded = Buffer.from(cursor, "base64url").toString("utf8");
-    const parsed = JSON.parse(decoded) as { updatedAt?: string; id?: string };
-    if (!parsed.updatedAt || !parsed.id) {
+    const parsed = JSON.parse(decoded) as {
+      sortKey?: string;
+      id?: string;
+      seed?: string;
+    };
+    if (!parsed.sortKey || !parsed.id || !parsed.seed) {
       throw new Error("Missing cursor fields.");
     }
-
-    const updatedAt = new Date(parsed.updatedAt);
-    if (Number.isNaN(updatedAt.getTime())) {
-      throw new Error("Invalid updatedAt.");
+    if (parsed.seed !== seed) {
+      throw new Error("Cursor seed mismatch.");
     }
 
     return {
-      updatedAt,
+      sortKey: parsed.sortKey,
       id: parsed.id,
     };
   } catch {
     throw new ApiError(400, "VALIDATION_ERROR", "Invalid cursor.");
   }
+}
+
+function computePersonaSortKey(id: string, seed: string) {
+  return createHash("md5").update(`${id}:${seed}`).digest("hex");
 }
 
 function mapPersona(row: typeof agentPersonas.$inferSelect): Persona {

@@ -10,4 +10,5 @@ export const listPublicPersonasQuerySchema = z.object({
   cursor: z.string().min(1).optional(),
   limit: z.coerce.number().int().min(1).max(50).default(24),
   excludeUserId: z.string().min(1).max(64).optional(),
+  seed: z.string().min(1).max(120).default("default-seed"),
 });

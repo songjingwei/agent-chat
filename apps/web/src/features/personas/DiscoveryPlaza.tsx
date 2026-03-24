@@ -1,6 +1,6 @@
 import { useTranslation, Trans } from 'react-i18next'
 import { Link } from '@tanstack/react-router'
-import { HeartHandshake, Wand2 } from 'lucide-react'
+import { HeartHandshake, RefreshCw, Wand2 } from 'lucide-react'
 import { ConfirmDialog } from '#/components/ConfirmDialog'
 import { PersonaCard } from '#/components/PersonaCard'
 import { EmptyState } from '#/components/EmptyState'
@@ -13,11 +13,8 @@ export function DiscoveryPlaza() {
   const {
     otherPersonas,
     total,
-    currentPage,
-    hasPrevPage,
-    hasNextPage,
-    goToPrevPage,
-    goToNextPage,
+    shuffleBatch,
+    pageSize,
     myPersona,
     selectedTarget,
     handleStartChat,
@@ -103,22 +100,12 @@ export function DiscoveryPlaza() {
             <div className="mt-6 flex items-center justify-center gap-3">
               <button
                 type="button"
-                onClick={goToPrevPage}
-                disabled={!hasPrevPage || isLoading}
+                onClick={shuffleBatch}
+                disabled={isLoading || total <= pageSize}
                 className="btn-ghost px-4 py-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {t('plaza.prevPage')}
-              </button>
-              <span className="text-sm text-[var(--sea-ink-soft)]">
-                {t('plaza.pageLabel', { page: currentPage })}
-              </span>
-              <button
-                type="button"
-                onClick={goToNextPage}
-                disabled={!hasNextPage || isLoading}
-                className="btn-ghost px-4 py-2 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {t('plaza.nextPage')}
+                <RefreshCw size={14} />
+                {t('plaza.shuffleBatch')}
               </button>
             </div>
           </>

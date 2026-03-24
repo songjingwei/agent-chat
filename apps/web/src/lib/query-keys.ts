@@ -4,7 +4,12 @@ export const queryKeys = {
   },
   personas: {
     all: ['personas'] as const,
-    list: (input?: { excludeUserId?: string; limit?: number; cursor?: string }) =>
+    list: (input?: {
+      excludeUserId?: string
+      limit?: number
+      cursor?: string
+      seed?: string
+    }) =>
       [...queryKeys.personas.all, 'list', input ?? {}] as const,
     mine: () => [...queryKeys.personas.all, 'mine'] as const,
     detail: (id: string) =>

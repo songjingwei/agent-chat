@@ -50,6 +50,7 @@ export interface ListPublicPersonasInput {
   cursor?: string | undefined;
   limit: number;
   excludeUserId?: string | undefined;
+  seed: string;
 }
 
 export interface ListPublicPersonasResult {

@@ -38,6 +38,7 @@ interface FetchPersonasInput {
   cursor?: string
   limit?: number
   excludeUserId?: string
+  seed?: string
 }
 
 const requestAuthState = new WeakMap<Request, RequestAuthState>()
@@ -145,6 +146,7 @@ export const fetchPersonas = createServerFn({ method: 'GET' })
     cursor: input?.cursor,
     limit: input?.limit,
     excludeUserId: input?.excludeUserId,
+    seed: input?.seed,
   }))
   .handler(async ({ data: input }) => {
     const params = new URLSearchParams()
@@ -157,6 +159,9 @@ export const fetchPersonas = createServerFn({ method: 'GET' })
     }
     if (input.excludeUserId) {
       params.set('excludeUserId', input.excludeUserId)
+    }
+    if (input.seed) {
+      params.set('seed', input.seed)
     }
 
     const query = params.toString()

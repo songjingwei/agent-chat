@@ -6,6 +6,7 @@ interface UsePersonaListOptions {
   excludeUserId?: string
   limit?: number
   cursor?: string
+  seed?: string
 }
 
 export function usePersonaList(options: UsePersonaListOptions = {}) {

@@ -3,28 +3,30 @@ import { usePersonaList } from './usePersonaList'
 import { useMyPersonas } from './useMyPersonas'
 import { useCreateSession } from '#/features/sessions/useCreateSession'
 import { useAuth } from '#/lib/auth-context'
+import { sendHumanMessage } from '#/lib/api-client'
 import type { Persona } from '#/lib/types'
 import { useEffect, useState } from 'react'
+import { buildPlazaSeed } from './plaza-seed'
 
 const PLAZA_PAGE_SIZE = 12
 
 export function useDiscoveryPlaza() {
   const [selectedTarget, setSelectedTarget] = useState<Persona | null>(null)
-  const [cursor, setCursor] = useState<string | undefined>(undefined)
-  const [prevCursors, setPrevCursors] = useState<string[]>([])
+  const [isBootstrappingChat, setIsBootstrappingChat] = useState(false)
+  const [batch, setBatch] = useState(0)
   const navigate = useNavigate()
   const { user, isAuthenticated } = useAuth()
+  const seed = buildPlazaSeed(user?.id, batch)
 
   const {
     personas: allPersonas,
     total,
-    nextCursor,
     isLoading: allLoading,
     error: allError,
   } = usePersonaList({
     excludeUserId: user?.id,
     limit: PLAZA_PAGE_SIZE,
-    cursor,
+    seed,
   })
   const { personas: myPersonas, isLoading: myLoading } = useMyPersonas({
     enabled: isAuthenticated,
@@ -34,13 +36,9 @@ export function useDiscoveryPlaza() {
 
   const myPersona = myPersonas[0] ?? null
   const otherPersonas = allPersonas
-  const hasPrevPage = prevCursors.length > 0
-  const hasNextPage = !!nextCursor
-  const currentPage = prevCursors.length + 1
 
   useEffect(() => {
-    setCursor(undefined)
-    setPrevCursors([])
+    setBatch(0)
   }, [user?.id])
 
   function handleStartChat(target: Persona) {
@@ -51,60 +49,65 @@ export function useDiscoveryPlaza() {
     setSelectedTarget(target)
   }
 
-  function confirmStartChat() {
-    if (!myPersona || !selectedTarget) return
+  async function confirmStartChat() {
+    if (!myPersona || !selectedTarget || isBootstrappingChat) return
 
-    createSession.mutate(
-      {
+    setIsBootstrappingChat(true)
+    let sessionId: string | null = null
+
+    try {
+      const session = await createSession.mutateAsync({
         initiatorPersonaId: myPersona.id,
         targetPersonaId: selectedTarget.id,
-      },
-      {
-        onSuccess: (session) => {
-          setSelectedTarget(null)
-          navigate({ to: '/sessions/$id', params: { id: session.id } })
-        },
-      },
-    )
+      })
+      sessionId = session.id
+
+      const openingMessage = `你好，${selectedTarget.displayName}。很高兴认识你，我们先从今天最想分享的一件小事开始吧。`
+      await sendHumanMessage(session.id, {
+        authorPersonaId: myPersona.id,
+        content: openingMessage,
+      })
+    } catch (error) {
+      console.error(
+        '[plaza] start_chat_bootstrap_failed',
+        JSON.stringify({
+          targetPersonaId: selectedTarget.id,
+          sessionId,
+          error: error instanceof Error ? error.message : String(error),
+        }),
+      )
+    } finally {
+      setSelectedTarget(null)
+      setIsBootstrappingChat(false)
+      if (sessionId) {
+        navigate({ to: '/sessions/$id', params: { id: sessionId } })
+      }
+    }
   }
 
   function cancelSelection() {
     setSelectedTarget(null)
   }
 
-  function goToNextPage() {
-    if (!nextCursor || allLoading) {
+  function shuffleBatch() {
+    if (allLoading || total <= 1) {
       return
     }
-    setPrevCursors((prev) => [...prev, cursor ?? ''])
-    setCursor(nextCursor)
-  }
-
-  function goToPrevPage() {
-    if (!hasPrevPage || allLoading) {
-      return
-    }
-    const previousCursor = prevCursors[prevCursors.length - 1]
-    setPrevCursors((prev) => prev.slice(0, -1))
-    setCursor(previousCursor || undefined)
+    setBatch((current) => current + 1)
   }
 
   return {
     otherPersonas,
     total,
-    currentPage,
     pageSize: PLAZA_PAGE_SIZE,
-    hasPrevPage,
-    hasNextPage,
-    goToPrevPage,
-    goToNextPage,
+    shuffleBatch,
     myPersona,
     selectedTarget,
     handleStartChat,
     confirmStartChat,
     cancelSelection,
     isLoading: allLoading || myLoading,
-    isCreatingSession: createSession.isPending,
+    isCreatingSession: createSession.isPending || isBootstrappingChat,
     error: allError,
   }
 }
