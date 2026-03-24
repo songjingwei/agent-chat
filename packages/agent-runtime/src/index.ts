@@ -29,6 +29,7 @@ export {
 export {
   AgentRuntimeEngine,
   createStaticRuntimeModelClient,
+  type RuntimeMemoryWrite,
   type RuntimeModelClient,
   type RuntimeModelRequest,
   type RuntimeModelResponse,
@@ -36,3 +37,18 @@ export {
   type RuntimeTurnInput,
   type RuntimeTurnResult,
 } from "./runtime/agent-runtime.js";
+export {
+  OpenAIResponsesModelClient,
+  createOpenAIResponsesModelClient,
+  AnthropicModelClient,
+  createAnthropicModelClient,
+  OllamaModelClient,
+  createOllamaModelClient,
+  createRuntimeModelClient,
+  resolveRuntimeModelProvider,
+  type RuntimeModelProvider,
+  type RuntimeModelClientFactoryEnv,
+  type OpenAIResponsesModelClientOptions,
+  type AnthropicModelClientOptions,
+  type OllamaModelClientOptions,
+} from "./model-clients/index.js";

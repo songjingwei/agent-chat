@@ -39,7 +39,23 @@ export const createServices = (
   const sessionService = new SessionService(db);
   const messageService = new MessageService(db, sessionService);
   const reportService = new ReportService(db);
-  const runtimeService = options.runtimeService ?? new RuntimeService();
+  const runtimeService =
+    options.runtimeService ??
+    new RuntimeService({
+      db,
+      env: {
+        RUNTIME_MODEL_PROVIDER: apiConfig.runtimeModelProvider,
+        RUNTIME_MODEL_TIMEOUT_MS: String(apiConfig.runtimeModelTimeoutMs),
+        OPENAI_API_KEY: apiConfig.openAIApiKey,
+        OPENAI_BASE_URL: apiConfig.openAIBaseUrl,
+        OPENAI_MODEL_CHAT: apiConfig.openAIModelChat,
+        ANTHROPIC_API_KEY: apiConfig.anthropicApiKey,
+        ANTHROPIC_BASE_URL: apiConfig.anthropicBaseUrl,
+        ANTHROPIC_MODEL_CHAT: apiConfig.anthropicModelChat,
+        OLLAMA_BASE_URL: apiConfig.ollamaBaseUrl,
+        OLLAMA_MODEL_CHAT: apiConfig.ollamaModelChat,
+      },
+    });
 
   return {
     healthService,
