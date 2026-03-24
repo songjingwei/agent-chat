@@ -93,6 +93,58 @@ test("OpenAI Responses maps max_output_tokens incomplete reason to length", asyn
   );
 });
 
+test("OpenAI Responses streaming mode sends stream flag and parses SSE deltas", async () => {
+  await withMockFetch(
+    (async (_input, init) => {
+      const body = JSON.parse(String(init?.body));
+      assert.equal(body.stream, true);
+
+      const encoder = new TextEncoder();
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(
+            encoder.encode(
+              'data: {"type":"response.output_text.delta","delta":"{\\"ok\\":"}\n\n',
+            ),
+          );
+          controller.enqueue(
+            encoder.encode(
+              'data: {"type":"response.output_text.delta","delta":"true}"}\n\n',
+            ),
+          );
+          controller.enqueue(
+            encoder.encode(
+              'data: {"type":"response.completed","response":{"model":"gpt-5.4","status":"completed","usage":{"input_tokens":9,"output_tokens":4}}}\n\n',
+            ),
+          );
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+          controller.close();
+        },
+      });
+
+      return new Response(stream, { status: 200 });
+    }) as typeof fetch,
+    async () => {
+      const client = createRuntimeModelClient({
+        RUNTIME_MODEL_PROVIDER: "openai",
+        OPENAI_API_KEY: "test-openai-key",
+        OPENAI_RESPONSES_STREAM: "true",
+      });
+
+      const result = await client.generate({
+        prompt: "hello",
+        maxOutputTokens: 64,
+      });
+
+      assert.equal(result.text, "{\"ok\":true}");
+      assert.equal(result.finishReason, "stop");
+      assert.equal(result.model, "gpt-5.4");
+      assert.equal(result.promptTokens, 9);
+      assert.equal(result.completionTokens, 4);
+    },
+  );
+});
+
 test("factory creates Anthropic client and maps max_tokens to length", async () => {
   await withMockFetch(
     (async (input, init) => {

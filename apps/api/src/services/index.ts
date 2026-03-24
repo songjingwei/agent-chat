@@ -49,6 +49,7 @@ export const createServices = (
         OPENAI_API_KEY: apiConfig.openAIApiKey,
         OPENAI_BASE_URL: apiConfig.openAIBaseUrl,
         OPENAI_MODEL_CHAT: apiConfig.openAIModelChat,
+        OPENAI_RESPONSES_STREAM: apiConfig.openAIResponsesStream,
         ANTHROPIC_API_KEY: apiConfig.anthropicApiKey,
         ANTHROPIC_BASE_URL: apiConfig.anthropicBaseUrl,
         ANTHROPIC_MODEL_CHAT: apiConfig.anthropicModelChat,

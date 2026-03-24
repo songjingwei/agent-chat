@@ -85,6 +85,7 @@ export const apiConfig = {
   openAIApiKey: process.env.OPENAI_API_KEY,
   openAIBaseUrl: process.env.OPENAI_BASE_URL ?? DEFAULT_OPENAI_BASE_URL,
   openAIModelChat: process.env.OPENAI_MODEL_CHAT ?? DEFAULT_OPENAI_MODEL_CHAT,
+  openAIResponsesStream: process.env.OPENAI_RESPONSES_STREAM,
   anthropicApiKey: process.env.ANTHROPIC_API_KEY,
   anthropicBaseUrl: process.env.ANTHROPIC_BASE_URL ?? DEFAULT_ANTHROPIC_BASE_URL,
   anthropicModelChat:

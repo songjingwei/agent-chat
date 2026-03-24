@@ -9,6 +9,7 @@ export interface RuntimeModelClientFactoryEnv {
   OPENAI_API_KEY?: string | undefined;
   OPENAI_BASE_URL?: string | undefined;
   OPENAI_MODEL_CHAT?: string | undefined;
+  OPENAI_RESPONSES_STREAM?: string | undefined;
 
   ANTHROPIC_API_KEY?: string | undefined;
   ANTHROPIC_BASE_URL?: string | undefined;
