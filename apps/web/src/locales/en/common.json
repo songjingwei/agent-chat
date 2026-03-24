@@ -79,6 +79,9 @@
     "vs": "&"
   },
   "chat": {
+    "backToSessions": "Back to sessions",
+    "sessionSwitchTitle": "Switch encounters",
+    "sessionSwitchHint": "Use the left rail to jump between chats",
     "noMessages": "A quiet moment",
     "noMessagesDesc": "A heartfelt conversation is about to begin...",
     "inputPlaceholder": "Share your thoughts...",

@@ -1,10 +1,11 @@
 import { useTranslation } from 'react-i18next'
+import { Link } from '@tanstack/react-router'
 import { StatusBadge } from '#/components/StatusBadge'
 import { EmptyState } from '#/components/EmptyState'
 import { ErrorDisplay } from '#/components/ErrorDisplay'
 import { LoadingSkeleton } from '#/components/LoadingSkeleton'
 import { useChatRoom } from './useChatRoom'
-import { Send, MessageCircle } from 'lucide-react'
+import { ArrowLeft, Send, MessageCircle } from 'lucide-react'
 import type { ChatMessage, Persona } from '#/lib/types'
 
 interface ChatRoomProps {
@@ -53,11 +54,20 @@ export function ChatRoom({ sessionId }: ChatRoomProps) {
   if (targetPersona) personaMap[targetPersona.id] = targetPersona
 
   return (
-    <div className="flex flex-col" style={{ height: 'calc(100dvh - 64px)' }}>
+    <div className="flex h-full flex-col">
       {/* Top bar */}
       <header className="border-b border-[var(--line)] bg-[var(--header-bg)] backdrop-blur-sm shrink-0 px-4 py-3">
         <div className="flex items-center justify-between gap-3 max-w-3xl mx-auto">
-          <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center gap-2 min-w-0 sm:gap-3">
+            <Link
+              to="/sessions"
+              className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 text-xs font-semibold tracking-[0.08em] text-[var(--sea-ink)] no-underline shadow-[0_10px_26px_rgba(60,42,33,0.08)] transition-all hover:-translate-y-px hover:bg-[var(--link-bg-hover)] lg:hidden"
+              aria-label={t('chat.backToSessions')}
+              title={t('chat.backToSessions')}
+            >
+              <ArrowLeft size={16} />
+              <span className="hidden sm:inline">{t('chat.backToSessions')}</span>
+            </Link>
             <div className="flex -space-x-2">
               {[initiatorPersona, targetPersona].map(
                 (p) =>
@@ -153,7 +163,7 @@ export function ChatRoom({ sessionId }: ChatRoomProps) {
         </div>
       )}
 
-      {session.status === 'queued' && (
+      {session.status === 'queued' && !canSendMessage && (
         <div className="shrink-0 text-center py-3 border-t border-[var(--line)] bg-[var(--surface)]">
           <p className="text-sm text-[var(--sea-ink-soft)]">
             {t('chat.waiting')}

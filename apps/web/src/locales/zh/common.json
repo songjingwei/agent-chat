@@ -96,6 +96,9 @@
     "vs": "邂逅"
   },
   "chat": {
+    "backToSessions": "返回会话页",
+    "sessionSwitchTitle": "切换正在对话的人",
+    "sessionSwitchHint": "左侧列表可快速切换不同奇遇",
     "noMessages": "寂静无声",
     "noMessagesDesc": "一场真诚的对话即将拉开序幕……",
     "inputPlaceholder": "分享你的想法...",
