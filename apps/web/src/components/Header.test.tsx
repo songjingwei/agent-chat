@@ -9,6 +9,10 @@ const { mockLogout, mockUseAuth } = vi.hoisted(() => ({
   mockUseAuth: vi.fn(),
 }))
 
+const { mockUseMyPersonas } = vi.hoisted(() => ({
+  mockUseMyPersonas: vi.fn(),
+}))
+
 vi.mock('@tanstack/react-router', () => ({
   Link: ({
     to,
@@ -42,6 +46,10 @@ vi.mock('#/lib/auth-context', () => ({
   useAuth: () => mockUseAuth(),
 }))
 
+vi.mock('#/features/personas/useMyPersonas', () => ({
+  useMyPersonas: () => mockUseMyPersonas(),
+}))
+
 vi.mock('./LanguageSwitcher', () => ({
   LanguageSwitcher: () => <span>language-switcher</span>,
 }))
@@ -61,10 +69,17 @@ describe('Header logout confirmation', () => {
     mockLogout.mockReset()
     mockLogout.mockResolvedValue(undefined)
     mockUseAuth.mockReset()
+    mockUseMyPersonas.mockReset()
     mockUseAuth.mockReturnValue({
       user: { displayName: 'Song' },
       isAuthenticated: true,
       logout: mockLogout,
+    })
+    mockUseMyPersonas.mockReturnValue({
+      personas: [],
+      hasPersona: false,
+      isLoading: false,
+      error: null,
     })
   })
 
@@ -103,5 +118,45 @@ describe('Header logout confirmation', () => {
 
     expect(mockLogout).not.toHaveBeenCalled()
     expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('routes quick action to my agents when mirror already exists', () => {
+    mockUseMyPersonas.mockReturnValue({
+      personas: [{ id: 'prs_1' }],
+      hasPersona: true,
+      isLoading: false,
+      error: null,
+    })
+
+    render(<Header />)
+
+    const quickAction = screen
+      .getAllByRole('link', { name: 'nav.myAgents' })
+      .find((link) => link.className.includes('btn-primary'))
+    expect(quickAction).toBeTruthy()
+    if (!quickAction) {
+      throw new Error('Expected desktop quick action link for existing mirror.')
+    }
+    expect(quickAction.getAttribute('href')).toBe('/personas')
+  })
+
+  it('routes quick action to create page when mirror does not exist', () => {
+    mockUseMyPersonas.mockReturnValue({
+      personas: [],
+      hasPersona: false,
+      isLoading: false,
+      error: null,
+    })
+
+    render(<Header />)
+
+    const quickAction = screen
+      .getAllByRole('link', { name: 'nav.newAgent' })
+      .find((link) => link.className.includes('btn-primary'))
+    expect(quickAction).toBeTruthy()
+    if (!quickAction) {
+      throw new Error('Expected desktop quick action link for missing mirror.')
+    }
+    expect(quickAction.getAttribute('href')).toBe('/personas/create')
   })
 })

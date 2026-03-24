@@ -21,6 +21,8 @@ export function DiscoveryPlaza() {
     isCreatingSession,
     error,
   } = useDiscoveryPlaza()
+  const primaryActionTo = myPersona ? '/personas' : '/personas/create'
+  const primaryActionLabel = myPersona ? t('nav.myAgents') : t('plaza.createYourAgent')
 
   return (
     <div>
@@ -34,9 +36,9 @@ export function DiscoveryPlaza() {
           {t('plaza.subtitle')}
         </p>
         <div className="flex flex-wrap justify-center gap-3">
-          <Link to="/personas/create" className="btn-primary">
+          <Link to={primaryActionTo} className="btn-primary">
             <Wand2 size={16} />
-            {t('plaza.createYourAgent')}
+            {primaryActionLabel}
           </Link>
           {myPersona && (
             <Link to="/sessions" className="btn-ghost">

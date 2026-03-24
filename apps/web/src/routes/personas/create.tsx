@@ -1,6 +1,8 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { PersonaCreateForm } from '#/features/personas/PersonaCreateForm'
+import { queryKeys } from '#/lib/query-keys'
+import { fetchMyPersonas } from '#/lib/server-fns'
 import { ArrowLeft } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 
@@ -8,6 +10,16 @@ export const Route = createFileRoute('/personas/create')({
   beforeLoad: ({ context }) => {
     if (!context.auth.isAuthenticated) {
       throw redirect({ to: '/login' })
+    }
+  },
+  loader: async ({ context }) => {
+    const myPersonas = await context.queryClient.ensureQueryData({
+      queryKey: queryKeys.personas.mine(),
+      queryFn: () => fetchMyPersonas(),
+    })
+
+    if (myPersonas.items.length > 0) {
+      throw redirect({ to: '/personas' })
     }
   },
   component: PersonaCreatePage,

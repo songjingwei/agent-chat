@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router'
 import { LogOut, Menu, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '#/lib/auth-context'
+import { useMyPersonas } from '#/features/personas/useMyPersonas'
 import { ConfirmDialog } from './ConfirmDialog'
 import { LanguageSwitcher } from './LanguageSwitcher'
 import Logo from './Logo'
@@ -20,6 +21,12 @@ export default function Header() {
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const { t } = useTranslation()
   const { user, isAuthenticated, logout } = useAuth()
+  const { hasPersona, isLoading: isCheckingPersona } = useMyPersonas({
+    enabled: isAuthenticated,
+  })
+  const shouldPreferMyAgents = hasPersona || isCheckingPersona
+  const quickActionTo = shouldPreferMyAgents ? '/personas' : '/personas/create'
+  const quickActionLabel = shouldPreferMyAgents ? t('nav.myAgents') : t('nav.newAgent')
 
   function handleLogoutRequest() {
     setMobileOpen(false)
@@ -80,10 +87,10 @@ export default function Header() {
             {isAuthenticated ? (
               <>
                 <Link
-                  to="/personas/create"
+                  to={quickActionTo}
                   className="btn-primary hidden px-4 py-1.5 text-sm sm:inline-flex"
                 >
-                  {t('nav.newAgent')}
+                  {quickActionLabel}
                 </Link>
                 <span className="hidden items-center gap-2 px-2 text-sm text-[var(--sea-ink-soft)] sm:inline-flex">
                   {user?.displayName}
@@ -142,11 +149,11 @@ export default function Header() {
               {isAuthenticated ? (
                 <>
                   <Link
-                    to="/personas/create"
+                    to={quickActionTo}
                     className="btn-primary mt-1 px-3 py-2 text-center text-sm"
                     onClick={() => setMobileOpen(false)}
                   >
-                    {t('nav.newAgent')}
+                    {quickActionLabel}
                   </Link>
                   <button
                     type="button"
