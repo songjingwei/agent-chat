@@ -3,11 +3,22 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "scripts": {
-    "dev": "node -e \"console.log('[runtime] scaffold ready')\"",
-    "build": "node -e \"console.log('[runtime] build placeholder')\"",
-    "test": "node -e \"console.log('[runtime] test placeholder')\"",
-    "lint": "node -e \"console.log('[runtime] lint placeholder')\"",
-    "typecheck": "node -e \"console.log('[runtime] typecheck placeholder')\""
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "test": "tsx --test src/**/*.test.ts",
+    "lint": "pnpm run typecheck",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   }
 }

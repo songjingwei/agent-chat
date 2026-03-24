@@ -13,6 +13,9 @@ importers:
       '@agent/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@agent/runtime':
+        specifier: workspace:*
+        version: link:../../packages/agent-runtime
       '@agent/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -150,7 +153,21 @@ importers:
 
   apps/worker: {}
 
-  packages/agent-runtime: {}
+  packages/agent-runtime:
+    dependencies:
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
+    devDependencies:
+      '@types/node':
+        specifier: ^25.5.0
+        version: 25.5.0
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
 
   packages/db:
     dependencies:

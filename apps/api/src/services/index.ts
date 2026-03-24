@@ -6,6 +6,7 @@ import { HealthService } from "./health.service.js";
 import { MessageService } from "./message.service.js";
 import { PersonaService } from "./persona.service.js";
 import { ReportService } from "./report.service.js";
+import { RuntimeService } from "./runtime.service.js";
 import { SessionService } from "./session.service.js";
 
 export interface AppServices {
@@ -15,10 +16,12 @@ export interface AppServices {
   sessionService: SessionService;
   messageService: MessageService;
   reportService: ReportService;
+  runtimeService: RuntimeService;
 }
 
 export interface CreateServicesOptions {
   healthService?: HealthService;
+  runtimeService?: RuntimeService;
 }
 
 export const createServices = (
@@ -36,6 +39,7 @@ export const createServices = (
   const sessionService = new SessionService(db);
   const messageService = new MessageService(db, sessionService);
   const reportService = new ReportService(db);
+  const runtimeService = options.runtimeService ?? new RuntimeService();
 
   return {
     healthService,
@@ -44,5 +48,6 @@ export const createServices = (
     sessionService,
     messageService,
     reportService,
+    runtimeService,
   };
 };

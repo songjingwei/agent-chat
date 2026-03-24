@@ -12,7 +12,7 @@
 | Day 2 | 2026-03-24 | 搭建 docker 依赖与健康检查 | 已启动 `docker compose` 本地依赖（Postgres/Redis/MinIO）；`GET /health` 已接入 Postgres/Redis TCP 探针并返回 `ok`；API 已补最小 trace 日志（`requestId`、路径、状态码、耗时）；`pnpm --filter @agent/api test` 4 条通过，`pnpm --filter @agent/api typecheck` 通过；手动请求 `/health` 验证通过；**额外完成**：冻结 `apps/api/docs/web-api-contract.md`，为 `GET /sessions` 增加 `userId` 过滤，并补齐 web 联调契约回归测试 | Done | 无 | 开始 Day 3：定义核心数据模型、迁移方案与种子数据边界 |
 | Day 2+ | 2026-03-23 | 前端 SSR 数据预取与认证体系加固 | 将所有 GET 请求迁移至 TanStack Start server functions，5 条路由实现 SSR 数据预取（`ensureQueryData`）；引入 AuthState 状态机（unknown/anonymous/authenticated）实现 SSR 感知的认证解析；access token 同步至 cookie 支持服务端请求认证；API 增加 CORS 中间件与 origin 白名单；补充 auth provider 初始化测试覆盖 | Done | 无 | 开始 Day 3：定义核心数据模型、迁移方案与种子数据边界 |
 | Day 3 | 2026-03-25 | 完成核心数据模型与迁移 | 数据库 Schema 已同步；已注入 2 用户、4 Persona、1 会话、6 消息、4 记忆、1 报告；Alice/Bob 密码已重置为 `12345678`；`packages/db` 已安装 `tsx` 环境 | Done | 无 | 开始 Day 4：Runtime 状态机骨架与结构化输出设计 |
-| Day 4 | 2026-03-26 | Runtime 状态机骨架 + 结构化输出 |  | Not Started |  |  |
+| Day 4 | 2026-03-26 | Runtime 状态机骨架 + 结构化输出 | `@agent/runtime` 已完成状态机、PromptManager、结构化输出 Zod Schema、解析失败重试与 fallback；新增关键回归测试 2 条（成功闭环 + 非法 JSON）；`apps/api` 已新增 `RuntimeService` 并接入服务容器；验证：`pnpm --filter @agent/runtime test` 2/2 通过，`pnpm --filter @agent/runtime typecheck` 通过，`pnpm --filter @agent/api test` 5/5 通过，`pnpm --filter @agent/api typecheck` 通过 | Done | 无 | 开始 Day 5：Persona Builder（资料到 persona 的结构化生成 + 版本化存储） |
 | Day 5 | 2026-03-27 | Persona Builder v1 |  | Not Started |  |  |
 | Day 6 | 2026-03-30 | 双 agent 自动对话 Worker |  | Not Started |  |  |
 | Day 7 | 2026-03-31 | 用户介入高权重记忆生效 |  | Not Started |  |  |

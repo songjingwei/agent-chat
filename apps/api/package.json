@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@agent/db": "workspace:*",
+    "@agent/runtime": "workspace:*",
     "@agent/shared": "workspace:*",
     "@hono/node-server": "^1.19.11",
     "bcryptjs": "^3.0.3",
