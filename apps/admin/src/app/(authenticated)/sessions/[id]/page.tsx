@@ -68,6 +68,28 @@ export default function SessionDetailPage() {
     </Space>
   );
 
+  const renderInlinePersonaIdentity = (
+    personaId: string,
+    personaName?: string,
+  ) => {
+    if (!personaName) {
+      return (
+        <Text strong style={{ fontFamily: "monospace" }}>
+          {personaId}
+        </Text>
+      );
+    }
+
+    return (
+      <Space size={6}>
+        <Text strong>{personaName}</Text>
+        <Text type="secondary" style={{ fontFamily: "monospace", fontSize: 12 }}>
+          {personaId}
+        </Text>
+      </Space>
+    );
+  };
+
   return (
     <div>
       <Space style={{ marginBottom: 16 }}>
@@ -137,9 +159,10 @@ export default function SessionDetailPage() {
                 <div>
                   <div style={{ marginBottom: 4 }}>
                     <Space>
-                      <Text strong>
-                        {msg.senderPersona?.name ?? msg.senderPersonaId}
-                      </Text>
+                      {renderInlinePersonaIdentity(
+                        msg.senderPersonaId,
+                        msg.senderPersona?.name,
+                      )}
                       <Tag>{msg.role}</Tag>
                       <Text type="secondary" style={{ fontSize: 12 }}>
                         Round {msg.roundNumber}

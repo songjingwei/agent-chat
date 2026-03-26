@@ -1422,3 +1422,68 @@ test("admin sessions endpoints should include initiator and target persona names
   assert.equal(sessionFromList?.targetPersona?.id, context.targetPersonaId);
   assert.equal(sessionFromList?.targetPersona?.name, "Bob");
 });
+
+test("admin session messages endpoint should include sender persona names", async () => {
+  const app = createTestApp();
+  const adminToken = createAdminAccessToken();
+  const context = await registerPairAndCreateSession(app, "admin-message-persona-names");
+
+  const sendInitiatorMessage = await app.request(
+    `/sessions/${context.sessionId}/human-message`,
+    {
+      method: "POST",
+      headers: authHeaders(context.userA.accessToken),
+      body: JSON.stringify({
+        authorPersonaId: context.initiatorPersonaId,
+        content: "admin-msg-test-initiator",
+      }),
+    },
+  );
+  assert.equal(sendInitiatorMessage.status, 201);
+
+  const sendTargetMessage = await app.request(
+    `/sessions/${context.sessionId}/human-message`,
+    {
+      method: "POST",
+      headers: authHeaders(context.userB.accessToken),
+      body: JSON.stringify({
+        authorPersonaId: context.targetPersonaId,
+        content: "admin-msg-test-target",
+      }),
+    },
+  );
+  assert.equal(sendTargetMessage.status, 201);
+
+  const response = await app.request(
+    `/admin/sessions/${context.sessionId}/messages?limit=20`,
+    {
+      headers: adminAuthHeaders(adminToken),
+    },
+  );
+  assert.equal(response.status, 200);
+  const json = await response.json();
+  assert.equal(json.success, true);
+
+  const items = json.data.items as Array<{
+    senderPersonaId: string;
+    content: string;
+    senderPersona?: { id: string; name: string };
+  }>;
+
+  const initiatorMessage = items.find(
+    (item) => item.content === "admin-msg-test-initiator",
+  );
+  const targetMessage = items.find(
+    (item) => item.content === "admin-msg-test-target",
+  );
+
+  assert.ok(initiatorMessage);
+  assert.equal(initiatorMessage?.senderPersonaId, context.initiatorPersonaId);
+  assert.equal(initiatorMessage?.senderPersona?.id, context.initiatorPersonaId);
+  assert.equal(initiatorMessage?.senderPersona?.name, "Alice");
+
+  assert.ok(targetMessage);
+  assert.equal(targetMessage?.senderPersonaId, context.targetPersonaId);
+  assert.equal(targetMessage?.senderPersona?.id, context.targetPersonaId);
+  assert.equal(targetMessage?.senderPersona?.name, "Bob");
+});
