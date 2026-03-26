@@ -26,7 +26,7 @@ interface AuthActions {
 }
 
 const BASE_URL =
-  process.env.NEXT_PUBLIC_API_ORIGIN ?? "http://localhost:3001";
+  import.meta.env.VITE_API_ORIGIN ?? "http://localhost:3001";
 
 export const useAuthStore = create<AuthState & AuthActions>()(
   persist(

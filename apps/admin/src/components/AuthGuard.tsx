@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import { Spin } from "antd";
 import { useAuthStore } from "@/lib/auth-store";
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [hydrated, setHydrated] = useState(false);
 
@@ -25,9 +25,9 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   // Redirect to login after hydration completes if not authenticated
   useEffect(() => {
     if (hydrated && !isAuthenticated) {
-      router.replace("/login");
+      navigate("/login", { replace: true });
     }
-  }, [hydrated, isAuthenticated, router]);
+  }, [hydrated, isAuthenticated, navigate]);
 
   if (!hydrated) {
     return (

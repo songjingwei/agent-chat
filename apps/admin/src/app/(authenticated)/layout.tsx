@@ -1,16 +1,15 @@
 "use client";
 
+import { Outlet } from "react-router-dom";
 import AuthGuard from "@/components/AuthGuard";
 import AdminLayout from "@/components/AdminLayout";
 
-export default function AuthenticatedLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AuthenticatedLayout() {
   return (
     <AuthGuard>
-      <AdminLayout>{children}</AdminLayout>
+      <AdminLayout>
+        <Outlet />
+      </AdminLayout>
     </AuthGuard>
   );
 }

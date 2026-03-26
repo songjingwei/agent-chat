@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import { Typography, Input, Modal, Tooltip, Space, Button, message } from "antd";
 import {
   SearchOutlined,
@@ -21,7 +21,7 @@ import { useT } from "@/lib/i18n";
 const { Title } = Typography;
 
 export default function UsersPage() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [messageApi, contextHolder] = message.useMessage();
   const t = useT();
@@ -121,7 +121,7 @@ export default function UsersPage() {
             type="link"
             size="small"
             icon={<EyeOutlined />}
-            onClick={() => router.push(`/users/${record.id}`)}
+            onClick={() => navigate(`/users/${record.id}`)}
           >
             {t("table.view")}
           </Button>

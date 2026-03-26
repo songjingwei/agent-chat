@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Card,
   Descriptions,
@@ -25,14 +25,15 @@ const { Title, Text, Paragraph } = Typography;
 
 export default function SessionDetailPage() {
   const params = useParams<{ id: string }>();
-  const router = useRouter();
+  const navigate = useNavigate();
   const t = useT();
-  const sessionId = params.id;
+  const sessionId = params.id ?? "";
   const [msgCursor, setMsgCursor] = useState<string | undefined>(undefined);
 
   const { data: session, isLoading } = useQuery({
     queryKey: queryKeys.sessions.detail(sessionId),
     queryFn: () => sessionsApi.get(sessionId),
+    enabled: Boolean(sessionId),
   });
 
   const { data: messagesData, isLoading: messagesLoading } = useQuery({
@@ -62,7 +63,7 @@ export default function SessionDetailPage() {
       <Space style={{ marginBottom: 16 }}>
         <Button
           icon={<ArrowLeftOutlined />}
-          onClick={() => router.push("/sessions")}
+          onClick={() => navigate("/sessions")}
         >
           {t("common.back")}
         </Button>

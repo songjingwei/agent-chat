@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Layout, Menu, Button, Select, theme, type MenuProps } from "antd";
 import {
   DashboardOutlined,
@@ -28,8 +28,8 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const [collapsed, setCollapsed] = useState(false);
-  const router = useRouter();
-  const pathname = usePathname();
+  const navigate = useNavigate();
+  const pathname = useLocation().pathname;
   const admin = useAuthStore((s) => s.admin);
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const t = useT();
@@ -51,12 +51,12 @@ export default function AdminLayout({
   ];
 
   const handleMenuClick: MenuProps["onClick"] = ({ key }) => {
-    router.push(key);
+    navigate(key);
   };
 
   const handleLogout = () => {
     clearAuth();
-    router.replace("/login");
+    navigate("/login", { replace: true });
   };
 
   // Determine the selected menu key from current pathname

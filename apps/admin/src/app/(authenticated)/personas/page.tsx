@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import {
   Typography,
   Select,
@@ -28,7 +28,7 @@ import { useT } from "@/lib/i18n";
 const { Title } = Typography;
 
 export default function PersonasPage() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [messageApi, contextHolder] = message.useMessage();
   const t = useT();
@@ -127,7 +127,7 @@ export default function PersonasPage() {
             type="link"
             size="small"
             icon={<EyeOutlined />}
-            onClick={() => router.push(`/personas/${record.id}`)}
+            onClick={() => navigate(`/personas/${record.id}`)}
           >
             {t("table.view")}
           </Button>

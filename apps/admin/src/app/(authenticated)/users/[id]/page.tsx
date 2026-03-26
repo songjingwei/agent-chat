@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Card,
   Descriptions,
@@ -25,13 +25,14 @@ const { Title, Text } = Typography;
 
 export default function UserDetailPage() {
   const params = useParams<{ id: string }>();
-  const router = useRouter();
+  const navigate = useNavigate();
   const t = useT();
-  const userId = params.id;
+  const userId = params.id ?? "";
 
   const { data: user, isLoading } = useQuery({
     queryKey: queryKeys.users.detail(userId),
     queryFn: () => usersApi.get(userId),
+    enabled: Boolean(userId),
   });
 
   const { data: personasData, isLoading: personasLoading } = useQuery({
@@ -84,7 +85,7 @@ export default function UserDetailPage() {
           type="link"
           size="small"
           icon={<EyeOutlined />}
-          onClick={() => router.push(`/personas/${record.id}`)}
+          onClick={() => navigate(`/personas/${record.id}`)}
         >
           {t("table.view")}
         </Button>
@@ -113,7 +114,7 @@ export default function UserDetailPage() {
       <Space style={{ marginBottom: 16 }}>
         <Button
           icon={<ArrowLeftOutlined />}
-          onClick={() => router.push("/users")}
+          onClick={() => navigate("/users")}
         >
           {t("common.back")}
         </Button>

@@ -1,7 +1,7 @@
 import { useAuthStore } from "./auth-store";
 
 const BASE_URL =
-  process.env.NEXT_PUBLIC_API_ORIGIN ?? "http://localhost:3001";
+  import.meta.env.VITE_API_ORIGIN ?? "http://localhost:3001";
 
 interface ApiResponse<T> {
   success: boolean;

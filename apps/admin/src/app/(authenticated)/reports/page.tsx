@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import { Typography, Select, Space, Tooltip, Button } from "antd";
 import { EyeOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
@@ -16,7 +16,7 @@ import { useT } from "@/lib/i18n";
 const { Title } = Typography;
 
 export default function ReportsPage() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const t = useT();
 
   const [cursor, setCursor] = useState<string | undefined>(undefined);
@@ -88,7 +88,7 @@ export default function ReportsPage() {
           type="link"
           size="small"
           icon={<EyeOutlined />}
-          onClick={() => router.push(`/reports/${record.id}`)}
+          onClick={() => navigate(`/reports/${record.id}`)}
         >
           {t("table.view")}
         </Button>

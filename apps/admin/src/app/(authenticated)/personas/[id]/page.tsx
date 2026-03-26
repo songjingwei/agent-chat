@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Card,
   Descriptions,
@@ -22,13 +22,14 @@ const { Title, Text } = Typography;
 
 export default function PersonaDetailPage() {
   const params = useParams<{ id: string }>();
-  const router = useRouter();
+  const navigate = useNavigate();
   const t = useT();
-  const personaId = params.id;
+  const personaId = params.id ?? "";
 
   const { data: persona, isLoading } = useQuery({
     queryKey: queryKeys.personas.detail(personaId),
     queryFn: () => personasApi.get(personaId),
+    enabled: Boolean(personaId),
   });
 
   if (isLoading) {
@@ -52,7 +53,7 @@ export default function PersonaDetailPage() {
       <Space style={{ marginBottom: 16 }}>
         <Button
           icon={<ArrowLeftOutlined />}
-          onClick={() => router.push("/personas")}
+          onClick={() => navigate("/personas")}
         >
           {t("common.back")}
         </Button>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import { Card, Form, Input, Button, Typography, message } from "antd";
 import { UserOutlined, LockOutlined } from "@ant-design/icons";
 import { useAuthStore } from "@/lib/auth-store";
@@ -29,11 +29,11 @@ interface LoginResponse {
 }
 
 const BASE_URL =
-  process.env.NEXT_PUBLIC_API_ORIGIN ?? "http://localhost:3001";
+  import.meta.env.VITE_API_ORIGIN ?? "http://localhost:3001";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
+  const navigate = useNavigate();
   const setAuth = useAuthStore((s) => s.setAuth);
   const [messageApi, contextHolder] = message.useMessage();
   const t = useT();
@@ -63,7 +63,7 @@ export default function LoginPage() {
         refreshToken: json.data.tokens.refreshToken,
         admin: json.data.admin,
       });
-      router.replace("/dashboard");
+      navigate("/dashboard", { replace: true });
     } catch {
       messageApi.error(t("login.error.network"));
     } finally {

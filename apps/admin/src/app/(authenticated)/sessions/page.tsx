@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import {
   Typography,
   Select,
@@ -27,7 +27,7 @@ import { useT } from "@/lib/i18n";
 const { Title } = Typography;
 
 export default function SessionsPage() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [messageApi, contextHolder] = message.useMessage();
   const t = useT();
@@ -121,7 +121,7 @@ export default function SessionsPage() {
             type="link"
             size="small"
             icon={<EyeOutlined />}
-            onClick={() => router.push(`/sessions/${record.id}`)}
+            onClick={() => navigate(`/sessions/${record.id}`)}
           >
             {t("table.view")}
           </Button>

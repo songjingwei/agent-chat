@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Card,
   Descriptions,
@@ -23,13 +23,14 @@ const { Title, Text, Paragraph } = Typography;
 
 export default function ReportDetailPage() {
   const params = useParams<{ id: string }>();
-  const router = useRouter();
+  const navigate = useNavigate();
   const t = useT();
-  const reportId = params.id;
+  const reportId = params.id ?? "";
 
   const { data: report, isLoading } = useQuery({
     queryKey: queryKeys.reports.detail(reportId),
     queryFn: () => reportsApi.get(reportId),
+    enabled: Boolean(reportId),
   });
 
   if (isLoading) {
@@ -60,7 +61,7 @@ export default function ReportDetailPage() {
       <Space style={{ marginBottom: 16 }}>
         <Button
           icon={<ArrowLeftOutlined />}
-          onClick={() => router.push("/reports")}
+          onClick={() => navigate("/reports")}
         >
           {t("common.back")}
         </Button>
@@ -80,7 +81,7 @@ export default function ReportDetailPage() {
             <Button
               type="link"
               size="small"
-              onClick={() => router.push(`/sessions/${report.sessionId}`)}
+              onClick={() => navigate(`/sessions/${report.sessionId}`)}
               style={{ padding: 0 }}
             >
               {report.sessionId}
