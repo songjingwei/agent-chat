@@ -9,6 +9,7 @@ import type {
   CreatePersonaInput,
   CreateSessionInput,
   LatestReport,
+  ListMessagesInput,
   ListResponse,
   LoginInput,
   Persona,
@@ -156,6 +157,7 @@ export function listPersonas(input?: {
   limit?: number
   excludeUserId?: string
   seed?: string
+  viewerPersonaId?: string
 }) {
   const params = new URLSearchParams()
 
@@ -165,15 +167,23 @@ export function listPersonas(input?: {
   if (input?.limit) {
     params.set('limit', String(input.limit))
   }
-  if (input?.excludeUserId) {
+  if (input?.excludeUserId && !input?.viewerPersonaId) {
     params.set('excludeUserId', input.excludeUserId)
   }
   if (input?.seed) {
     params.set('seed', input.seed)
   }
+  if (input?.viewerPersonaId) {
+    params.set('viewerPersonaId', input.viewerPersonaId)
+  }
 
   const query = params.toString()
-  return request<ListResponse<Persona>>('GET', query ? `/personas?${query}` : '/personas')
+  const path = input?.viewerPersonaId
+    ? `/discovery/personas?${query}`
+    : query
+      ? `/personas?${query}`
+      : '/personas'
+  return request<ListResponse<Persona>>('GET', path)
 }
 
 export function listAllPersonas() {
@@ -212,10 +222,21 @@ export function sendHumanMessage(
   )
 }
 
-export function listMessages(sessionId: string) {
+export function listMessages(input: ListMessagesInput) {
+  const params = new URLSearchParams()
+  if (input.cursor) {
+    params.set('cursor', input.cursor)
+  }
+  if (input.limit) {
+    params.set('limit', String(input.limit))
+  }
+  if (input.scope) {
+    params.set('scope', input.scope)
+  }
+  const query = params.toString()
   return request<ListResponse<ChatMessage>>(
     'GET',
-    `/sessions/${sessionId}/messages`,
+    `/sessions/${input.sessionId}/messages${query ? `?${query}` : ''}`,
   )
 }
 

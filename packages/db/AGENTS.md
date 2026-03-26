@@ -10,7 +10,6 @@
 | `src/connection.ts` | pg Pool 连接工厂 |
 | `src/repositories/` | 数据访问层（封装查询逻辑，不暴露 ORM 细节） |
 | `drizzle/` | 生成的 SQL 迁移文件（版本化、可审计） |
-| `seeds/` | 开发/测试种子数据 |
 
 ---
 

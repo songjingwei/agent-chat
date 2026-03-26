@@ -1,0 +1,140 @@
+import { Hono } from "hono";
+import { and, eq, gt, asc } from "drizzle-orm";
+import type { DbClient } from "@agent/db";
+import { chatSessions } from "@agent/db";
+
+import { ApiError } from "../../lib/api-error.js";
+import { jsonOk } from "../../lib/http.js";
+import { parseJsonBody, parseWithSchema } from "../../lib/validation.js";
+import {
+  listSessionsQuerySchema,
+  updateSessionBodySchema,
+} from "../../schemas/admin.js";
+
+export const createAdminSessionsRoutes = (db: DbClient) => {
+  const routes = new Hono();
+
+  // GET /sessions — list sessions with cursor-based pagination
+  routes.get("/sessions", async (c) => {
+    const query = parseWithSchema(listSessionsQuerySchema, c.req.query());
+    const { cursor, limit, status } = query;
+
+    const conditions = [];
+    if (cursor) {
+      conditions.push(gt(chatSessions.id, cursor));
+    }
+    if (status) {
+      conditions.push(eq(chatSessions.status, status));
+    }
+
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const rows = await db
+      .select()
+      .from(chatSessions)
+      .where(where)
+      .orderBy(asc(chatSessions.id))
+      .limit(limit + 1);
+
+    const hasNextPage = rows.length > limit;
+    const items = hasNextPage ? rows.slice(0, limit) : rows;
+    const nextCursor = hasNextPage ? items[items.length - 1]!.id : null;
+
+    return jsonOk(c, { items, nextCursor, hasNextPage });
+  });
+
+  // GET /sessions/:sessionId — get session detail
+  routes.get("/sessions/:sessionId", async (c) => {
+    const sessionId = c.req.param("sessionId");
+    const [session] = await db
+      .select()
+      .from(chatSessions)
+      .where(eq(chatSessions.id, sessionId))
+      .limit(1);
+
+    if (!session) {
+      throw new ApiError(
+        404,
+        "SESSION_NOT_FOUND",
+        `Session not found: ${sessionId}`,
+      );
+    }
+
+    return jsonOk(c, session);
+  });
+
+  // PATCH /sessions/:sessionId — update status only
+  routes.patch("/sessions/:sessionId", async (c) => {
+    const sessionId = c.req.param("sessionId");
+    const body = await parseJsonBody(c, updateSessionBodySchema);
+    const adminId = c.get("adminId");
+
+    const [existing] = await db
+      .select({ id: chatSessions.id })
+      .from(chatSessions)
+      .where(eq(chatSessions.id, sessionId))
+      .limit(1);
+
+    if (!existing) {
+      throw new ApiError(
+        404,
+        "SESSION_NOT_FOUND",
+        `Session not found: ${sessionId}`,
+      );
+    }
+
+    const [updated] = await db
+      .update(chatSessions)
+      .set({
+        status: body.status,
+        updatedBy: adminId,
+        updatedAt: new Date(),
+      })
+      .where(eq(chatSessions.id, sessionId))
+      .returning();
+
+    return jsonOk(c, updated);
+  });
+
+  // DELETE /sessions/:sessionId — soft-delete
+  routes.delete("/sessions/:sessionId", async (c) => {
+    const sessionId = c.req.param("sessionId");
+    const adminId = c.get("adminId");
+
+    const [existing] = await db
+      .select({ id: chatSessions.id, deletedAt: chatSessions.deletedAt })
+      .from(chatSessions)
+      .where(eq(chatSessions.id, sessionId))
+      .limit(1);
+
+    if (!existing) {
+      throw new ApiError(
+        404,
+        "SESSION_NOT_FOUND",
+        `Session not found: ${sessionId}`,
+      );
+    }
+
+    if (existing.deletedAt) {
+      throw new ApiError(
+        400,
+        "SESSION_ALREADY_DELETED",
+        "Session is already deleted.",
+      );
+    }
+
+    const [deleted] = await db
+      .update(chatSessions)
+      .set({
+        deletedAt: new Date(),
+        updatedBy: adminId,
+        updatedAt: new Date(),
+      })
+      .where(eq(chatSessions.id, sessionId))
+      .returning();
+
+    return jsonOk(c, deleted);
+  });
+
+  return routes;
+};

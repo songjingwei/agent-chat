@@ -7,10 +7,10 @@
 - 当前状态（`2026-03-22`）：`Day 0 Done`、`Day 1 Done`（提前完成）、`Day 2 Done`（提前完成）
 - 目标：在可控成本下完成可演示闭环（创建 agent -> 双 agent 对话 -> 用户介入 -> 总结推荐）
 
-## 0.1 当前进度快照（As of 2026-03-22）
-1. 已完成：monorepo 骨架、`.env.example`、`docs/core-metrics.md`、`infra/docker/docker-compose.yml`、`apps/api` 最小服务、`apps/web` 脚手架。
-2. 已验证：`docker -v` = `20.10.21`、`docker compose version` = `v2.13.0`、`docker compose ... up -d` 成功、`GET /health` 已确认 Postgres/Redis 为 `ok`、`pnpm --filter @agent/api test` 2 条通过、`pnpm --filter @agent/api typecheck` 通过。
-3. 当前缺口：`packages/db` / `packages/agent-runtime` / `apps/worker` 仍是占位实现，Day 3 尚未开始。
+## 0.1 当前进度快照（As of 2026-03-26）
+1. 已完成：monorepo 骨架、`.env.example`、`docs/core-metrics.md`、`infra/docker/docker-compose.yml`、`apps/api` 最小服务、`apps/web` 脚手架、核心数据库 Schema 与迁移、Runtime 状态机骨架、结构化输出解析与 fallback/retry、广场发现优化（shuffle-batch random feed + Redis 缓存）、聊天室导航优化（ChatSessionSidebar）、双 agent 对话编排器骨架、Persona Builder v1（LLM 生成 + 版本化存储）、OpenAPI/Swagger 双语文档、**Admin 管理后台**（Next.js 15 应用，10+ 页面，9 个 API 路由模块，JWT+refresh token 认证）、**Persona Pair Insight 关系洞察引擎**、前端核心页面补齐（ChatRoom、SessionList、Auth、Report、10+ 共享组件）、5 张新 DB 表 + 2 个迁移。
+2. 已验证：`docker -v` = `20.10.21`、`docker compose version` = `v2.13.0`、`docker compose ... up -d` 成功、`GET /health` 已确认 Postgres/Redis 为 `ok`、`pnpm --filter @agent/api test` 通过、`pnpm --filter @agent/runtime test` 2 条通过。
+3. 当前缺口：`apps/worker` 仍是占位实现（Day 6 主攻），双 agent 对话编排器已有骨架但未接入 Worker 驱动循环。
 
 ## 1. 前置知识（先学会再开工）
 

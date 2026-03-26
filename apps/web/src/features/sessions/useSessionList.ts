@@ -6,6 +6,7 @@ export function useSessionList(personaId?: string) {
   const query = useQuery({
     queryKey: queryKeys.sessions.list(personaId),
     queryFn: () => fetchSessions({ data: personaId }),
+    refetchInterval: 1_000,
   })
 
   return {

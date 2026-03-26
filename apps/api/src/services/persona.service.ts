@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import { and, desc, eq, isNull, ne, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, ne, notInArray, sql } from "drizzle-orm";
 
 import type { DbClient } from "@agent/db";
 import { agentPersonas, users } from "@agent/db";
@@ -95,6 +95,29 @@ export class PersonaService {
     return rows.map(mapPersona);
   }
 
+  async listByIds(personaIds: string[]): Promise<Persona[]> {
+    if (personaIds.length === 0) {
+      return [];
+    }
+
+    const rows = await this.db
+      .select()
+      .from(agentPersonas)
+      .where(
+        and(
+          inArray(agentPersonas.id, personaIds),
+          isNull(agentPersonas.deletedAt),
+          eq(agentPersonas.status, "active"),
+        ),
+      );
+
+    const personaMap = new Map(rows.map((row) => [row.id, mapPersona(row)]));
+    return personaIds.flatMap((personaId) => {
+      const persona = personaMap.get(personaId);
+      return persona ? [persona] : [];
+    });
+  }
+
   async listPublic(input: ListPublicPersonasInput): Promise<ListPublicPersonasResult> {
     const seed = input.seed;
     const cursor = parsePersonaCursor(input.cursor, seed);
@@ -108,6 +131,9 @@ export class PersonaService {
 
     if (input.excludeUserId) {
       listConditions.push(ne(agentPersonas.userId, input.excludeUserId));
+    }
+    if (input.excludePersonaIds && input.excludePersonaIds.length > 0) {
+      listConditions.push(notInArray(agentPersonas.id, input.excludePersonaIds));
     }
 
     const cursorCondition = cursor

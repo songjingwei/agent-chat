@@ -125,7 +125,13 @@ function SessionSidebarItem({
           <span className="font-normal text-[var(--sea-ink-soft)]">{t('session.vs')}</span>{' '}
           {target?.displayName ?? '...'}
         </p>
-        <p className="truncate text-xs text-[var(--sea-ink-soft)]">{timeAgo}</p>
+        {session.lastMessageContent ? (
+          <p className="truncate text-xs text-[var(--sea-ink-soft)] mt-0.5">
+            {session.lastMessageContent}
+          </p>
+        ) : (
+          <p className="truncate text-xs text-[var(--sea-ink-soft)]">{timeAgo}</p>
+        )}
       </div>
 
       <StatusBadge status={session.status} />

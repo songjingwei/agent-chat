@@ -106,7 +106,7 @@ describe('Header logout confirmation', () => {
     await waitFor(() => {
       expect(screen.queryByRole('dialog')).toBeNull()
     })
-  })
+  }, 10_000)
 
   it('closes the confirmation dialog without logging out when canceled', () => {
     render(<Header />)

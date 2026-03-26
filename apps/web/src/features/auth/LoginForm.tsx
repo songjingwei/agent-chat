@@ -5,8 +5,8 @@ import type { useLogin } from './useLogin'
 type LoginFormProps = ReturnType<typeof useLogin>
 
 export function LoginForm({
-  email,
-  setEmail,
+  identifier,
+  setIdentifier,
   password,
   setPassword,
   error,
@@ -37,16 +37,16 @@ export function LoginForm({
 
           <label className="flex flex-col gap-1.5">
             <span className="text-sm font-medium text-[var(--sea-ink)]">
-              {t('auth.login.emailLabel')}
+              {t('auth.login.identifierLabel')}
             </span>
             <input
-              type="email"
+              type="text"
               className="form-field"
-              placeholder={t('auth.login.emailPlaceholder')}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              placeholder={t('auth.login.identifierPlaceholder')}
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
               required
-              autoComplete="email"
+              autoComplete="username"
               autoFocus
             />
           </label>

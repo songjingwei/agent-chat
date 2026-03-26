@@ -30,7 +30,7 @@ interface AuthContextValue {
   status: AuthStatus
   isLoading: boolean
   isAuthenticated: boolean
-  login: (email: string, password: string) => Promise<void>
+  login: (identifier: string, password: string) => Promise<void>
   register: (
     email: string,
     password: string,
@@ -105,8 +105,8 @@ export function AuthProvider({
     }
   }, [authState.isAuthenticated])
 
-  async function login(email: string, password: string) {
-    const res = await loginUser({ email, password })
+  async function login(identifier: string, password: string) {
+    const res = await loginUser({ identifier, password })
     setTokens(res.tokens.accessToken, res.tokens.refreshToken)
     setAuthState(createAuthenticatedAuthState(res.user))
     setIsLoading(false)

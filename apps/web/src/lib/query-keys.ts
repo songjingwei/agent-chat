@@ -9,6 +9,8 @@ export const queryKeys = {
       limit?: number
       cursor?: string
       seed?: string
+      viewerPersonaId?: string
+      relationshipFilter?: 'all' | 'chatted' | 'new'
     }) =>
       [...queryKeys.personas.all, 'list', input ?? {}] as const,
     mine: () => [...queryKeys.personas.all, 'mine'] as const,
@@ -25,6 +27,16 @@ export const queryKeys = {
   messages: {
     bySession: (sessionId: string) =>
       ['messages', sessionId] as const,
+    history: (input: {
+      sessionId: string
+      scope: 'session' | 'pair'
+      limit: number
+    }) =>
+      [
+        ...queryKeys.messages.bySession(input.sessionId),
+        'history',
+        { scope: input.scope, limit: input.limit },
+      ] as const,
   },
   reports: {
     latest: (personaId: string) =>

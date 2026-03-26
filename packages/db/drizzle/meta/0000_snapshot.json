@@ -308,7 +308,7 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "default": 20
+          "default": 120
         },
         "created_by": {
           "name": "created_by",
@@ -525,6 +525,235 @@
         "match_reports_score_check": {
           "name": "match_reports_score_check",
           "value": "\"match_reports\".\"compatibility_score\" IS NULL OR (\"match_reports\".\"compatibility_score\" >= 0 AND \"match_reports\".\"compatibility_score\" <= 1)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.persona_pair_insights": {
+      "name": "persona_pair_insights",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar(64)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "persona_low_id": {
+          "name": "persona_low_id",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "persona_high_id": {
+          "name": "persona_high_id",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_session_id": {
+          "name": "last_session_id",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "session_count": {
+          "name": "session_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "message_count": {
+          "name": "message_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "mutual_score": {
+          "name": "mutual_score",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "confidence": {
+          "name": "confidence",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "affinity_label": {
+          "name": "affinity_label",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "summary_short": {
+          "name": "summary_short",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_interacted_at": {
+          "name": "last_interacted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "analysis_data": {
+          "name": "analysis_data",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "persona_pair_insights_pair_idx": {
+          "name": "persona_pair_insights_pair_idx",
+          "columns": [
+            {
+              "expression": "persona_low_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "persona_high_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "persona_pair_insights_persona_low_id_idx": {
+          "name": "persona_pair_insights_persona_low_id_idx",
+          "columns": [
+            {
+              "expression": "persona_low_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "persona_pair_insights_persona_high_id_idx": {
+          "name": "persona_pair_insights_persona_high_id_idx",
+          "columns": [
+            {
+              "expression": "persona_high_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "persona_pair_insights_last_interacted_at_idx": {
+          "name": "persona_pair_insights_last_interacted_at_idx",
+          "columns": [
+            {
+              "expression": "last_interacted_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "persona_pair_insights_persona_low_id_agent_personas_id_fk": {
+          "name": "persona_pair_insights_persona_low_id_agent_personas_id_fk",
+          "tableFrom": "persona_pair_insights",
+          "tableTo": "agent_personas",
+          "columnsFrom": [
+            "persona_low_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "persona_pair_insights_persona_high_id_agent_personas_id_fk": {
+          "name": "persona_pair_insights_persona_high_id_agent_personas_id_fk",
+          "tableFrom": "persona_pair_insights",
+          "tableTo": "agent_personas",
+          "columnsFrom": [
+            "persona_high_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "persona_pair_insights_last_session_id_chat_sessions_id_fk": {
+          "name": "persona_pair_insights_last_session_id_chat_sessions_id_fk",
+          "tableFrom": "persona_pair_insights",
+          "tableTo": "chat_sessions",
+          "columnsFrom": [
+            "last_session_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "persona_pair_insights_pair_order_check": {
+          "name": "persona_pair_insights_pair_order_check",
+          "value": "\"persona_pair_insights\".\"persona_low_id\" < \"persona_pair_insights\".\"persona_high_id\""
+        },
+        "persona_pair_insights_session_count_check": {
+          "name": "persona_pair_insights_session_count_check",
+          "value": "\"persona_pair_insights\".\"session_count\" >= 0"
+        },
+        "persona_pair_insights_message_count_check": {
+          "name": "persona_pair_insights_message_count_check",
+          "value": "\"persona_pair_insights\".\"message_count\" >= 0"
+        },
+        "persona_pair_insights_mutual_score_check": {
+          "name": "persona_pair_insights_mutual_score_check",
+          "value": "\"persona_pair_insights\".\"mutual_score\" >= 0 AND \"persona_pair_insights\".\"mutual_score\" <= 1"
+        },
+        "persona_pair_insights_confidence_check": {
+          "name": "persona_pair_insights_confidence_check",
+          "value": "\"persona_pair_insights\".\"confidence\" >= 0 AND \"persona_pair_insights\".\"confidence\" <= 1"
         }
       },
       "isRLSEnabled": false

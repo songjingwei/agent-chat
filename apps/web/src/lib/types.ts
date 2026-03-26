@@ -4,8 +4,21 @@ export interface Persona {
   displayName: string
   bio?: string | undefined
   traits: string[]
+  relationship?: PersonaRelationship | undefined
   createdAt: string
   updatedAt: string
+}
+
+export interface PersonaRelationship {
+  hasHistory: boolean
+  sessionCount: number
+  messageCount: number
+  mutualScore: number
+  confidence: number
+  affinityLabel: string
+  summaryShort: string
+  lastInteractedAt: string
+  lastSessionId: string | null
 }
 
 export type SessionStatus = 'queued' | 'active' | 'completed'
@@ -15,6 +28,9 @@ export interface Session {
   initiatorPersonaId: string
   targetPersonaId: string
   status: SessionStatus
+  currentRound?: number
+  maxRounds?: number
+  lastMessageContent?: string | undefined
   createdAt: string
   updatedAt: string
 }
@@ -23,7 +39,7 @@ export interface ChatMessage {
   id: string
   sessionId: string
   authorPersonaId: string
-  role: 'human'
+  role: 'agent' | 'human' | 'system'
   content: string
   createdAt: string
 }
@@ -65,7 +81,7 @@ export interface RegisterInput {
 }
 
 export interface LoginInput {
-  email: string
+  identifier: string
   password: string
 }
 
@@ -88,6 +104,13 @@ export interface CreateSessionInput {
 export interface CreateHumanMessageInput {
   authorPersonaId: string
   content: string
+}
+
+export interface ListMessagesInput {
+  sessionId: string
+  cursor?: string
+  limit?: number
+  scope?: 'session' | 'pair'
 }
 
 export interface ListResponse<T> {

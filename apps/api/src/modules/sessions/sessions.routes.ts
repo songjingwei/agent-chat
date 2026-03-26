@@ -4,14 +4,28 @@ import { ApiError } from "../../lib/api-error.js";
 import { jsonOk } from "../../lib/http.js";
 import { parseJsonBody, parseWithSchema } from "../../lib/validation.js";
 import { createSessionBodySchema, listSessionsQuerySchema } from "../../schemas/session.js";
+import type { ConversationOrchestrator } from "../../services/conversation-orchestrator.service.js";
 import type { SessionService } from "../../services/session.service.js";
 
-export const createSessionRoutes = (sessionService: SessionService) => {
+interface CreateSessionRoutesDeps {
+  sessionService: SessionService;
+  conversationOrchestrator: ConversationOrchestrator;
+}
+
+export const createSessionRoutes = ({
+  sessionService,
+  conversationOrchestrator,
+}: CreateSessionRoutesDeps) => {
   const routes = new Hono();
 
   routes.post("/sessions", async (c) => {
     const body = await parseJsonBody(c, createSessionBodySchema);
     const session = await sessionService.create(body);
+    conversationOrchestrator.enqueueAdvance({
+      sessionId: session.id,
+      trigger: "session_created",
+      requestedSpeakerPersonaId: session.initiatorPersonaId,
+    });
     return jsonOk(c, session, 201);
   });
 
@@ -38,6 +52,18 @@ export const createSessionRoutes = (sessionService: SessionService) => {
     }
 
     return jsonOk(c, session);
+  });
+
+  routes.post("/sessions/:sessionId/force-end", async (c) => {
+    const sessionId = c.req.param("sessionId");
+    const session = await sessionService.getById(sessionId);
+    if (!session) {
+      throw new ApiError(404, "SESSION_NOT_FOUND", `Session not found: ${sessionId}`);
+    }
+
+    conversationOrchestrator.cancelSession(sessionId);
+    const ended = await sessionService.updateStatus(sessionId, "completed");
+    return jsonOk(c, ended);
   });
 
   return routes;

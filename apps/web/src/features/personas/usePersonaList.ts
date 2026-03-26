@@ -7,12 +7,25 @@ interface UsePersonaListOptions {
   limit?: number
   cursor?: string
   seed?: string
+  viewerPersonaId?: string
+  relationshipFilter?: 'all' | 'chatted' | 'new'
+  enabled?: boolean
 }
 
 export function usePersonaList(options: UsePersonaListOptions = {}) {
+  const queryInput = {
+    excludeUserId: options.viewerPersonaId ? undefined : options.excludeUserId,
+    limit: options.limit,
+    cursor: options.cursor,
+    seed: options.seed,
+    viewerPersonaId: options.viewerPersonaId,
+    relationshipFilter: options.relationshipFilter,
+  }
+
   const query = useQuery({
-    queryKey: queryKeys.personas.list(options),
-    queryFn: () => fetchPersonas({ data: options }),
+    queryKey: queryKeys.personas.list(queryInput),
+    queryFn: () => fetchPersonas({ data: queryInput }),
+    enabled: options.enabled ?? true,
   })
 
   return {

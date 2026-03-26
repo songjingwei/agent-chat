@@ -17,6 +17,7 @@ import type {
   AuthUser,
   ChatMessage,
   LatestReport,
+  ListMessagesInput,
   ListResponse,
   Persona,
   Session,
@@ -39,6 +40,8 @@ interface FetchPersonasInput {
   limit?: number
   excludeUserId?: string
   seed?: string
+  viewerPersonaId?: string
+  relationshipFilter?: 'all' | 'chatted' | 'new'
 }
 
 const requestAuthState = new WeakMap<Request, RequestAuthState>()
@@ -147,6 +150,8 @@ export const fetchPersonas = createServerFn({ method: 'GET' })
     limit: input?.limit,
     excludeUserId: input?.excludeUserId,
     seed: input?.seed,
+    viewerPersonaId: input?.viewerPersonaId,
+    relationshipFilter: input?.relationshipFilter,
   }))
   .handler(async ({ data: input }) => {
     const params = new URLSearchParams()
@@ -157,15 +162,25 @@ export const fetchPersonas = createServerFn({ method: 'GET' })
     if (input.limit) {
       params.set('limit', String(input.limit))
     }
-    if (input.excludeUserId) {
+    if (input.excludeUserId && !input.viewerPersonaId) {
       params.set('excludeUserId', input.excludeUserId)
     }
     if (input.seed) {
       params.set('seed', input.seed)
     }
+    if (input.viewerPersonaId) {
+      params.set('viewerPersonaId', input.viewerPersonaId)
+    }
+    if (input.relationshipFilter) {
+      params.set('relationshipFilter', input.relationshipFilter)
+    }
 
     const query = params.toString()
-    const path = query ? `/personas?${query}` : '/personas'
+    const path = input.viewerPersonaId
+      ? `/discovery/personas?${query}`
+      : query
+        ? `/personas?${query}`
+        : '/personas'
     return serverRequest<ListResponse<Persona>>(path)
   })
 
@@ -199,10 +214,27 @@ export const fetchSession = createServerFn({ method: 'GET' })
 
 // Messages
 export const fetchMessages = createServerFn({ method: 'GET' })
-  .inputValidator((sessionId: string) => sessionId)
-  .handler(async ({ data: sessionId }) => {
+  .inputValidator((input: ListMessagesInput) => ({
+    sessionId: input.sessionId,
+    cursor: input.cursor,
+    limit: input.limit,
+    scope: input.scope,
+  }))
+  .handler(async ({ data: input }) => {
+    const params = new URLSearchParams()
+    if (input.cursor) {
+      params.set('cursor', input.cursor)
+    }
+    if (input.limit) {
+      params.set('limit', String(input.limit))
+    }
+    if (input.scope) {
+      params.set('scope', input.scope)
+    }
+
+    const query = params.toString()
     return serverRequest<ListResponse<ChatMessage>>(
-      `/sessions/${sessionId}/messages`,
+      `/sessions/${input.sessionId}/messages${query ? `?${query}` : ''}`,
     )
   })
 

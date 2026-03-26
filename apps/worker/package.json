@@ -9,5 +9,8 @@
     "test": "node -e \"console.log('[worker] test placeholder')\"",
     "lint": "node -e \"console.log('[worker] lint placeholder')\"",
     "typecheck": "node -e \"console.log('[worker] typecheck placeholder')\""
+  },
+  "dependencies": {
+    "bullmq": "^5.71.1"
   }
 }

@@ -33,7 +33,7 @@ CREATE TABLE "chat_sessions" (
 	"target_persona_id" varchar(64) NOT NULL,
 	"status" varchar(20) DEFAULT 'pending' NOT NULL,
 	"current_round" integer DEFAULT 0 NOT NULL,
-	"max_rounds" integer DEFAULT 20 NOT NULL,
+	"max_rounds" integer DEFAULT 120 NOT NULL,
 	"created_by" varchar(64),
 	"updated_by" varchar(64),
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
@@ -55,6 +55,28 @@ CREATE TABLE "match_reports" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "match_reports_status_check" CHECK ("match_reports"."status" IN ('pending', 'generating', 'completed', 'failed')),
 	CONSTRAINT "match_reports_score_check" CHECK ("match_reports"."compatibility_score" IS NULL OR ("match_reports"."compatibility_score" >= 0 AND "match_reports"."compatibility_score" <= 1))
+);
+--> statement-breakpoint
+CREATE TABLE "persona_pair_insights" (
+	"id" varchar(64) PRIMARY KEY NOT NULL,
+	"persona_low_id" varchar(64) NOT NULL,
+	"persona_high_id" varchar(64) NOT NULL,
+	"last_session_id" varchar(64),
+	"session_count" integer DEFAULT 0 NOT NULL,
+	"message_count" integer DEFAULT 0 NOT NULL,
+	"mutual_score" real NOT NULL,
+	"confidence" real NOT NULL,
+	"affinity_label" varchar(32) NOT NULL,
+	"summary_short" text NOT NULL,
+	"last_interacted_at" timestamp with time zone NOT NULL,
+	"analysis_data" jsonb,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "persona_pair_insights_pair_order_check" CHECK ("persona_pair_insights"."persona_low_id" < "persona_pair_insights"."persona_high_id"),
+	CONSTRAINT "persona_pair_insights_session_count_check" CHECK ("persona_pair_insights"."session_count" >= 0),
+	CONSTRAINT "persona_pair_insights_message_count_check" CHECK ("persona_pair_insights"."message_count" >= 0),
+	CONSTRAINT "persona_pair_insights_mutual_score_check" CHECK ("persona_pair_insights"."mutual_score" >= 0 AND "persona_pair_insights"."mutual_score" <= 1),
+	CONSTRAINT "persona_pair_insights_confidence_check" CHECK ("persona_pair_insights"."confidence" >= 0 AND "persona_pair_insights"."confidence" <= 1)
 );
 --> statement-breakpoint
 CREATE TABLE "memory_items" (
@@ -101,6 +123,9 @@ ALTER TABLE "chat_messages" ADD CONSTRAINT "chat_messages_sender_persona_id_agen
 ALTER TABLE "chat_sessions" ADD CONSTRAINT "chat_sessions_initiator_persona_id_agent_personas_id_fk" FOREIGN KEY ("initiator_persona_id") REFERENCES "public"."agent_personas"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "chat_sessions" ADD CONSTRAINT "chat_sessions_target_persona_id_agent_personas_id_fk" FOREIGN KEY ("target_persona_id") REFERENCES "public"."agent_personas"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "match_reports" ADD CONSTRAINT "match_reports_session_id_chat_sessions_id_fk" FOREIGN KEY ("session_id") REFERENCES "public"."chat_sessions"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "persona_pair_insights" ADD CONSTRAINT "persona_pair_insights_persona_low_id_agent_personas_id_fk" FOREIGN KEY ("persona_low_id") REFERENCES "public"."agent_personas"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "persona_pair_insights" ADD CONSTRAINT "persona_pair_insights_persona_high_id_agent_personas_id_fk" FOREIGN KEY ("persona_high_id") REFERENCES "public"."agent_personas"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "persona_pair_insights" ADD CONSTRAINT "persona_pair_insights_last_session_id_chat_sessions_id_fk" FOREIGN KEY ("last_session_id") REFERENCES "public"."chat_sessions"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "memory_items" ADD CONSTRAINT "memory_items_persona_id_agent_personas_id_fk" FOREIGN KEY ("persona_id") REFERENCES "public"."agent_personas"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "memory_items" ADD CONSTRAINT "memory_items_session_id_chat_sessions_id_fk" FOREIGN KEY ("session_id") REFERENCES "public"."chat_sessions"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "refresh_tokens" ADD CONSTRAINT "refresh_tokens_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -110,6 +135,10 @@ CREATE INDEX "chat_messages_sender_persona_id_idx" ON "chat_messages" USING btre
 CREATE INDEX "chat_sessions_initiator_persona_id_idx" ON "chat_sessions" USING btree ("initiator_persona_id");--> statement-breakpoint
 CREATE INDEX "chat_sessions_target_persona_id_idx" ON "chat_sessions" USING btree ("target_persona_id");--> statement-breakpoint
 CREATE INDEX "match_reports_session_id_idx" ON "match_reports" USING btree ("session_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "persona_pair_insights_pair_idx" ON "persona_pair_insights" USING btree ("persona_low_id","persona_high_id");--> statement-breakpoint
+CREATE INDEX "persona_pair_insights_persona_low_id_idx" ON "persona_pair_insights" USING btree ("persona_low_id");--> statement-breakpoint
+CREATE INDEX "persona_pair_insights_persona_high_id_idx" ON "persona_pair_insights" USING btree ("persona_high_id");--> statement-breakpoint
+CREATE INDEX "persona_pair_insights_last_interacted_at_idx" ON "persona_pair_insights" USING btree ("last_interacted_at");--> statement-breakpoint
 CREATE INDEX "memory_items_persona_id_idx" ON "memory_items" USING btree ("persona_id");--> statement-breakpoint
 CREATE INDEX "memory_items_session_id_idx" ON "memory_items" USING btree ("session_id");--> statement-breakpoint
 CREATE INDEX "memory_items_source_idx" ON "memory_items" USING btree ("source");--> statement-breakpoint

@@ -85,7 +85,13 @@ function SessionRow({ session }: { session: Session }) {
           <span className="font-normal text-[var(--sea-ink-soft)]">{t('session.vs')}</span>{' '}
           {target?.displayName ?? '...'}
         </p>
-        <p className="text-xs text-[var(--sea-ink-soft)]">{timeAgo}</p>
+        {session.lastMessageContent ? (
+          <p className="text-xs text-[var(--sea-ink-soft)] truncate mt-0.5">
+            {session.lastMessageContent}
+          </p>
+        ) : (
+          <p className="text-xs text-[var(--sea-ink-soft)]">{timeAgo}</p>
+        )}
       </div>
 
       <StatusBadge status={session.status} />

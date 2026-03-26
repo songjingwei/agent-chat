@@ -1,7 +1,12 @@
 export { users } from "./users.js";
 export { refreshTokens } from "./refresh-tokens.js";
 export { agentPersonas } from "./agent-personas.js";
-export { chatSessions } from "./chat-sessions.js";
+export { chatSessions, DEFAULT_SESSION_MAX_ROUNDS } from "./chat-sessions.js";
 export { chatMessages } from "./chat-messages.js";
 export { memoryItems } from "./memory-items.js";
 export { matchReports } from "./match-reports.js";
+export { personaPairInsights } from "./persona-pair-insights.js";
+export { adminUsers } from "./admin-users.js";
+export { adminRefreshTokens } from "./admin-refresh-tokens.js";
+export { systemConfigs } from "./system-configs.js";
+export { adminAuditLogs } from "./admin-audit-logs.js";

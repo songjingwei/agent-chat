@@ -15,9 +15,13 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "seed": "tsx seed.ts",
+    "seed:admin": "tsx src/seed-admin.ts"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "dotenv": "^16.4.0",
     "drizzle-orm": "^0.45.1",
     "pg": "^8.20.0"
   },

@@ -15,7 +15,7 @@ const getDurationMs = (startedAt: number) => {
 const localhostOriginPattern = /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/;
 
 const resolveCorsOrigin = (origin: string) => {
-  if (origin === apiConfig.appOrigin) {
+  if (origin === apiConfig.appOrigin || origin === apiConfig.adminOrigin) {
     return origin;
   }
 

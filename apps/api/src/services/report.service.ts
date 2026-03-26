@@ -97,6 +97,8 @@ function mapSession(row: typeof chatSessions.$inferSelect): Session {
     initiatorPersonaId: row.initiatorPersonaId,
     targetPersonaId: row.targetPersonaId,
     status: mapSessionStatus(row.status),
+    currentRound: row.currentRound,
+    maxRounds: row.maxRounds,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };

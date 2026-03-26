@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "demo": "node --import tsx src/demo.ts",
     "build": "tsc -p tsconfig.json",
     "test": "tsx --test src/**/*.test.ts",
     "lint": "pnpm run typecheck",

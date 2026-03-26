@@ -13,8 +13,9 @@
 | Day 2+ | 2026-03-23 | 前端 SSR 数据预取与认证体系加固 | 将所有 GET 请求迁移至 TanStack Start server functions，5 条路由实现 SSR 数据预取（`ensureQueryData`）；引入 AuthState 状态机（unknown/anonymous/authenticated）实现 SSR 感知的认证解析；access token 同步至 cookie 支持服务端请求认证；API 增加 CORS 中间件与 origin 白名单；补充 auth provider 初始化测试覆盖 | Done | 无 | 开始 Day 3：定义核心数据模型、迁移方案与种子数据边界 |
 | Day 3 | 2026-03-25 | 完成核心数据模型与迁移 | 数据库 Schema 已同步；已注入 2 用户、4 Persona、1 会话、6 消息、4 记忆、1 报告；Alice/Bob 密码已重置为 `12345678`；`packages/db` 已安装 `tsx` 环境 | Done | 无 | 开始 Day 4：Runtime 状态机骨架与结构化输出设计 |
 | Day 4 | 2026-03-26 | Runtime 状态机骨架 + 结构化输出 | `@agent/runtime` 已完成状态机、PromptManager、结构化输出 Zod Schema、解析失败重试与 fallback；新增关键回归测试 2 条（成功闭环 + 非法 JSON）；`apps/api` 已新增 `RuntimeService` 并接入服务容器；验证：`pnpm --filter @agent/runtime test` 2/2 通过，`pnpm --filter @agent/runtime typecheck` 通过，`pnpm --filter @agent/api test` 5/5 通过，`pnpm --filter @agent/api typecheck` 通过 | Done | 无 | 开始 Day 5：Persona Builder（资料到 persona 的结构化生成 + 版本化存储） |
-| Day 5 | 2026-03-27 | Persona Builder v1 |  | Not Started |  |  |
-| Day 6 | 2026-03-30 | 双 agent 自动对话 Worker |  | Not Started |  |  |
+| Day 5 | 2026-03-25 | Persona Builder v1 + 广场优化 | 广场发现优化（shuffle-batch random feed + Redis 缓存）；ChatSessionSidebar 侧边栏；双 agent 对话编排器骨架；Persona Builder 接口/资料解析/版本化存储/人工编辑入口；OpenAPI + Swagger 双语文档 | Done | 无 | Admin 后台 + 前端核心页面 |
+| Day 5+ | 2026-03-26 | Admin 后台 + 前端核心页面 + Pair Insight | **Admin 后台**：新建 Next.js 15 应用（10+ 页面，Ant Design 5），9 个 Admin API 路由模块，JWT+refresh token 认证体系，admin 种子脚本；**Pair Insight**：关系洞察引擎（heuristic scoring + affinity label），广场集成展示；**前端补齐**：ChatRoom（消息气泡/无限滚动/实时轮询）、SessionList、Auth 表单、ReportView、10+ 共享组件、401 自动刷新；**DB**：5 张新表 + 2 个迁移；**其他**：Runtime CLI demo、骨架屏/卡片 UI 优化 | Done | 无 | 开始 Day 6：双 agent 自动对话 Worker |
+| Day 6 | 2026-03-27 | 双 agent 自动对话 Worker |  | Not Started |  |  |
 | Day 7 | 2026-03-31 | 用户介入高权重记忆生效 |  | Not Started |  |  |
 | Day 8 | 2026-04-01 | 评测集 + baseline 报告 |  | Not Started |  |  |
 | Day 9 | 2026-04-02 | 总结与推荐 v1 API |  | Not Started |  |  |

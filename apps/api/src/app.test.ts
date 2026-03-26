@@ -1,15 +1,104 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import test from "node:test";
+import { readFile } from "node:fs/promises";
+import test, { after } from "node:test";
+
+import { drizzle } from "drizzle-orm/node-postgres";
+import pg from "pg";
+
+import * as dbSchema from "../../../packages/db/src/schema/index.js";
 
 import { createApp } from "./app.js";
+import { apiConfig } from "./config.js";
+import { AuthService } from "./services/auth.service.js";
 import { HealthService } from "./services/health.service.js";
-import { createServices } from "./services/index.js";
+import {
+  InProcessConversationOrchestratorService,
+  NoopConversationOrchestratorService,
+  type ConversationOrchestrator,
+} from "./services/conversation-orchestrator.service.js";
+import { MessageService } from "./services/message.service.js";
+import { PairInsightService } from "./services/pair-insight.service.js";
+import { PersonaService } from "./services/persona.service.js";
+import { ReportService } from "./services/report.service.js";
 import type { RuntimeService } from "./services/runtime.service.js";
+import { RuntimeService as DefaultRuntimeService } from "./services/runtime.service.js";
+import { SessionService } from "./services/session.service.js";
 
 interface CreateTestAppOptions {
   runtimeService?: RuntimeService;
+  conversationOrchestrator?: ConversationOrchestrator;
+  useDefaultConversationOrchestrator?: boolean;
+  sessionMaxRounds?: number;
 }
+
+const createTestDatabase = async () => {
+  const baseUrl = new URL(apiConfig.databaseUrl);
+  const adminUrl = new URL(baseUrl.toString());
+  adminUrl.pathname = "/postgres";
+
+  const dbName = `agent_api_test_${randomUUID().replace(/-/g, "")}`;
+  const databaseUrl = new URL(baseUrl.toString());
+  databaseUrl.pathname = `/${dbName}`;
+
+  const adminClient = new pg.Client({ connectionString: adminUrl.toString() });
+  await adminClient.connect();
+
+  try {
+    await adminClient.query(`CREATE DATABASE ${dbName}`);
+  } finally {
+    await adminClient.end();
+  }
+
+  const pool = new pg.Pool({ connectionString: databaseUrl.toString() });
+  const migrationClient = await pool.connect();
+
+  try {
+    const migrationSql = await readFile(
+      new URL("../../../packages/db/drizzle/0000_burly_phalanx.sql", import.meta.url),
+      "utf8",
+    );
+
+    for (const statement of migrationSql
+      .split("--> statement-breakpoint")
+      .map((chunk) => chunk.trim())
+      .filter(Boolean)) {
+      await migrationClient.query(statement);
+    }
+  } finally {
+    migrationClient.release();
+  }
+
+  return {
+    dbName,
+    adminConnectionString: adminUrl.toString(),
+    pool,
+    db: drizzle(pool, { schema: dbSchema }),
+  };
+};
+
+const testDatabase = await createTestDatabase();
+
+after(async () => {
+  await testDatabase.pool.end();
+
+  const adminClient = new pg.Client({
+    connectionString: testDatabase.adminConnectionString,
+  });
+  await adminClient.connect();
+
+  try {
+    await adminClient.query(
+      `SELECT pg_terminate_backend(pid)
+       FROM pg_stat_activity
+       WHERE datname = $1 AND pid <> pg_backend_pid()`,
+      [testDatabase.dbName],
+    );
+    await adminClient.query(`DROP DATABASE IF EXISTS ${testDatabase.dbName}`);
+  } finally {
+    await adminClient.end();
+  }
+});
 
 const createTestApp = (options: CreateTestAppOptions = {}) => {
   const healthService = new HealthService({
@@ -25,12 +114,159 @@ const createTestApp = (options: CreateTestAppOptions = {}) => {
     }),
   });
 
-  return createApp(
-    createServices({
-      healthService,
-      runtimeService: options.runtimeService,
-    }),
+  const authService = new AuthService(testDatabase.db, {
+    jwtSecret: apiConfig.jwtSecret,
+    jwtAccessExpiresIn: apiConfig.jwtAccessExpiresIn,
+    jwtRefreshExpiresIn: apiConfig.jwtRefreshExpiresIn,
+  });
+  const personaService = new PersonaService(testDatabase.db);
+  const pairInsightService = new PairInsightService(testDatabase.db);
+  const sessionService = new SessionService(testDatabase.db, {
+    defaultMaxRounds: options.sessionMaxRounds,
+  });
+  const messageService = new MessageService(
+    testDatabase.db,
+    sessionService,
+    pairInsightService,
   );
+  const reportService = new ReportService(testDatabase.db);
+  const runtimeService =
+    options.runtimeService ??
+    new DefaultRuntimeService({
+      db: testDatabase.db,
+      env: {
+        RUNTIME_MODEL_PROVIDER: apiConfig.runtimeModelProvider,
+        RUNTIME_MODEL_TIMEOUT_MS: String(apiConfig.runtimeModelTimeoutMs),
+        OPENAI_API_KEY: apiConfig.openAIApiKey,
+        OPENAI_BASE_URL: apiConfig.openAIBaseUrl,
+        OPENAI_MODEL_CHAT: apiConfig.openAIModelChat,
+        OPENAI_RESPONSES_STREAM: apiConfig.openAIResponsesStream,
+        ANTHROPIC_API_KEY: apiConfig.anthropicApiKey,
+        ANTHROPIC_BASE_URL: apiConfig.anthropicBaseUrl,
+        ANTHROPIC_MODEL_CHAT: apiConfig.anthropicModelChat,
+        OLLAMA_BASE_URL: apiConfig.ollamaBaseUrl,
+        OLLAMA_MODEL_CHAT: apiConfig.ollamaModelChat,
+      },
+    });
+  const conversationOrchestrator = options.useDefaultConversationOrchestrator
+    ? options.conversationOrchestrator ??
+      new InProcessConversationOrchestratorService({
+        messageService,
+        sessionService,
+        personaService,
+        runtimeService,
+      })
+    : options.conversationOrchestrator ?? new NoopConversationOrchestratorService();
+
+  return createApp({
+    healthService,
+    authService,
+    personaService,
+    pairInsightService,
+    sessionService,
+    messageService,
+    reportService,
+    runtimeService,
+    conversationOrchestrator,
+  });
+};
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const waitFor = async (
+  predicate: () => Promise<boolean>,
+  timeoutMs = 2_500,
+): Promise<void> => {
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeoutMs) {
+    if (await predicate()) {
+      return;
+    }
+    await sleep(25);
+  }
+
+  throw new Error(`waitFor timeout after ${timeoutMs}ms`);
+};
+
+const readSessionStatus = async (
+  app: ReturnType<typeof createTestApp>,
+  accessToken: string,
+  sessionId: string,
+): Promise<string> => {
+  const response = await app.request(`/sessions/${sessionId}`, {
+    headers: { authorization: `Bearer ${accessToken}` },
+  });
+  assert.equal(response.status, 200);
+  const payload = await response.json();
+  return payload.data.status as string;
+};
+
+const readSessionMessages = async (
+  app: ReturnType<typeof createTestApp>,
+  accessToken: string,
+  sessionId: string,
+) => {
+  const response = await app.request(`/sessions/${sessionId}/messages`, {
+    headers: { authorization: `Bearer ${accessToken}` },
+  });
+  assert.equal(response.status, 200);
+  const payload = await response.json();
+  return payload.data.items as Array<{
+    id: string;
+    role: "agent" | "human" | "system";
+    authorPersonaId: string;
+    content: string;
+    metadata?: Record<string, unknown>;
+  }>;
+};
+
+const registerPairAndCreateSession = async (
+  app: ReturnType<typeof createTestApp>,
+  label: string,
+) => {
+  const userA = await registerTestUser(app, `${label}-a`);
+  const userB = await registerTestUser(app, `${label}-b`);
+
+  const personaAResponse = await app.request("/personas", {
+    method: "POST",
+    headers: authHeaders(userA.accessToken),
+    body: JSON.stringify({
+      displayName: "Alice",
+      traits: ["curious"],
+    }),
+  });
+  const personaBResponse = await app.request("/personas", {
+    method: "POST",
+    headers: authHeaders(userB.accessToken),
+    body: JSON.stringify({
+      displayName: "Bob",
+      traits: ["calm"],
+    }),
+  });
+  assert.equal(personaAResponse.status, 201);
+  assert.equal(personaBResponse.status, 201);
+
+  const personaAJson = await personaAResponse.json();
+  const personaBJson = await personaBResponse.json();
+
+  const sessionResponse = await app.request("/sessions", {
+    method: "POST",
+    headers: authHeaders(userA.accessToken),
+    body: JSON.stringify({
+      initiatorPersonaId: personaAJson.data.id,
+      targetPersonaId: personaBJson.data.id,
+    }),
+  });
+  assert.equal(sessionResponse.status, 201);
+
+  const sessionJson = await sessionResponse.json();
+  return {
+    userA,
+    userB,
+    initiatorPersonaId: personaAJson.data.id as string,
+    targetPersonaId: personaBJson.data.id as string,
+    sessionId: sessionJson.data.id as string,
+  };
 };
 
 const authHeaders = (accessToken: string) => ({
@@ -62,6 +298,9 @@ const registerTestUser = async (
     userId: payload.data.user.id as string,
     accessToken: payload.data.tokens.accessToken as string,
     refreshToken: payload.data.tokens.refreshToken as string,
+    email,
+    password,
+    displayName,
   };
 };
 
@@ -77,6 +316,75 @@ test("GET /health should return ok", async () => {
   assert.equal(body.data.service, "agent-api");
   assert.equal(body.data.checks.postgres.status, "ok");
   assert.equal(body.data.checks.redis.status, "ok");
+});
+
+test("POST /auth/login should support email and display name identifiers", async () => {
+  const app = createTestApp();
+  const registered = await registerTestUser(app, "login-identifier");
+
+  const emailLoginResponse = await app.request("/auth/login", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      identifier: registered.email,
+      password: registered.password,
+    }),
+  });
+  assert.equal(emailLoginResponse.status, 200);
+
+  const emailLoginJson = await emailLoginResponse.json();
+  assert.equal(emailLoginJson.success, true);
+  assert.equal(emailLoginJson.data.user.email, registered.email);
+
+  const displayNameLoginResponse = await app.request("/auth/login", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      identifier: registered.displayName,
+      password: registered.password,
+    }),
+  });
+  assert.equal(displayNameLoginResponse.status, 200);
+
+  const displayNameLoginJson = await displayNameLoginResponse.json();
+  assert.equal(displayNameLoginJson.success, true);
+  assert.equal(displayNameLoginJson.data.user.email, registered.email);
+});
+
+test("POST /auth/login should reject ambiguous display names", async () => {
+  const app = createTestApp();
+  const sharedDisplayName = `shared-name-${randomUUID()}`;
+  const password = "Passw0rd!123456";
+
+  for (const email of [
+    `ambiguous-a-${randomUUID()}@test.local`,
+    `ambiguous-b-${randomUUID()}@test.local`,
+  ]) {
+    const response = await app.request("/auth/register", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        email,
+        password,
+        displayName: sharedDisplayName,
+      }),
+    });
+    assert.equal(response.status, 201);
+  }
+
+  const loginResponse = await app.request("/auth/login", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      identifier: sharedDisplayName,
+      password,
+    }),
+  });
+  assert.equal(loginResponse.status, 409);
+
+  const loginJson = await loginResponse.json();
+  assert.equal(loginJson.success, false);
+  assert.equal(loginJson.error.code, "AUTH_IDENTIFIER_AMBIGUOUS");
 });
 
 test("persona/session/message/report flow should work", async () => {
@@ -148,9 +456,162 @@ test("persona/session/message/report flow should work", async () => {
   assert.equal(reportJson.data.totalMessages, 1);
 });
 
-test("POST /sessions/:id/human-message should append one runtime agent reply when runtime is available", async () => {
+test("GET /sessions/:id/messages should support pair-scope cursor pagination", async () => {
+  const app = createTestApp();
+  const context = await registerPairAndCreateSession(app, "pair-history");
+
+  const sendMessage = async (
+    accessToken: string,
+    authorPersonaId: string,
+    content: string,
+    sessionId: string,
+  ) => {
+    const response = await app.request(`/sessions/${sessionId}/human-message`, {
+      method: "POST",
+      headers: authHeaders(accessToken),
+      body: JSON.stringify({
+        authorPersonaId,
+        content,
+      }),
+    });
+    assert.equal(response.status, 201);
+  };
+
+  for (let index = 0; index < 25; index += 1) {
+    const fromInitiator = index % 2 === 0;
+    await sendMessage(
+      fromInitiator ? context.userA.accessToken : context.userB.accessToken,
+      fromInitiator ? context.initiatorPersonaId : context.targetPersonaId,
+      `S1-${String(index).padStart(2, "0")}`,
+      context.sessionId,
+    );
+  }
+
+  const forceEndResponse = await app.request(`/sessions/${context.sessionId}/force-end`, {
+    method: "POST",
+    headers: authHeaders(context.userA.accessToken),
+  });
+  assert.equal(forceEndResponse.status, 200);
+
+  const secondSessionResponse = await app.request("/sessions", {
+    method: "POST",
+    headers: authHeaders(context.userA.accessToken),
+    body: JSON.stringify({
+      initiatorPersonaId: context.initiatorPersonaId,
+      targetPersonaId: context.targetPersonaId,
+    }),
+  });
+  assert.equal(secondSessionResponse.status, 201);
+  const secondSessionJson = await secondSessionResponse.json();
+  const secondSessionId = secondSessionJson.data.id as string;
+
+  for (let index = 0; index < 15; index += 1) {
+    const fromInitiator = index % 2 === 0;
+    await sendMessage(
+      fromInitiator ? context.userA.accessToken : context.userB.accessToken,
+      fromInitiator ? context.initiatorPersonaId : context.targetPersonaId,
+      `S2-${String(index).padStart(2, "0")}`,
+      secondSessionId,
+    );
+  }
+
+  const firstPageResponse = await app.request(
+    `/sessions/${secondSessionId}/messages?scope=pair&limit=15`,
+    {
+      headers: { authorization: `Bearer ${context.userA.accessToken}` },
+    },
+  );
+  assert.equal(firstPageResponse.status, 200);
+  const firstPageJson = await firstPageResponse.json();
+  assert.equal(firstPageJson.success, true);
+  assert.equal(firstPageJson.data.total, 40);
+  assert.equal(firstPageJson.data.items.length, 15);
+  assert.ok(firstPageJson.data.nextCursor);
+  assert.ok(
+    firstPageJson.data.items.every((item: { content: string }) =>
+      item.content.startsWith("S2-"),
+    ),
+  );
+
+  const firstPageIds = new Set(
+    firstPageJson.data.items.map((item: { id: string }) => item.id),
+  );
+  assert.equal(firstPageIds.size, 15);
+
+  const secondPageResponse = await app.request(
+    `/sessions/${secondSessionId}/messages?scope=pair&limit=15&cursor=${encodeURIComponent(
+      firstPageJson.data.nextCursor as string,
+    )}`,
+    {
+      headers: { authorization: `Bearer ${context.userA.accessToken}` },
+    },
+  );
+  assert.equal(secondPageResponse.status, 200);
+  const secondPageJson = await secondPageResponse.json();
+  assert.equal(secondPageJson.success, true);
+  assert.equal(secondPageJson.data.total, 40);
+  assert.equal(secondPageJson.data.items.length, 15);
+  assert.ok(secondPageJson.data.nextCursor);
+
+  const secondPageIds = new Set(
+    secondPageJson.data.items.map((item: { id: string }) => item.id),
+  );
+  assert.equal(secondPageIds.size, 15);
+  for (const id of secondPageIds) {
+    assert.equal(firstPageIds.has(id), false);
+  }
+
+  const thirdPageResponse = await app.request(
+    `/sessions/${secondSessionId}/messages?scope=pair&limit=15&cursor=${encodeURIComponent(
+      secondPageJson.data.nextCursor as string,
+    )}`,
+    {
+      headers: { authorization: `Bearer ${context.userA.accessToken}` },
+    },
+  );
+  assert.equal(thirdPageResponse.status, 200);
+  const thirdPageJson = await thirdPageResponse.json();
+  assert.equal(thirdPageJson.success, true);
+  assert.equal(thirdPageJson.data.total, 40);
+  assert.equal(thirdPageJson.data.items.length, 10);
+  assert.equal(thirdPageJson.data.nextCursor, null);
+
+  const allIds = new Set<string>();
+  for (const item of firstPageJson.data.items as Array<{ id: string }>) {
+    allIds.add(item.id);
+  }
+  for (const item of secondPageJson.data.items as Array<{ id: string }>) {
+    allIds.add(item.id);
+  }
+  for (const item of thirdPageJson.data.items as Array<{ id: string }>) {
+    allIds.add(item.id);
+  }
+  assert.equal(allIds.size, 40);
+});
+
+test("orchestrator should generate first message from initiator and complete on farewell handshake", async () => {
+  const replies = [
+    {
+      content: "你好，我先来打个招呼。",
+      shouldEndSession: false,
+    },
+    {
+      content: "聊得很开心，我想我们可以说再见了。",
+      shouldEndSession: true,
+    },
+    {
+      content: "谢谢你，晚安，再见。",
+      shouldEndSession: true,
+    },
+  ];
+
   const runtimeService = {
     generateTurn: async () => {
+      const next = replies.shift() ?? {
+        content: "fallback",
+        shouldEndSession: true,
+      };
+
       return {
         sessionId: "ses_runtime",
         status: "ok",
@@ -158,16 +619,16 @@ test("POST /sessions/:id/human-message should append one runtime agent reply whe
         usedFallback: false,
         message: {
           role: "agent" as const,
-          content: "你好，我也很高兴认识你。",
-          intent: "empathize" as const,
-          tone: "warm" as const,
-          shouldEndSession: false,
+          content: next.content,
+          intent: "clarify" as const,
+          tone: "calm" as const,
+          shouldEndSession: next.shouldEndSession,
         },
         memoryWrites: [],
         promptMeta: {
           tokenEstimate: 100,
           includedMessages: 1,
-          includedMemories: 0,
+          includedMemories: 1,
         },
         modelMeta: {
           model: "mock-runtime",
@@ -180,68 +641,109 @@ test("POST /sessions/:id/human-message should append one runtime agent reply whe
     },
   } as RuntimeService;
 
-  const app = createTestApp({ runtimeService });
-  const userA = await registerTestUser(app, "runtime-a");
-  const userB = await registerTestUser(app, "runtime-b");
-
-  const personaAResponse = await app.request("/personas", {
-    method: "POST",
-    headers: authHeaders(userA.accessToken),
-    body: JSON.stringify({
-      displayName: "Alice",
-      traits: ["curious"],
-    }),
+  const app = createTestApp({
+    runtimeService,
+    useDefaultConversationOrchestrator: true,
   });
-  const personaBResponse = await app.request("/personas", {
-    method: "POST",
-    headers: authHeaders(userB.accessToken),
-    body: JSON.stringify({
-      displayName: "Bob",
-      traits: ["calm"],
-    }),
+  const context = await registerPairAndCreateSession(app, "orchestrator-first");
+
+  await waitFor(async () => {
+    const status = await readSessionStatus(
+      app,
+      context.userA.accessToken,
+      context.sessionId,
+    );
+    return status === "completed";
   });
-  assert.equal(personaAResponse.status, 201);
-  assert.equal(personaBResponse.status, 201);
 
-  const personaAJson = await personaAResponse.json();
-  const personaBJson = await personaBResponse.json();
+  const items = await readSessionMessages(
+    app,
+    context.userA.accessToken,
+    context.sessionId,
+  );
+  const agentMessages = items.filter((item) => item.role === "agent");
+  assert.ok(agentMessages.length >= 3);
+  assert.equal(agentMessages[0]?.authorPersonaId, context.initiatorPersonaId);
+  assert.equal(agentMessages[0]?.content, "你好，我先来打个招呼。");
 
-  const sessionResponse = await app.request("/sessions", {
-    method: "POST",
-    headers: authHeaders(userA.accessToken),
-    body: JSON.stringify({
-      initiatorPersonaId: personaAJson.data.id,
-      targetPersonaId: personaBJson.data.id,
-    }),
+  const systemMessages = items.filter((item) => item.role === "system");
+  const kinds = systemMessages
+    .map((item) => item.metadata?.orchestrator)
+    .filter(Boolean)
+    .map((meta) => (meta as Record<string, unknown>).kind);
+  assert.ok(kinds.includes("farewell_proposed"));
+  assert.ok(kinds.includes("farewell_completed"));
+});
+
+test("POST /sessions/:id/force-end should stop further orchestration advances", async () => {
+  const runtimeService = {
+    generateTurn: async () => {
+      await sleep(30);
+      return {
+        sessionId: "ses_runtime",
+        status: "ok",
+        attempts: 1,
+        usedFallback: false,
+        message: {
+          role: "agent" as const,
+          content: "继续聊聊吧。",
+          intent: "clarify" as const,
+          tone: "calm" as const,
+          shouldEndSession: false,
+        },
+        memoryWrites: [],
+        promptMeta: {
+          tokenEstimate: 100,
+          includedMessages: 1,
+          includedMemories: 1,
+        },
+        modelMeta: {
+          model: "mock-runtime",
+          latencyMs: 10,
+          promptTokens: 20,
+          completionTokens: 10,
+        },
+        transitions: [],
+      };
+    },
+  } as RuntimeService;
+
+  const app = createTestApp({
+    runtimeService,
+    useDefaultConversationOrchestrator: true,
   });
-  assert.equal(sessionResponse.status, 201);
-  const sessionJson = await sessionResponse.json();
+  const context = await registerPairAndCreateSession(app, "orchestrator-force-end");
 
-  const messageResponse = await app.request(
-    `/sessions/${sessionJson.data.id}/human-message`,
+  const forceEndResponse = await app.request(
+    `/sessions/${context.sessionId}/force-end`,
     {
       method: "POST",
-      headers: authHeaders(userA.accessToken),
-      body: JSON.stringify({
-        authorPersonaId: personaAJson.data.id,
-        content: "你好，很高兴认识你。",
-      }),
+      headers: authHeaders(context.userA.accessToken),
     },
   );
-  assert.equal(messageResponse.status, 201);
+  assert.equal(forceEndResponse.status, 200);
 
-  const listResponse = await app.request(
-    `/sessions/${sessionJson.data.id}/messages`,
-    { headers: { authorization: `Bearer ${userA.accessToken}` } },
+  await waitFor(async () => {
+    const status = await readSessionStatus(
+      app,
+      context.userA.accessToken,
+      context.sessionId,
+    );
+    return status === "completed";
+  });
+
+  const before = await readSessionMessages(
+    app,
+    context.userA.accessToken,
+    context.sessionId,
   );
-  assert.equal(listResponse.status, 200);
-  const listJson = await listResponse.json();
-  assert.equal(listJson.success, true);
-  assert.equal(listJson.data.total, 2);
-  assert.equal(listJson.data.items[0].role, "human");
-  assert.equal(listJson.data.items[1].role, "agent");
-  assert.equal(listJson.data.items[1].authorPersonaId, personaBJson.data.id);
-  assert.equal(listJson.data.items[1].content, "你好，我也很高兴认识你。");
+  await sleep(150);
+  const after = await readSessionMessages(
+    app,
+    context.userA.accessToken,
+    context.sessionId,
+  );
+  assert.equal(after.length, before.length);
 });
 
 test("GET /sessions should support userId filtering for web session list", async () => {
@@ -309,6 +811,221 @@ test("GET /sessions should support userId filtering for web session list", async
   assert.equal(body.data.items[0].initiatorPersonaId, personaAJson.data.id);
 });
 
+test("GET /discovery/personas should include relationship summaries for chatted personas", async () => {
+  const app = createTestApp();
+  const userA = await registerTestUser(app, "discovery-a");
+  const userB = await registerTestUser(app, "discovery-b");
+
+  const personaAResponse = await app.request("/personas", {
+    method: "POST",
+    headers: authHeaders(userA.accessToken),
+    body: JSON.stringify({
+      displayName: "Alice Discovery",
+      traits: ["warm"],
+    }),
+  });
+  const personaBResponse = await app.request("/personas", {
+    method: "POST",
+    headers: authHeaders(userB.accessToken),
+    body: JSON.stringify({
+      displayName: "Bob Discovery",
+      traits: ["steady"],
+    }),
+  });
+
+  assert.equal(personaAResponse.status, 201);
+  assert.equal(personaBResponse.status, 201);
+
+  const personaAJson = await personaAResponse.json();
+  const personaBJson = await personaBResponse.json();
+
+  const sessionResponse = await app.request("/sessions", {
+    method: "POST",
+    headers: authHeaders(userA.accessToken),
+    body: JSON.stringify({
+      initiatorPersonaId: personaAJson.data.id,
+      targetPersonaId: personaBJson.data.id,
+    }),
+  });
+  assert.equal(sessionResponse.status, 201);
+
+  const sessionJson = await sessionResponse.json();
+
+  const messageResponse = await app.request(
+    `/sessions/${sessionJson.data.id}/human-message`,
+    {
+      method: "POST",
+      headers: authHeaders(userA.accessToken),
+      body: JSON.stringify({
+        authorPersonaId: personaAJson.data.id,
+        content: "今天我想分享一件小事：我下班路上闻到了桂花香。",
+      }),
+    },
+  );
+  assert.equal(messageResponse.status, 201);
+
+  const discoveryResponse = await app.request(
+    `/discovery/personas?viewerPersonaId=${personaAJson.data.id}&limit=12&seed=discovery-relationship`,
+    {
+      headers: { authorization: `Bearer ${userA.accessToken}` },
+    },
+  );
+  assert.equal(discoveryResponse.status, 200);
+
+  const discoveryJson = await discoveryResponse.json();
+  assert.equal(discoveryJson.success, true);
+
+  const counterpart = discoveryJson.data.items.find(
+    (item: { id: string }) => item.id === personaBJson.data.id,
+  );
+  assert.ok(counterpart);
+  assert.equal(counterpart.relationship.hasHistory, true);
+  assert.equal(counterpart.relationship.sessionCount, 1);
+  assert.equal(counterpart.relationship.messageCount, 1);
+  assert.equal(counterpart.relationship.lastSessionId, sessionJson.data.id);
+  assert.ok(counterpart.relationship.affinityLabel.length > 0);
+  assert.ok(counterpart.relationship.summaryShort.length > 0);
+});
+
+test("GET /discovery/personas should split chatted and new personas by relationshipFilter", async () => {
+  const app = createTestApp();
+  const userA = await registerTestUser(app, "discovery-filter-a");
+  const userB = await registerTestUser(app, "discovery-filter-b");
+  const userC = await registerTestUser(app, "discovery-filter-c");
+
+  const personaAResponse = await app.request("/personas", {
+    method: "POST",
+    headers: authHeaders(userA.accessToken),
+    body: JSON.stringify({
+      displayName: "Alice Filter",
+      traits: ["warm"],
+    }),
+  });
+  const personaBResponse = await app.request("/personas", {
+    method: "POST",
+    headers: authHeaders(userB.accessToken),
+    body: JSON.stringify({
+      displayName: "Bob Filter",
+      traits: ["steady"],
+    }),
+  });
+  const personaCResponse = await app.request("/personas", {
+    method: "POST",
+    headers: authHeaders(userC.accessToken),
+    body: JSON.stringify({
+      displayName: "Cara Filter",
+      traits: ["curious"],
+    }),
+  });
+
+  assert.equal(personaAResponse.status, 201);
+  assert.equal(personaBResponse.status, 201);
+  assert.equal(personaCResponse.status, 201);
+
+  const personaAJson = await personaAResponse.json();
+  const personaBJson = await personaBResponse.json();
+  await personaCResponse.json();
+
+  const sessionResponse = await app.request("/sessions", {
+    method: "POST",
+    headers: authHeaders(userA.accessToken),
+    body: JSON.stringify({
+      initiatorPersonaId: personaAJson.data.id,
+      targetPersonaId: personaBJson.data.id,
+    }),
+  });
+  assert.equal(sessionResponse.status, 201);
+
+  const sessionJson = await sessionResponse.json();
+
+  const messageResponse = await app.request(
+    `/sessions/${sessionJson.data.id}/human-message`,
+    {
+      method: "POST",
+      headers: authHeaders(userA.accessToken),
+      body: JSON.stringify({
+        authorPersonaId: personaAJson.data.id,
+        content: "昨晚我在楼下听到一阵风铃声，忽然很想把它讲给谁听。",
+      }),
+    },
+  );
+  assert.equal(messageResponse.status, 201);
+
+  const chattedResponse = await app.request(
+    `/discovery/personas?viewerPersonaId=${personaAJson.data.id}&relationshipFilter=chatted&limit=12&seed=discovery-filter`,
+    {
+      headers: authHeaders(userA.accessToken),
+    },
+  );
+  assert.equal(chattedResponse.status, 200);
+
+  const chattedJson = await chattedResponse.json();
+  assert.equal(chattedJson.success, true);
+  assert.equal(chattedJson.data.items.length, 1);
+  assert.equal(chattedJson.data.items[0].id, personaBJson.data.id);
+  assert.equal(chattedJson.data.items[0].relationship.hasHistory, true);
+
+  const newResponse = await app.request(
+    `/discovery/personas?viewerPersonaId=${personaAJson.data.id}&relationshipFilter=new&limit=12&seed=discovery-filter`,
+    {
+      headers: authHeaders(userA.accessToken),
+    },
+  );
+  assert.equal(newResponse.status, 200);
+
+  const newJson = await newResponse.json();
+  assert.equal(newJson.success, true);
+  assert.ok(newJson.data.items.length > 0);
+  assert.ok(newJson.data.items.every((item: { id: string }) => item.id !== personaBJson.data.id));
+  assert.ok(
+    newJson.data.items.every(
+      (item: { relationship?: { hasHistory?: boolean } }) => !item.relationship?.hasHistory,
+    ),
+  );
+});
+
+test("POST /sessions should honor configured session max rounds", async () => {
+  const app = createTestApp({ sessionMaxRounds: 77 });
+  const { userA, userB } = await registerPairAndCreateSession(app, "session-max-rounds");
+
+  const personaAResponse = await app.request("/personas", {
+    method: "POST",
+    headers: authHeaders(userA.accessToken),
+    body: JSON.stringify({
+      displayName: "Alice Configured",
+      traits: ["thoughtful"],
+    }),
+  });
+  const personaBResponse = await app.request("/personas", {
+    method: "POST",
+    headers: authHeaders(userB.accessToken),
+    body: JSON.stringify({
+      displayName: "Bob Configured",
+      traits: ["curious"],
+    }),
+  });
+
+  assert.equal(personaAResponse.status, 201);
+  assert.equal(personaBResponse.status, 201);
+
+  const personaAJson = await personaAResponse.json();
+  const personaBJson = await personaBResponse.json();
+
+  const sessionResponse = await app.request("/sessions", {
+    method: "POST",
+    headers: authHeaders(userA.accessToken),
+    body: JSON.stringify({
+      initiatorPersonaId: personaAJson.data.id,
+      targetPersonaId: personaBJson.data.id,
+    }),
+  });
+
+  assert.equal(sessionResponse.status, 201);
+
+  const sessionJson = await sessionResponse.json();
+  assert.equal(sessionJson.data.maxRounds, 77);
+});
+
 test("web contract should return stable 404 errors for missing messages/report resources", async () => {
   const app = createTestApp();
   const user = await registerTestUser(app, "missing-resource-user");
@@ -365,7 +1082,11 @@ test("GET /personas should support plaza pagination and exclude current user", a
   const firstPageBody = await firstPageResponse.json();
   assert.equal(firstPageBody.success, true);
   assert.equal(firstPageBody.data.items.length, 1);
-  assert.ok(firstPageBody.data.total >= 2);
+  const allTotalResponse = await app.request(`/personas?limit=1&seed=${seed}`);
+  assert.equal(allTotalResponse.status, 200);
+  const allTotalBody = await allTotalResponse.json();
+  assert.equal(allTotalBody.success, true);
+  assert.equal(firstPageBody.data.total, allTotalBody.data.total);
   assert.ok(firstPageBody.data.nextCursor);
   assert.notEqual(firstPageBody.data.items[0].userId, userA.userId);
 
@@ -377,7 +1098,7 @@ test("GET /personas should support plaza pagination and exclude current user", a
   const secondPageBody = await secondPageResponse.json();
   assert.equal(secondPageBody.success, true);
   assert.equal(secondPageBody.data.items.length, 1);
-  assert.ok(secondPageBody.data.total >= 2);
+  assert.equal(secondPageBody.data.total, allTotalBody.data.total);
   assert.notEqual(secondPageBody.data.items[0].userId, userA.userId);
   assert.notEqual(
     secondPageBody.data.items[0].id,

@@ -96,6 +96,33 @@ docker compose -f infra/docker/docker-compose.yml up -d
 - `apps/web/AGENTS.md` — frontend module guide, page roadmap, constraints
 - `packages/db/AGENTS.md` — **数据库 schema 设计规范、迁移管理、性能指导、建表检查清单**
 
+## Debugging & Browser Tools
+
+### Browser Automation & Debugging
+- **`dev-browser` Skill**: Use for browser automation, visual testing, and Chrome DevTools debugging.
+  - **Standalone mode**: Launches a fresh Chromium instance for isolated testing.
+  - **Extension mode**: Connects to user's existing Chrome session for authenticated workflows.
+- **Chrome DevTools**: When debugging frontend issues, leverage browser DevTools via `dev-browser` skill or manual inspection.
+- **TanStack DevTools**: The frontend includes TanStack React Query and Router DevTools for inspecting state, queries, and routes.
+- **Screenshot Capture**: Use `dev-browser` to capture screenshots for visual regression testing and bug reporting.
+
+### Usage Example
+```bash
+# Start dev-browser server (standalone mode)
+./skills/dev-browser/server.sh &
+
+# Run a quick browser script
+cd skills/dev-browser && npx tsx <<'EOF'
+import { connect, waitForPageLoad } from "@/client.js";
+const client = await connect();
+const page = await client.page("test", { viewport: { width: 1920, height: 1080 } });
+await page.goto("http://localhost:3000");
+await waitForPageLoad(page);
+console.log({ title: await page.title(), url: page.url() });
+await client.disconnect();
+EOF
+```
+
 ## Important Constraints
 
 - Human override messages always have higher priority than model-inferred data and must be traceable.

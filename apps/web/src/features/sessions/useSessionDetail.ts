@@ -7,7 +7,7 @@ export function useSessionDetail(id: string) {
     queryKey: queryKeys.sessions.detail(id),
     queryFn: () => fetchSession({ data: id }),
     enabled: !!id,
-    refetchInterval: 5_000,
+    refetchInterval: 1_000,
   })
 
   return {

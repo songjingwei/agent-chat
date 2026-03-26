@@ -4,8 +4,21 @@ export interface Persona {
   displayName: string;
   bio?: string | undefined;
   traits: string[];
+  relationship?: PersonaRelationship | undefined;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface PersonaRelationship {
+  hasHistory: boolean;
+  sessionCount: number;
+  messageCount: number;
+  mutualScore: number;
+  confidence: number;
+  affinityLabel: string;
+  summaryShort: string;
+  lastInteractedAt: string;
+  lastSessionId: string | null;
 }
 
 export type SessionStatus = "queued" | "active" | "completed";
@@ -15,6 +28,9 @@ export interface Session {
   initiatorPersonaId: string;
   targetPersonaId: string;
   status: SessionStatus;
+  currentRound: number;
+  maxRounds: number;
+  lastMessageContent?: string | undefined;
   createdAt: string;
   updatedAt: string;
 }
@@ -25,6 +41,7 @@ export interface ChatMessage {
   authorPersonaId: string;
   role: "agent" | "human" | "system";
   content: string;
+  metadata?: Record<string, unknown> | undefined;
   createdAt: string;
 }
 
@@ -50,11 +67,12 @@ export interface ListPublicPersonasInput {
   cursor?: string | undefined;
   limit: number;
   excludeUserId?: string | undefined;
+  excludePersonaIds?: string[] | undefined;
   seed: string;
 }
 
-export interface ListPublicPersonasResult {
-  items: Persona[];
+export interface ListPublicPersonasResult<TItem = Persona> {
+  items: TItem[];
   total: number;
   nextCursor: string | null;
 }
@@ -80,4 +98,23 @@ export interface CreateAgentMessageInput {
   authorPersonaId: string;
   content: string;
   metadata?: Record<string, unknown> | undefined;
+}
+
+export interface CreateSystemMessageInput {
+  sessionId: string;
+  authorPersonaId: string;
+  content: string;
+  metadata?: Record<string, unknown> | undefined;
+}
+
+export interface BuildPersonaInput {
+  userId: string;
+  sourceText: string;
+  existingPersonaId?: string | undefined;
+}
+
+export interface BuildPersonaResult {
+  persona: Persona;
+  generatedSystemPrompt: string;
+  version: number;
 }

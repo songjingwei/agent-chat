@@ -1,3 +1,22 @@
+import { existsSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { loadEnvFile } from "node:process";
+import { fileURLToPath } from "node:url";
+
+import { DEFAULT_SESSION_MAX_ROUNDS } from "@agent/db";
+
+const configDir = dirname(fileURLToPath(import.meta.url));
+const envLocalPath = resolve(configDir, "../../../.env.local");
+const envPath = resolve(configDir, "../../../.env");
+
+if (existsSync(envLocalPath)) {
+  loadEnvFile(envLocalPath);
+}
+
+if (existsSync(envPath)) {
+  loadEnvFile(envPath);
+}
+
 const DEFAULT_PORT = 3001;
 const DEFAULT_APP_ORIGIN = "http://localhost:3000";
 const DEFAULT_DATABASE_URL = "postgres://postgres:postgres@localhost:5432/agent_chat";
@@ -63,6 +82,7 @@ export const apiConfig = {
   port: parsePort(process.env.PORT),
   serviceName: "agent-api",
   appOrigin: process.env.APP_ORIGIN ?? DEFAULT_APP_ORIGIN,
+  adminOrigin: process.env.ADMIN_ORIGIN ?? "http://localhost:3002",
   databaseUrl: process.env.DATABASE_URL ?? DEFAULT_DATABASE_URL,
   redisUrl: process.env.REDIS_URL ?? DEFAULT_REDIS_URL,
   healthcheckTimeoutMs: parsePositiveInt(
@@ -74,6 +94,10 @@ export const apiConfig = {
   jwtRefreshExpiresIn: parsePositiveInt(
     process.env.JWT_REFRESH_EXPIRES_IN,
     604800,
+  ),
+  sessionMaxRounds: parsePositiveInt(
+    process.env.SESSION_MAX_ROUNDS,
+    DEFAULT_SESSION_MAX_ROUNDS,
   ),
   runtimeModelProvider: parseRuntimeModelProvider(
     process.env.RUNTIME_MODEL_PROVIDER,

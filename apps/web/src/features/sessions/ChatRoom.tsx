@@ -5,7 +5,7 @@ import { EmptyState } from '#/components/EmptyState'
 import { ErrorDisplay } from '#/components/ErrorDisplay'
 import { LoadingSkeleton } from '#/components/LoadingSkeleton'
 import { useChatRoom } from './useChatRoom'
-import { ArrowLeft, Send, MessageCircle } from 'lucide-react'
+import { ArrowDown, ArrowLeft, MessageCircle, Send } from 'lucide-react'
 import type { ChatMessage, Persona } from '#/lib/types'
 
 interface ChatRoomProps {
@@ -26,6 +26,13 @@ export function ChatRoom({ sessionId }: ChatRoomProps) {
     handleSend,
     handleKeyDown,
     scrollRef,
+    handleMessagesScroll,
+    hasOlder,
+    isFetchingOlder,
+    loadOlderMessages,
+    hasUnreadNewMessages,
+    scrollToLatest,
+    expectedSpeakerPersonaId,
     isSending,
     isLoading,
     error,
@@ -100,28 +107,110 @@ export function ChatRoom({ sessionId }: ChatRoomProps) {
       </header>
 
       {/* Messages */}
-      <div
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto p-4"
-      >
-        <div className="max-w-3xl mx-auto space-y-3">
-        {messages.length === 0 ? (
-          <EmptyState
-            icon={<MessageCircle size={40} />}
-            title={t('chat.noMessages')}
-            description={t('chat.noMessagesDesc')}
-          />
-        ) : (
-          messages.map((msg) => (
-            <MessageBubble
-              key={msg.id}
-              message={msg}
-              isMine={msg.authorPersonaId === myPersonaId}
-              authorName={personaMap[msg.authorPersonaId]?.displayName ?? 'Unknown'}
-            />
-          ))
-        )}
+      <div className="relative flex-1 min-h-0">
+        <div
+          ref={scrollRef}
+          onScroll={handleMessagesScroll}
+          className="h-full min-h-0 overflow-y-auto p-4"
+        >
+          <div className="max-w-3xl mx-auto space-y-3">
+            {hasOlder && (
+              <div className="flex justify-center pb-2">
+                <button
+                  type="button"
+                  onClick={() => void loadOlderMessages()}
+                  disabled={isFetchingOlder}
+                  className="btn-ghost px-3 py-1.5 text-xs disabled:opacity-50"
+                >
+                  {isFetchingOlder ? t('chat.loadingHistory') : t('chat.loadHistory')}
+                </button>
+              </div>
+            )}
+
+            {messages.length === 0 ? (
+              <EmptyState
+                icon={<MessageCircle size={40} />}
+                title={t('chat.noMessages')}
+                description={t('chat.noMessagesDesc')}
+              />
+            ) : (
+              <>
+                {messages.map((msg) => (
+                  <MessageBubble
+                    key={msg.id}
+                    message={msg}
+                    isMine={msg.authorPersonaId === myPersonaId}
+                    authorName={personaMap[msg.authorPersonaId]?.displayName ?? 'Unknown'}
+                  />
+                ))}
+
+                {/* Typing Indicators */}
+                {isSending && (
+                  <div className="flex flex-col items-end animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <p className="text-xs text-[var(--sea-ink-soft)] mb-1 px-1">
+                      {personaMap[myPersonaId ?? '']?.displayName ?? '...'}
+                    </p>
+                    <div className="message-bubble message-bubble--mine px-4 py-3">
+                      <div className="flex gap-1">
+                        <span className="h-1.5 w-1.5 rounded-full bg-white/60 animate-bounce [animation-delay:-0.3s]" />
+                        <span className="h-1.5 w-1.5 rounded-full bg-white/60 animate-bounce [animation-delay:-0.15s]" />
+                        <span className="h-1.5 w-1.5 rounded-full bg-white/60 animate-bounce" />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {session.status === 'active' && !isSending && (
+                  <div
+                    className={`flex flex-col ${
+                      expectedSpeakerPersonaId === myPersonaId ? 'items-end' : 'items-start'
+                    } animate-in fade-in slide-in-from-bottom-2 duration-300`}
+                  >
+                    <p className="text-xs text-[var(--sea-ink-soft)] mb-1 px-1">
+                      {personaMap[expectedSpeakerPersonaId ?? '']?.displayName ?? '...'}
+                    </p>
+                    <div
+                      className={`message-bubble ${
+                        expectedSpeakerPersonaId === myPersonaId
+                          ? 'message-bubble--mine'
+                          : 'message-bubble--other'
+                      } px-4 py-3`}
+                    >
+                      <div className="flex gap-1">
+                        {expectedSpeakerPersonaId === myPersonaId ? (
+                          <>
+                            <span className="h-1.5 w-1.5 rounded-full bg-white/60 animate-bounce [animation-delay:-0.3s]" />
+                            <span className="h-1.5 w-1.5 rounded-full bg-white/60 animate-bounce [animation-delay:-0.15s]" />
+                            <span className="h-1.5 w-1.5 rounded-full bg-white/60 animate-bounce" />
+                          </>
+                        ) : (
+                          <>
+                            <span className="h-1.5 w-1.5 rounded-full bg-[var(--sea-ink-soft)]/40 animate-bounce [animation-delay:-0.3s]" />
+                            <span className="h-1.5 w-1.5 rounded-full bg-[var(--sea-ink-soft)]/40 animate-bounce [animation-delay:-0.15s]" />
+                            <span className="h-1.5 w-1.5 rounded-full bg-[var(--sea-ink-soft)]/40 animate-bounce" />
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
+
+        {hasUnreadNewMessages && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center">
+            <button
+              type="button"
+              onClick={scrollToLatest}
+              className="pointer-events-auto btn-primary inline-flex items-center gap-1.5 px-3 py-1.5 text-xs"
+            >
+              <ArrowDown size={14} />
+              {t('chat.newMessages')}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Input area */}

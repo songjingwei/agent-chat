@@ -9,6 +9,8 @@ import {
 import { sql } from "drizzle-orm";
 import { agentPersonas } from "./agent-personas.js";
 
+export const DEFAULT_SESSION_MAX_ROUNDS = 120;
+
 export const chatSessions = pgTable(
   "chat_sessions",
   {
@@ -36,7 +38,7 @@ export const chatSessions = pgTable(
     currentRound: integer("current_round").notNull().default(0),
 
     // 最大允许轮次 —— 安全阀门，防止 AI 无限聊下去烧钱
-    maxRounds: integer("max_rounds").notNull().default(20),
+    maxRounds: integer("max_rounds").notNull().default(DEFAULT_SESSION_MAX_ROUNDS),
 
     // 审计字段
     createdBy: varchar("created_by", { length: 64 }),

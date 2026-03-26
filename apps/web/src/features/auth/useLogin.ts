@@ -4,7 +4,7 @@ import { useAuth } from '#/lib/auth-context'
 import { ApiRequestError } from '#/lib/api-client'
 
 export function useLogin() {
-  const [email, setEmail] = useState('')
+  const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isPending, setIsPending] = useState(false)
@@ -18,7 +18,7 @@ export function useLogin() {
     setIsPending(true)
 
     try {
-      await login(email, password)
+      await login(identifier, password)
       navigate({ to: '/' })
     } catch (err) {
       if (err instanceof ApiRequestError) {
@@ -32,8 +32,8 @@ export function useLogin() {
   }
 
   return {
-    email,
-    setEmail,
+    identifier,
+    setIdentifier,
     password,
     setPassword,
     error,

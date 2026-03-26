@@ -30,6 +30,16 @@
 
 详细前端联调契约见：[`docs/web-api-contract.md`](./docs/web-api-contract.md)。
 
+## API 文档（Swagger UI）
+- OpenAPI JSON：`GET /openapi.json?lang=en|zh`
+- Swagger UI：`GET /docs?lang=en|zh`
+
+本地启动后可直接访问：
+- `http://localhost:3001/openapi.json?lang=en`
+- `http://localhost:3001/openapi.json?lang=zh`
+- `http://localhost:3001/docs?lang=en`
+- `http://localhost:3001/docs?lang=zh`
+
 ## 运行
 在仓库根目录执行：
 

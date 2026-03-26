@@ -7,6 +7,7 @@ import type { DbClient } from "@agent/db";
 import { users, refreshTokens } from "@agent/db";
 import {
   AUTH_INVALID_CREDENTIALS,
+  AUTH_IDENTIFIER_AMBIGUOUS,
   AUTH_EMAIL_EXISTS,
   AUTH_TOKEN_INVALID,
   AUTH_TOKEN_EXPIRED,
@@ -72,21 +73,34 @@ export class AuthService {
   }
 
   async login(input: {
-    email: string;
+    identifier: string;
     password: string;
   }): Promise<AuthResponse> {
+    const identifier = input.identifier.trim();
     const rows = await this.db
       .select()
       .from(users)
-      .where(eq(users.email, input.email))
-      .limit(1);
+      .where(
+        looksLikeEmail(identifier)
+          ? eq(users.email, identifier)
+          : eq(users.displayName, identifier),
+      )
+      .limit(2);
+
+    if (!looksLikeEmail(identifier) && rows.length > 1) {
+      throw new ApiError(
+        409,
+        AUTH_IDENTIFIER_AMBIGUOUS,
+        "This display name matches multiple accounts. Please sign in with email.",
+      );
+    }
 
     const user = rows[0];
     if (!user) {
       throw new ApiError(
         401,
         AUTH_INVALID_CREDENTIALS,
-        "Invalid email or password.",
+        "Invalid email, display name, or password.",
       );
     }
 
@@ -95,7 +109,7 @@ export class AuthService {
       throw new ApiError(
         401,
         AUTH_INVALID_CREDENTIALS,
-        "Invalid email or password.",
+        "Invalid email, display name, or password.",
       );
     }
 
@@ -222,4 +236,8 @@ export class AuthService {
   private hashToken(token: string): string {
     return crypto.createHash("sha256").update(token).digest("hex");
   }
+}
+
+function looksLikeEmail(value: string): boolean {
+  return value.includes("@");
 }
