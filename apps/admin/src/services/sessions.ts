@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/api-client";
+import type { BatchResult } from "@/lib/batch-feedback";
 
 export interface Session {
   id: string;
@@ -42,4 +43,15 @@ export const sessionsApi = {
     apiClient.patch<Session>(`/admin/sessions/${sessionId}`, body),
   delete: (sessionId: string) =>
     apiClient.delete<{ success: boolean }>(`/admin/sessions/${sessionId}`),
+  batch: (body:
+    | { action: "delete"; sessionIds: string[] }
+    | {
+        action: "update_status";
+        sessionIds: string[];
+        status: "pending" | "active" | "paused" | "completed" | "failed";
+      }) =>
+    apiClient.post<BatchResult<"delete" | "update_status">>(
+      "/admin/sessions/batch",
+      body,
+    ),
 };

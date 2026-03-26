@@ -1,15 +1,19 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import test, { after } from "node:test";
 
+import { inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
+import jwt from "jsonwebtoken";
 import pg from "pg";
 
 import * as dbSchema from "../../../packages/db/src/schema/index.js";
 
 import { createApp } from "./app.js";
 import { apiConfig } from "./config.js";
+import { AdminAuthService } from "./services/admin-auth.service.js";
+import { AssessmentService } from "./services/assessment.service.js";
 import { AuthService } from "./services/auth.service.js";
 import { HealthService } from "./services/health.service.js";
 import {
@@ -19,6 +23,8 @@ import {
 } from "./services/conversation-orchestrator.service.js";
 import { MessageService } from "./services/message.service.js";
 import { PairInsightService } from "./services/pair-insight.service.js";
+import { PersonaBuilderService } from "./services/persona-builder.service.js";
+import { PersonaEditorService } from "./services/persona-editor.service.js";
 import { PersonaService } from "./services/persona.service.js";
 import { ReportService } from "./services/report.service.js";
 import type { RuntimeService } from "./services/runtime.service.js";
@@ -54,16 +60,22 @@ const createTestDatabase = async () => {
   const migrationClient = await pool.connect();
 
   try {
-    const migrationSql = await readFile(
-      new URL("../../../packages/db/drizzle/0000_burly_phalanx.sql", import.meta.url),
-      "utf8",
-    );
+    const migrationDir = new URL("../../../packages/db/drizzle/", import.meta.url);
+    const migrationFiles = (await readdir(migrationDir))
+      .filter((name) => /^\d+_.+\.sql$/.test(name))
+      .sort((left, right) =>
+        left.localeCompare(right, undefined, { numeric: true }),
+      );
 
-    for (const statement of migrationSql
-      .split("--> statement-breakpoint")
-      .map((chunk) => chunk.trim())
-      .filter(Boolean)) {
-      await migrationClient.query(statement);
+    for (const fileName of migrationFiles) {
+      const migrationSql = await readFile(new URL(fileName, migrationDir), "utf8");
+
+      for (const statement of migrationSql
+        .split("--> statement-breakpoint")
+        .map((chunk) => chunk.trim())
+        .filter(Boolean)) {
+        await migrationClient.query(statement);
+      }
     }
   } finally {
     migrationClient.release();
@@ -119,7 +131,27 @@ const createTestApp = (options: CreateTestAppOptions = {}) => {
     jwtAccessExpiresIn: apiConfig.jwtAccessExpiresIn,
     jwtRefreshExpiresIn: apiConfig.jwtRefreshExpiresIn,
   });
+  const adminAuthService = new AdminAuthService(testDatabase.db, {
+    jwtSecret: apiConfig.jwtSecret,
+    jwtAccessExpiresIn: apiConfig.jwtAccessExpiresIn,
+    jwtRefreshExpiresIn: apiConfig.jwtRefreshExpiresIn,
+  });
+  const assessmentService = new AssessmentService(testDatabase.db);
   const personaService = new PersonaService(testDatabase.db);
+  const personaBuilderService = new PersonaBuilderService(testDatabase.db, {
+    modelClient: {
+      generate: async () => ({
+        text: JSON.stringify({
+          displayName: "Test Persona",
+          bio: "Auto-generated in test",
+          traits: ["calm"],
+          systemPrompt: "You are calm and concise.",
+        }),
+        finishReason: "stop",
+      }),
+    } as never,
+  });
+  const personaEditorService = new PersonaEditorService(testDatabase.db);
   const pairInsightService = new PairInsightService(testDatabase.db);
   const sessionService = new SessionService(testDatabase.db, {
     defaultMaxRounds: options.sessionMaxRounds,
@@ -159,9 +191,14 @@ const createTestApp = (options: CreateTestAppOptions = {}) => {
     : options.conversationOrchestrator ?? new NoopConversationOrchestratorService();
 
   return createApp({
+    db: testDatabase.db,
     healthService,
     authService,
+    adminAuthService,
+    assessmentService,
     personaService,
+    personaBuilderService,
+    personaEditorService,
     pairInsightService,
     sessionService,
     messageService,
@@ -270,6 +307,22 @@ const registerPairAndCreateSession = async (
 };
 
 const authHeaders = (accessToken: string) => ({
+  "content-type": "application/json",
+  authorization: `Bearer ${accessToken}`,
+});
+
+const createAdminAccessToken = (adminId?: string) =>
+  jwt.sign(
+    {
+      sub: adminId ?? `adm_${randomUUID().replace(/-/g, "")}`,
+      role: "admin",
+      type: "admin",
+    },
+    apiConfig.jwtSecret,
+    { expiresIn: apiConfig.jwtAccessExpiresIn },
+  );
+
+const adminAuthHeaders = (accessToken: string) => ({
   "content-type": "application/json",
   authorization: `Bearer ${accessToken}`,
 });
@@ -1115,4 +1168,220 @@ test("unauthenticated requests to protected routes should return 401", async () 
   const body = await response.json();
   assert.equal(body.success, false);
   assert.equal(body.error.code, "AUTH_UNAUTHORIZED");
+});
+
+test("POST /admin/memory-items/batch should support partial success for update and delete", async () => {
+  const app = createTestApp();
+  const adminToken = createAdminAccessToken();
+  const context = await registerPairAndCreateSession(app, "admin-memory-batch");
+
+  const memoryIdA = `mem_${randomUUID().replace(/-/g, "")}`;
+  const memoryIdB = `mem_${randomUUID().replace(/-/g, "")}`;
+  const missingId = `mem_missing_${randomUUID().replace(/-/g, "")}`;
+
+  await testDatabase.db.insert(dbSchema.memoryItems).values([
+    {
+      id: memoryIdA,
+      personaId: context.initiatorPersonaId,
+      sessionId: context.sessionId,
+      category: "fact",
+      content: "before-a",
+      weight: 0.35,
+      source: "agent_inferred",
+    },
+    {
+      id: memoryIdB,
+      personaId: context.initiatorPersonaId,
+      sessionId: context.sessionId,
+      category: "preference",
+      content: "before-b",
+      weight: 0.45,
+      source: "human_override",
+    },
+  ]);
+
+  const updateResponse = await app.request("/admin/memory-items/batch", {
+    method: "POST",
+    headers: adminAuthHeaders(adminToken),
+    body: JSON.stringify({
+      action: "update",
+      memoryIds: [memoryIdA, memoryIdB, missingId],
+      category: "instruction",
+      weight: 0.9,
+    }),
+  });
+  assert.equal(updateResponse.status, 200);
+  const updateJson = await updateResponse.json();
+  assert.equal(updateJson.success, true);
+  assert.equal(updateJson.data.action, "update");
+  assert.equal(updateJson.data.requestedCount, 3);
+  assert.equal(updateJson.data.succeededCount, 2);
+  assert.equal(updateJson.data.failedCount, 1);
+  assert.equal(updateJson.data.failedItems[0].id, missingId);
+  assert.equal(updateJson.data.failedItems[0].code, "MEMORY_ITEM_NOT_FOUND");
+
+  const updatedRows = await testDatabase.db
+    .select({
+      id: dbSchema.memoryItems.id,
+      category: dbSchema.memoryItems.category,
+      weight: dbSchema.memoryItems.weight,
+    })
+    .from(dbSchema.memoryItems)
+    .where(inArray(dbSchema.memoryItems.id, [memoryIdA, memoryIdB]));
+  assert.equal(updatedRows.length, 2);
+  for (const row of updatedRows) {
+    assert.equal(row.category, "instruction");
+    assert.ok(Math.abs((row.weight ?? 0) - 0.9) < 1e-6);
+  }
+
+  const deleteMissingId = `mem_missing_${randomUUID().replace(/-/g, "")}`;
+  const deleteResponse = await app.request("/admin/memory-items/batch", {
+    method: "POST",
+    headers: adminAuthHeaders(adminToken),
+    body: JSON.stringify({
+      action: "delete",
+      memoryIds: [memoryIdA, deleteMissingId],
+    }),
+  });
+  assert.equal(deleteResponse.status, 200);
+  const deleteJson = await deleteResponse.json();
+  assert.equal(deleteJson.success, true);
+  assert.equal(deleteJson.data.action, "delete");
+  assert.equal(deleteJson.data.requestedCount, 2);
+  assert.equal(deleteJson.data.succeededCount, 1);
+  assert.equal(deleteJson.data.failedCount, 1);
+  assert.equal(deleteJson.data.failedItems[0].id, deleteMissingId);
+  assert.equal(deleteJson.data.failedItems[0].code, "MEMORY_ITEM_NOT_FOUND");
+
+  const remainingRows = await testDatabase.db
+    .select({ id: dbSchema.memoryItems.id })
+    .from(dbSchema.memoryItems)
+    .where(inArray(dbSchema.memoryItems.id, [memoryIdA, memoryIdB]));
+  assert.equal(remainingRows.length, 1);
+  assert.equal(remainingRows[0]?.id, memoryIdB);
+});
+
+test("POST /admin/configs/batch should delete existing keys and report missing keys", async () => {
+  const app = createTestApp();
+  const adminToken = createAdminAccessToken();
+
+  const configKeyA = `feature_${randomUUID().replace(/-/g, "")}`;
+  const configKeyB = `feature_${randomUUID().replace(/-/g, "")}`;
+  const missingKey = `missing_${randomUUID().replace(/-/g, "")}`;
+
+  await testDatabase.db.insert(dbSchema.systemConfigs).values([
+    {
+      id: `cfg_${randomUUID().replace(/-/g, "")}`,
+      configKey: configKeyA,
+      configValue: "on",
+      valueType: "string",
+      createdBy: "seed_admin",
+      updatedBy: "seed_admin",
+    },
+    {
+      id: `cfg_${randomUUID().replace(/-/g, "")}`,
+      configKey: configKeyB,
+      configValue: "42",
+      valueType: "number",
+      createdBy: "seed_admin",
+      updatedBy: "seed_admin",
+    },
+  ]);
+
+  const response = await app.request("/admin/configs/batch", {
+    method: "POST",
+    headers: adminAuthHeaders(adminToken),
+    body: JSON.stringify({
+      action: "delete",
+      configKeys: [configKeyA, configKeyB, missingKey],
+    }),
+  });
+  assert.equal(response.status, 200);
+  const json = await response.json();
+  assert.equal(json.success, true);
+  assert.equal(json.data.action, "delete");
+  assert.equal(json.data.requestedCount, 3);
+  assert.equal(json.data.succeededCount, 2);
+  assert.equal(json.data.failedCount, 1);
+  assert.equal(json.data.failedItems[0].id, missingKey);
+  assert.equal(json.data.failedItems[0].code, "CONFIG_NOT_FOUND");
+
+  const remainingRows = await testDatabase.db
+    .select({ key: dbSchema.systemConfigs.configKey })
+    .from(dbSchema.systemConfigs)
+    .where(inArray(dbSchema.systemConfigs.configKey, [configKeyA, configKeyB]));
+  assert.equal(remainingRows.length, 0);
+});
+
+test("reports admin endpoints should support batch delete partial success and single delete not found", async () => {
+  const app = createTestApp();
+  const adminToken = createAdminAccessToken();
+  const context = await registerPairAndCreateSession(app, "admin-reports-batch");
+
+  const reportIdA = `rpt_${randomUUID().replace(/-/g, "")}`;
+  const reportIdB = `rpt_${randomUUID().replace(/-/g, "")}`;
+  const missingReportId = `rpt_missing_${randomUUID().replace(/-/g, "")}`;
+
+  await testDatabase.db.insert(dbSchema.matchReports).values([
+    {
+      id: reportIdA,
+      sessionId: context.sessionId,
+      status: "completed",
+      compatibilityScore: 0.72,
+      summary: "batch delete target a",
+      recommendation: "continue",
+      analysisData: { source: "test-a" },
+    },
+    {
+      id: reportIdB,
+      sessionId: context.sessionId,
+      status: "pending",
+      compatibilityScore: 0.51,
+      summary: "batch delete target b",
+      recommendation: "review",
+      analysisData: { source: "test-b" },
+    },
+  ]);
+
+  const batchResponse = await app.request("/admin/reports/batch", {
+    method: "POST",
+    headers: adminAuthHeaders(adminToken),
+    body: JSON.stringify({
+      action: "delete",
+      reportIds: [reportIdA, missingReportId],
+    }),
+  });
+  assert.equal(batchResponse.status, 200);
+  const batchJson = await batchResponse.json();
+  assert.equal(batchJson.success, true);
+  assert.equal(batchJson.data.action, "delete");
+  assert.equal(batchJson.data.requestedCount, 2);
+  assert.equal(batchJson.data.succeededCount, 1);
+  assert.equal(batchJson.data.failedCount, 1);
+  assert.equal(batchJson.data.failedItems[0].id, missingReportId);
+  assert.equal(batchJson.data.failedItems[0].code, "REPORT_NOT_FOUND");
+
+  const deleteResponse = await app.request(`/admin/reports/${reportIdB}`, {
+    method: "DELETE",
+    headers: adminAuthHeaders(adminToken),
+  });
+  assert.equal(deleteResponse.status, 200);
+  const deleteJson = await deleteResponse.json();
+  assert.equal(deleteJson.success, true);
+  assert.equal(deleteJson.data.deleted, true);
+
+  const deleteAgainResponse = await app.request(`/admin/reports/${reportIdB}`, {
+    method: "DELETE",
+    headers: adminAuthHeaders(adminToken),
+  });
+  assert.equal(deleteAgainResponse.status, 404);
+  const deleteAgainJson = await deleteAgainResponse.json();
+  assert.equal(deleteAgainJson.success, false);
+  assert.equal(deleteAgainJson.error.code, "REPORT_NOT_FOUND");
+
+  const remainingRows = await testDatabase.db
+    .select({ id: dbSchema.matchReports.id })
+    .from(dbSchema.matchReports)
+    .where(inArray(dbSchema.matchReports.id, [reportIdA, reportIdB]));
+  assert.equal(remainingRows.length, 0);
 });

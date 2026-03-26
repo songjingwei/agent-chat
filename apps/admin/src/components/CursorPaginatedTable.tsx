@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { Table, Button, Space } from "antd";
 import { LeftOutlined, RightOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
+import type { TableRowSelection } from "antd/es/table/interface";
 import { useT } from "@/lib/i18n";
 
 interface CursorPaginatedTableProps<T extends object> {
@@ -13,6 +14,8 @@ interface CursorPaginatedTableProps<T extends object> {
   nextCursor: string | null | undefined;
   onCursorChange: (cursor: string | undefined) => void;
   rowKey: string | ((record: T) => string);
+  rowSelection?: TableRowSelection<T>;
+  toolbar?: React.ReactNode;
   size?: "small" | "middle" | "large";
 }
 
@@ -23,6 +26,8 @@ export default function CursorPaginatedTable<T extends object>({
   nextCursor,
   onCursorChange,
   rowKey,
+  rowSelection,
+  toolbar,
   size = "middle",
 }: CursorPaginatedTableProps<T>) {
   const [cursorStack, setCursorStack] = useState<string[]>([]);
@@ -48,11 +53,13 @@ export default function CursorPaginatedTable<T extends object>({
 
   return (
     <div>
+      {toolbar ? <div style={{ marginBottom: 12 }}>{toolbar}</div> : null}
       <Table<T>
         columns={columns}
         dataSource={dataSource}
         loading={loading}
         rowKey={rowKey}
+        rowSelection={rowSelection}
         pagination={false}
         size={size}
       />

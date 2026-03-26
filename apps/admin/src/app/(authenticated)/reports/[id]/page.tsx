@@ -21,6 +21,11 @@ import { useT } from "@/lib/i18n";
 
 const { Title, Text, Paragraph } = Typography;
 
+function toPercent(score: number): number {
+  if (score <= 1) return Math.round(score * 100);
+  return Math.round(score);
+}
+
 export default function ReportDetailPage() {
   const params = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -49,10 +54,11 @@ export default function ReportDetailPage() {
     );
   }
 
+  const scoreValue = toPercent(report.compatibilityScore ?? 0);
   const scoreColor =
-    (report.compatibilityScore ?? 0) >= 70
+    scoreValue >= 70
       ? "#52c41a"
-      : (report.compatibilityScore ?? 0) >= 40
+      : scoreValue >= 40
         ? "#faad14"
         : "#ff4d4f";
 
@@ -98,7 +104,7 @@ export default function ReportDetailPage() {
           <div style={{ textAlign: "center" }}>
             <Progress
               type="dashboard"
-              percent={report.compatibilityScore}
+              percent={scoreValue}
               strokeColor={scoreColor}
               size={200}
             />

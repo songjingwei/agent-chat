@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/api-client";
+import type { BatchResult } from "@/lib/batch-feedback";
 
 export interface Persona {
   id: string;
@@ -47,4 +48,15 @@ export const personasApi = {
     apiClient.delete<{ success: boolean }>(`/admin/personas/${personaId}`),
   restore: (personaId: string) =>
     apiClient.post<Persona>(`/admin/personas/${personaId}/restore`),
+  batch: (body:
+    | { action: "delete" | "restore"; personaIds: string[] }
+    | {
+        action: "update_status";
+        personaIds: string[];
+        status: "draft" | "active" | "archived";
+      }) =>
+    apiClient.post<BatchResult<"delete" | "restore" | "update_status">>(
+      "/admin/personas/batch",
+      body,
+    ),
 };

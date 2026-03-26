@@ -16,6 +16,7 @@ import type { ColumnsType } from "antd/es/table";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { queryKeys } from "@/lib/query-keys";
+import { showBatchResult } from "@/lib/batch-feedback";
 import { memoryApi, type MemoryItem } from "@/services/memory";
 import CursorPaginatedTable from "@/components/CursorPaginatedTable";
 import { useT } from "@/lib/i18n";
@@ -37,6 +38,11 @@ export default function MemoryPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editWeight, setEditWeight] = useState<number>(1);
   const [editCategory, setEditCategory] = useState<string>("");
+  const [selectedMemoryIds, setSelectedMemoryIds] = useState<string[]>([]);
+  const [batchCategory, setBatchCategory] = useState<
+    "fact" | "preference" | "experience" | "instruction"
+  >("fact");
+  const [batchWeight, setBatchWeight] = useState<number>(0.5);
 
   const { data, isLoading } = useQuery({
     queryKey: [
@@ -81,6 +87,29 @@ export default function MemoryPage() {
     },
   });
 
+  const batchMutation = useMutation({
+    mutationFn: (
+      body:
+        | { action: "delete"; memoryIds: string[] }
+        | {
+            action: "update";
+            memoryIds: string[];
+            category?: "fact" | "preference" | "experience" | "instruction";
+            weight?: number;
+          },
+    ) => memoryApi.batch(body),
+    onSuccess: (result) => {
+      showBatchResult(messageApi, t, result);
+      setSelectedMemoryIds((prev) =>
+        prev.filter((id) => !result.succeededIds.includes(id)),
+      );
+      queryClient.invalidateQueries({ queryKey: queryKeys.memory.all });
+    },
+    onError: (err: Error) => {
+      messageApi.error(err.message);
+    },
+  });
+
   const handleDelete = (item: MemoryItem) => {
     Modal.confirm({
       title: t("memory.deleteConfirmTitle"),
@@ -101,6 +130,43 @@ export default function MemoryPage() {
     updateMutation.mutate({
       id,
       body: { weight: editWeight, category: editCategory },
+    });
+  };
+
+  const runBatchDelete = () => {
+    if (selectedMemoryIds.length === 0) return;
+    Modal.confirm({
+      title: t("batch.confirmTitle"),
+      content: t("batch.confirmContent", {
+        action: t("batch.deleteSelected"),
+        count: String(selectedMemoryIds.length),
+      }),
+      okText: t("common.delete"),
+      okButtonProps: { danger: true },
+      onOk: () =>
+        batchMutation.mutateAsync({
+          action: "delete",
+          memoryIds: selectedMemoryIds,
+        }),
+    });
+  };
+
+  const runBatchUpdate = () => {
+    if (selectedMemoryIds.length === 0) return;
+    Modal.confirm({
+      title: t("batch.confirmTitle"),
+      content: t("batch.confirmContent", {
+        action: t("batch.updateSelected"),
+        count: String(selectedMemoryIds.length),
+      }),
+      okText: t("common.confirm"),
+      onOk: () =>
+        batchMutation.mutateAsync({
+          action: "update",
+          memoryIds: selectedMemoryIds,
+          category: batchCategory,
+          weight: batchWeight,
+        }),
     });
   };
 
@@ -148,8 +214,7 @@ export default function MemoryPage() {
                 { label: "preference", value: "preference" },
                 { label: "experience", value: "experience" },
                 { label: "fact", value: "fact" },
-                { label: "emotion", value: "emotion" },
-                { label: "relationship", value: "relationship" },
+                { label: "instruction", value: "instruction" },
               ]}
             />
           );
@@ -174,8 +239,8 @@ export default function MemoryPage() {
             <InputNumber
               size="small"
               min={0}
-              max={10}
-              step={0.1}
+              max={1}
+              step={0.05}
               value={editWeight}
               onChange={(v) => setEditWeight(v ?? 1)}
               style={{ width: 80 }}
@@ -269,8 +334,7 @@ export default function MemoryPage() {
                 { label: "Preference", value: "preference" },
                 { label: "Experience", value: "experience" },
                 { label: "Fact", value: "fact" },
-                { label: "Emotion", value: "emotion" },
-                { label: "Relationship", value: "relationship" },
+                { label: "Instruction", value: "instruction" },
               ]}
             />
             <Select
@@ -283,8 +347,8 @@ export default function MemoryPage() {
                 setCursor(undefined);
               }}
               options={[
-                { label: "User Input", value: "user_input" },
-                { label: "LLM Inferred", value: "llm_inferred" },
+                { label: "Agent Inferred", value: "agent_inferred" },
+                { label: "Human Override", value: "human_override" },
                 { label: "System", value: "system" },
               ]}
             />
@@ -297,6 +361,53 @@ export default function MemoryPage() {
           nextCursor={data?.nextCursor}
           onCursorChange={setCursor}
           rowKey="id"
+          rowSelection={{
+            selectedRowKeys: selectedMemoryIds,
+            onChange: (keys) =>
+              setSelectedMemoryIds(keys.map((key) => String(key))),
+          }}
+          toolbar={(
+            <Space wrap>
+              <Typography.Text>
+                {t("batch.selectedCount", { count: String(selectedMemoryIds.length) })}
+              </Typography.Text>
+              <Button
+                danger
+                onClick={runBatchDelete}
+                disabled={selectedMemoryIds.length === 0}
+                loading={batchMutation.isPending}
+              >
+                {t("batch.deleteSelected")}
+              </Button>
+              <Select
+                value={batchCategory}
+                onChange={(
+                  val: "fact" | "preference" | "experience" | "instruction",
+                ) => setBatchCategory(val)}
+                style={{ width: 170 }}
+                options={[
+                  { label: "Fact", value: "fact" },
+                  { label: "Preference", value: "preference" },
+                  { label: "Experience", value: "experience" },
+                  { label: "Instruction", value: "instruction" },
+                ]}
+              />
+              <InputNumber
+                min={0}
+                max={1}
+                step={0.05}
+                value={batchWeight}
+                onChange={(v) => setBatchWeight(v ?? 0.5)}
+              />
+              <Button
+                onClick={runBatchUpdate}
+                disabled={selectedMemoryIds.length === 0}
+                loading={batchMutation.isPending}
+              >
+                {t("batch.updateSelected")}
+              </Button>
+            </Space>
+          )}
         />
       </div>
     </>

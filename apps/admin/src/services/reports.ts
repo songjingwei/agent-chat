@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/api-client";
+import type { BatchResult } from "@/lib/batch-feedback";
 
 export interface Report {
   id: string;
@@ -36,4 +37,11 @@ export const reportsApi = {
   },
   get: (reportId: string) =>
     apiClient.get<Report>(`/admin/reports/${reportId}`),
+  delete: (reportId: string) =>
+    apiClient.delete<{ success: boolean }>(`/admin/reports/${reportId}`),
+  batchDelete: (reportIds: string[]) =>
+    apiClient.post<BatchResult<"delete">>("/admin/reports/batch", {
+      action: "delete",
+      reportIds,
+    }),
 };

@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { and, eq, gt, isNull, asc } from "drizzle-orm";
+import { and, eq, gt, inArray, asc } from "drizzle-orm";
 import type { DbClient } from "@agent/db";
 import { agentPersonas } from "@agent/db";
 
@@ -7,6 +7,7 @@ import { ApiError } from "../../lib/api-error.js";
 import { jsonOk } from "../../lib/http.js";
 import { parseJsonBody, parseWithSchema } from "../../lib/validation.js";
 import {
+  batchPersonasBodySchema,
   listPersonasQuerySchema,
   updatePersonaBodySchema,
 } from "../../schemas/admin.js";
@@ -44,6 +45,120 @@ export const createAdminPersonasRoutes = (db: DbClient) => {
     const nextCursor = hasNextPage ? items[items.length - 1]!.id : null;
 
     return jsonOk(c, { items, nextCursor, hasNextPage });
+  });
+
+  // POST /personas/batch — batch delete/restore/update status with partial success
+  routes.post("/personas/batch", async (c) => {
+    const body = await parseJsonBody(c, batchPersonasBodySchema);
+    const adminId = c.get("adminId");
+    const uniqueIds = Array.from(new Set(body.personaIds));
+    const now = new Date();
+
+    const existingRows = await db
+      .select({
+        id: agentPersonas.id,
+        deletedAt: agentPersonas.deletedAt,
+      })
+      .from(agentPersonas)
+      .where(inArray(agentPersonas.id, uniqueIds));
+    const existingMap = new Map(existingRows.map((row) => [row.id, row]));
+
+    const eligibleIds: string[] = [];
+    const failedItems: Array<{ id: string; code: string; message: string }> = [];
+
+    for (const id of uniqueIds) {
+      const row = existingMap.get(id);
+      if (!row) {
+        failedItems.push({
+          id,
+          code: "PERSONA_NOT_FOUND",
+          message: `Persona not found: ${id}`,
+        });
+        continue;
+      }
+
+      if (body.action === "delete" && row.deletedAt) {
+        failedItems.push({
+          id,
+          code: "PERSONA_ALREADY_DELETED",
+          message: "Persona is already deleted.",
+        });
+        continue;
+      }
+
+      if (body.action === "restore" && !row.deletedAt) {
+        failedItems.push({
+          id,
+          code: "PERSONA_NOT_DELETED",
+          message: "Persona is not deleted.",
+        });
+        continue;
+      }
+
+      if (body.action === "update_status" && row.deletedAt) {
+        failedItems.push({
+          id,
+          code: "PERSONA_DELETED",
+          message: "Cannot update status of a deleted persona.",
+        });
+        continue;
+      }
+
+      eligibleIds.push(id);
+    }
+
+    let succeededIds: string[] = [];
+    if (eligibleIds.length > 0) {
+      if (body.action === "delete") {
+        const updatedRows = await db
+          .update(agentPersonas)
+          .set({
+            deletedAt: now,
+            updatedBy: adminId,
+            updatedAt: now,
+          })
+          .where(inArray(agentPersonas.id, eligibleIds))
+          .returning({ id: agentPersonas.id });
+        succeededIds = updatedRows.map((row) => row.id);
+      } else if (body.action === "restore") {
+        const updatedRows = await db
+          .update(agentPersonas)
+          .set({
+            deletedAt: null,
+            updatedBy: adminId,
+            updatedAt: now,
+          })
+          .where(inArray(agentPersonas.id, eligibleIds))
+          .returning({ id: agentPersonas.id });
+        succeededIds = updatedRows.map((row) => row.id);
+      } else {
+        const status = (
+          body as {
+            action: "update_status";
+            status: "draft" | "active" | "archived";
+          }
+        ).status;
+        const updatedRows = await db
+          .update(agentPersonas)
+          .set({
+            status,
+            updatedBy: adminId,
+            updatedAt: now,
+          })
+          .where(inArray(agentPersonas.id, eligibleIds))
+          .returning({ id: agentPersonas.id });
+        succeededIds = updatedRows.map((row) => row.id);
+      }
+    }
+
+    return jsonOk(c, {
+      action: body.action,
+      requestedCount: uniqueIds.length,
+      succeededCount: succeededIds.length,
+      failedCount: failedItems.length,
+      succeededIds,
+      failedItems,
+    });
   });
 
   // GET /personas/:personaId — get persona detail

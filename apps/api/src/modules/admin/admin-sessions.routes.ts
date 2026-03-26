@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { and, eq, gt, asc } from "drizzle-orm";
+import { and, eq, gt, inArray, asc } from "drizzle-orm";
 import type { DbClient } from "@agent/db";
 import { chatSessions } from "@agent/db";
 
@@ -7,6 +7,7 @@ import { ApiError } from "../../lib/api-error.js";
 import { jsonOk } from "../../lib/http.js";
 import { parseJsonBody, parseWithSchema } from "../../lib/validation.js";
 import {
+  batchSessionsBodySchema,
   listSessionsQuerySchema,
   updateSessionBodySchema,
 } from "../../schemas/admin.js";
@@ -41,6 +42,94 @@ export const createAdminSessionsRoutes = (db: DbClient) => {
     const nextCursor = hasNextPage ? items[items.length - 1]!.id : null;
 
     return jsonOk(c, { items, nextCursor, hasNextPage });
+  });
+
+  // POST /sessions/batch — batch delete/update status with partial success
+  routes.post("/sessions/batch", async (c) => {
+    const body = await parseJsonBody(c, batchSessionsBodySchema);
+    const adminId = c.get("adminId");
+    const uniqueIds = Array.from(new Set(body.sessionIds));
+    const now = new Date();
+
+    const existingRows = await db
+      .select({
+        id: chatSessions.id,
+        deletedAt: chatSessions.deletedAt,
+      })
+      .from(chatSessions)
+      .where(inArray(chatSessions.id, uniqueIds));
+    const existingMap = new Map(existingRows.map((row) => [row.id, row]));
+
+    const eligibleIds: string[] = [];
+    const failedItems: Array<{ id: string; code: string; message: string }> = [];
+
+    for (const id of uniqueIds) {
+      const row = existingMap.get(id);
+      if (!row) {
+        failedItems.push({
+          id,
+          code: "SESSION_NOT_FOUND",
+          message: `Session not found: ${id}`,
+        });
+        continue;
+      }
+
+      if (body.action === "delete" && row.deletedAt) {
+        failedItems.push({
+          id,
+          code: "SESSION_ALREADY_DELETED",
+          message: "Session is already deleted.",
+        });
+        continue;
+      }
+
+      if (body.action === "update_status" && row.deletedAt) {
+        failedItems.push({
+          id,
+          code: "SESSION_DELETED",
+          message: "Cannot update status of a deleted session.",
+        });
+        continue;
+      }
+
+      eligibleIds.push(id);
+    }
+
+    let succeededIds: string[] = [];
+    if (eligibleIds.length > 0) {
+      if (body.action === "delete") {
+        const updatedRows = await db
+          .update(chatSessions)
+          .set({
+            deletedAt: now,
+            updatedBy: adminId,
+            updatedAt: now,
+          })
+          .where(inArray(chatSessions.id, eligibleIds))
+          .returning({ id: chatSessions.id });
+        succeededIds = updatedRows.map((row) => row.id);
+      } else {
+        const updatedRows = await db
+          .update(chatSessions)
+          .set({
+            status: body.status,
+            updatedBy: adminId,
+            updatedAt: now,
+          })
+          .where(inArray(chatSessions.id, eligibleIds))
+          .returning({ id: chatSessions.id });
+        succeededIds = updatedRows.map((row) => row.id);
+      }
+    }
+
+    return jsonOk(c, {
+      action: body.action,
+      requestedCount: uniqueIds.length,
+      succeededCount: succeededIds.length,
+      failedCount: failedItems.length,
+      succeededIds,
+      failedItems,
+    });
   });
 
   // GET /sessions/:sessionId — get session detail

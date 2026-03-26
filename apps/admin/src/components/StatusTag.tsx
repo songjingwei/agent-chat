@@ -12,6 +12,7 @@ const statusColorMap: Record<string, string> = {
   archived: "red",
   failed: "red",
   deleted: "red",
+  generating: "blue",
   generated: "green",
 };
 

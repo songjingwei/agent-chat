@@ -13,6 +13,7 @@ import type { ColumnsType } from "antd/es/table";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { queryKeys } from "@/lib/query-keys";
+import { showBatchResult } from "@/lib/batch-feedback";
 import { usersApi, type User } from "@/services/users";
 import CursorPaginatedTable from "@/components/CursorPaginatedTable";
 import StatusTag from "@/components/StatusTag";
@@ -29,6 +30,7 @@ export default function UsersPage() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [cursor, setCursor] = useState<string | undefined>(undefined);
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
 
   // Debounce search
   const debounceTimer = useMemo(() => {
@@ -70,6 +72,21 @@ export default function UsersPage() {
     },
   });
 
+  const batchMutation = useMutation({
+    mutationFn: (body: { action: "delete" | "restore"; userIds: string[] }) =>
+      usersApi.batch(body),
+    onSuccess: (result) => {
+      showBatchResult(messageApi, t, result);
+      setSelectedUserIds((prev) =>
+        prev.filter((id) => !result.succeededIds.includes(id)),
+      );
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
+    },
+    onError: (err: Error) => {
+      messageApi.error(err.message);
+    },
+  });
+
   const handleDelete = (user: User) => {
     Modal.confirm({
       title: t("users.deleteConfirmTitle"),
@@ -77,6 +94,22 @@ export default function UsersPage() {
       okText: t("common.delete"),
       okButtonProps: { danger: true },
       onOk: () => deleteMutation.mutateAsync(user.id),
+    });
+  };
+
+  const runBatchAction = (action: "delete" | "restore") => {
+    if (selectedUserIds.length === 0) return;
+    const actionLabel =
+      action === "delete" ? t("batch.deleteSelected") : t("batch.restoreSelected");
+    Modal.confirm({
+      title: t("batch.confirmTitle"),
+      content: t("batch.confirmContent", {
+        action: actionLabel,
+        count: String(selectedUserIds.length),
+      }),
+      okText: action === "delete" ? t("common.delete") : t("table.restore"),
+      okButtonProps: action === "delete" ? { danger: true } : undefined,
+      onOk: () => batchMutation.mutateAsync({ action, userIds: selectedUserIds }),
     });
   };
 
@@ -175,6 +208,32 @@ export default function UsersPage() {
           nextCursor={data?.nextCursor}
           onCursorChange={setCursor}
           rowKey="id"
+          rowSelection={{
+            selectedRowKeys: selectedUserIds,
+            onChange: (keys) => setSelectedUserIds(keys.map((key) => String(key))),
+          }}
+          toolbar={(
+            <Space wrap>
+              <Typography.Text>
+                {t("batch.selectedCount", { count: String(selectedUserIds.length) })}
+              </Typography.Text>
+              <Button
+                danger
+                onClick={() => runBatchAction("delete")}
+                disabled={selectedUserIds.length === 0}
+                loading={batchMutation.isPending}
+              >
+                {t("batch.deleteSelected")}
+              </Button>
+              <Button
+                onClick={() => runBatchAction("restore")}
+                disabled={selectedUserIds.length === 0}
+                loading={batchMutation.isPending}
+              >
+                {t("batch.restoreSelected")}
+              </Button>
+            </Space>
+          )}
         />
       </div>
     </>

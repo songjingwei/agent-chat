@@ -19,6 +19,7 @@ import type { ColumnsType } from "antd/es/table";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { queryKeys } from "@/lib/query-keys";
+import { showBatchResult } from "@/lib/batch-feedback";
 import { sessionsApi, type Session } from "@/services/sessions";
 import CursorPaginatedTable from "@/components/CursorPaginatedTable";
 import StatusTag from "@/components/StatusTag";
@@ -36,6 +37,10 @@ export default function SessionsPage() {
   const [statusFilter, setStatusFilter] = useState<string | undefined>(
     undefined,
   );
+  const [selectedSessionIds, setSelectedSessionIds] = useState<string[]>([]);
+  const [batchStatus, setBatchStatus] = useState<
+    "pending" | "active" | "paused" | "completed" | "failed"
+  >("active");
 
   const { data, isLoading } = useQuery({
     queryKey: [...queryKeys.sessions.all, { cursor, status: statusFilter }],
@@ -54,6 +59,28 @@ export default function SessionsPage() {
     },
   });
 
+  const batchMutation = useMutation({
+    mutationFn: (
+      body:
+        | { action: "delete"; sessionIds: string[] }
+        | {
+            action: "update_status";
+            sessionIds: string[];
+            status: "pending" | "active" | "paused" | "completed" | "failed";
+          },
+    ) => sessionsApi.batch(body),
+    onSuccess: (result) => {
+      showBatchResult(messageApi, t, result);
+      setSelectedSessionIds((prev) =>
+        prev.filter((id) => !result.succeededIds.includes(id)),
+      );
+      queryClient.invalidateQueries({ queryKey: queryKeys.sessions.all });
+    },
+    onError: (err: Error) => {
+      messageApi.error(err.message);
+    },
+  });
+
   const handleDelete = (session: Session) => {
     Modal.confirm({
       title: t("sessions.deleteConfirmTitle"),
@@ -61,6 +88,42 @@ export default function SessionsPage() {
       okText: t("common.delete"),
       okButtonProps: { danger: true },
       onOk: () => deleteMutation.mutateAsync(session.id),
+    });
+  };
+
+  const runBatchDelete = () => {
+    if (selectedSessionIds.length === 0) return;
+    Modal.confirm({
+      title: t("batch.confirmTitle"),
+      content: t("batch.confirmContent", {
+        action: t("batch.deleteSelected"),
+        count: String(selectedSessionIds.length),
+      }),
+      okText: t("common.delete"),
+      okButtonProps: { danger: true },
+      onOk: () =>
+        batchMutation.mutateAsync({
+          action: "delete",
+          sessionIds: selectedSessionIds,
+        }),
+    });
+  };
+
+  const runBatchStatusUpdate = () => {
+    if (selectedSessionIds.length === 0) return;
+    Modal.confirm({
+      title: t("batch.confirmTitle"),
+      content: t("batch.confirmContent", {
+        action: t("batch.updateStatus"),
+        count: String(selectedSessionIds.length),
+      }),
+      okText: t("common.confirm"),
+      onOk: () =>
+        batchMutation.mutateAsync({
+          action: "update_status",
+          sessionIds: selectedSessionIds,
+          status: batchStatus,
+        }),
     });
   };
 
@@ -156,6 +219,7 @@ export default function SessionsPage() {
                 setCursor(undefined);
               }}
               options={[
+                { label: t("status.pending"), value: "pending" },
                 { label: t("status.active"), value: "active" },
                 { label: t("status.completed"), value: "completed" },
                 { label: t("status.paused"), value: "paused" },
@@ -171,6 +235,47 @@ export default function SessionsPage() {
           nextCursor={data?.nextCursor}
           onCursorChange={setCursor}
           rowKey="id"
+          rowSelection={{
+            selectedRowKeys: selectedSessionIds,
+            onChange: (keys) =>
+              setSelectedSessionIds(keys.map((key) => String(key))),
+          }}
+          toolbar={(
+            <Space wrap>
+              <Typography.Text>
+                {t("batch.selectedCount", { count: String(selectedSessionIds.length) })}
+              </Typography.Text>
+              <Button
+                danger
+                onClick={runBatchDelete}
+                disabled={selectedSessionIds.length === 0}
+                loading={batchMutation.isPending}
+              >
+                {t("batch.deleteSelected")}
+              </Button>
+              <Select
+                value={batchStatus}
+                onChange={(
+                  val: "pending" | "active" | "paused" | "completed" | "failed",
+                ) => setBatchStatus(val)}
+                style={{ width: 160 }}
+                options={[
+                  { label: t("status.pending"), value: "pending" },
+                  { label: t("status.active"), value: "active" },
+                  { label: t("status.paused"), value: "paused" },
+                  { label: t("status.completed"), value: "completed" },
+                  { label: t("status.failed"), value: "failed" },
+                ]}
+              />
+              <Button
+                onClick={runBatchStatusUpdate}
+                disabled={selectedSessionIds.length === 0}
+                loading={batchMutation.isPending}
+              >
+                {t("batch.updateStatus")}
+              </Button>
+            </Space>
+          )}
         />
       </div>
     </>

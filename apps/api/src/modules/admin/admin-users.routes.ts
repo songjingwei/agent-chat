@@ -3,10 +3,9 @@ import {
   and,
   eq,
   gt,
+  inArray,
   ilike,
-  isNull,
   or,
-  sql,
   asc,
 } from "drizzle-orm";
 import type { DbClient } from "@agent/db";
@@ -16,6 +15,7 @@ import { ApiError } from "../../lib/api-error.js";
 import { jsonOk } from "../../lib/http.js";
 import { parseJsonBody, parseWithSchema } from "../../lib/validation.js";
 import {
+  batchUsersBodySchema,
   listUsersQuerySchema,
   updateUserBodySchema,
 } from "../../schemas/admin.js";
@@ -64,6 +64,76 @@ export const createAdminUsersRoutes = (db: DbClient) => {
     return jsonOk(c, { items, nextCursor, hasNextPage });
   });
 
+  // POST /users/batch — batch delete/restore users with partial success
+  routes.post("/users/batch", async (c) => {
+    const body = await parseJsonBody(c, batchUsersBodySchema);
+    const uniqueIds = Array.from(new Set(body.userIds));
+    const now = new Date();
+
+    const existingRows = await db
+      .select({ id: users.id, deletedAt: users.deletedAt })
+      .from(users)
+      .where(inArray(users.id, uniqueIds));
+    const existingMap = new Map(existingRows.map((row) => [row.id, row]));
+
+    const eligibleIds: string[] = [];
+    const failedItems: Array<{ id: string; code: string; message: string }> = [];
+
+    for (const id of uniqueIds) {
+      const row = existingMap.get(id);
+      if (!row) {
+        failedItems.push({
+          id,
+          code: "USER_NOT_FOUND",
+          message: `User not found: ${id}`,
+        });
+        continue;
+      }
+
+      if (body.action === "delete" && row.deletedAt) {
+        failedItems.push({
+          id,
+          code: "USER_ALREADY_DELETED",
+          message: "User is already deleted.",
+        });
+        continue;
+      }
+
+      if (body.action === "restore" && !row.deletedAt) {
+        failedItems.push({
+          id,
+          code: "USER_NOT_DELETED",
+          message: "User is not deleted.",
+        });
+        continue;
+      }
+
+      eligibleIds.push(id);
+    }
+
+    let succeededIds: string[] = [];
+    if (eligibleIds.length > 0) {
+      const updatedRows = await db
+        .update(users)
+        .set({
+          deletedAt: body.action === "delete" ? now : null,
+          updatedAt: now,
+        })
+        .where(inArray(users.id, eligibleIds))
+        .returning({ id: users.id });
+      succeededIds = updatedRows.map((row) => row.id);
+    }
+
+    return jsonOk(c, {
+      action: body.action,
+      requestedCount: uniqueIds.length,
+      succeededCount: succeededIds.length,
+      failedCount: failedItems.length,
+      succeededIds,
+      failedItems,
+    });
+  });
+
   // GET /users/:userId — get user detail
   routes.get("/users/:userId", async (c) => {
     const userId = c.req.param("userId");
@@ -85,7 +155,6 @@ export const createAdminUsersRoutes = (db: DbClient) => {
   routes.patch("/users/:userId", async (c) => {
     const userId = c.req.param("userId");
     const body = await parseJsonBody(c, updateUserBodySchema);
-    const adminId = c.get("adminId");
 
     const [existing] = await db
       .select({ id: users.id })

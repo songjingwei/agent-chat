@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/api-client";
+import type { BatchResult } from "@/lib/batch-feedback";
 
 export interface MemoryItem {
   id: string;
@@ -41,4 +42,17 @@ export const memoryApi = {
     apiClient.patch<MemoryItem>(`/admin/memory-items/${memoryId}`, body),
   delete: (memoryId: string) =>
     apiClient.delete<{ success: boolean }>(`/admin/memory-items/${memoryId}`),
+  batch: (body:
+    | { action: "delete"; memoryIds: string[] }
+    | {
+        action: "update";
+        memoryIds: string[];
+        category?: "fact" | "preference" | "experience" | "instruction";
+        weight?: number;
+        content?: string;
+      }) =>
+    apiClient.post<BatchResult<"delete" | "update">>(
+      "/admin/memory-items/batch",
+      body,
+    ),
 };

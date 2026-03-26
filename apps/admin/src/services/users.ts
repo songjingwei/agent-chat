@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/api-client";
+import type { BatchResult } from "@/lib/batch-feedback";
 
 export interface User {
   id: string;
@@ -40,4 +41,6 @@ export const usersApi = {
     apiClient.delete<{ success: boolean }>(`/admin/users/${userId}`),
   restore: (userId: string) =>
     apiClient.post<User>(`/admin/users/${userId}/restore`),
+  batch: (body: { action: "delete" | "restore"; userIds: string[] }) =>
+    apiClient.post<BatchResult<"delete" | "restore">>("/admin/users/batch", body),
 };

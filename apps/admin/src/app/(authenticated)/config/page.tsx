@@ -9,6 +9,8 @@ import {
   Modal,
   Form,
   Input,
+  Select,
+  Switch,
   Popconfirm,
   message,
 } from "antd";
@@ -17,6 +19,7 @@ import type { ColumnsType } from "antd/es/table";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { queryKeys } from "@/lib/query-keys";
+import { showBatchResult } from "@/lib/batch-feedback";
 import { configApi, type ConfigItem } from "@/services/config";
 import { useT } from "@/lib/i18n";
 
@@ -30,6 +33,7 @@ export default function ConfigPage() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [selectedConfigKeys, setSelectedConfigKeys] = useState<string[]>([]);
 
   const { data, isLoading } = useQuery({
     queryKey: queryKeys.configs.all,
@@ -39,18 +43,36 @@ export default function ConfigPage() {
   const upsertMutation = useMutation({
     mutationFn: ({
       key,
-      value,
+      configValue,
+      valueType,
       description,
+      isSecret,
     }: {
       key: string;
-      value: string;
+      configValue: string;
+      valueType: "string" | "number" | "boolean" | "json";
       description?: string;
-    }) => configApi.upsert(key, { value, description }),
+      isSecret?: boolean;
+    }) => configApi.upsert(key, { configValue, valueType, description, isSecret }),
     onSuccess: () => {
       messageApi.success(t("config.saveSuccess"));
       setModalOpen(false);
       setEditingKey(null);
       form.resetFields();
+      queryClient.invalidateQueries({ queryKey: queryKeys.configs.all });
+    },
+    onError: (err: Error) => {
+      messageApi.error(err.message);
+    },
+  });
+
+  const batchDeleteMutation = useMutation({
+    mutationFn: (keys: string[]) => configApi.batchDelete(keys),
+    onSuccess: (result) => {
+      showBatchResult(messageApi, t, result);
+      setSelectedConfigKeys((prev) =>
+        prev.filter((key) => !result.succeededIds.includes(key)),
+      );
       queryClient.invalidateQueries({ queryKey: queryKeys.configs.all });
     },
     onError: (err: Error) => {
@@ -76,11 +98,13 @@ export default function ConfigPage() {
   };
 
   const handleEdit = (item: ConfigItem) => {
-    setEditingKey(item.key);
+    setEditingKey(item.configKey);
     form.setFieldsValue({
-      key: item.key,
-      value: item.value,
+      key: item.configKey,
+      configValue: item.configValue,
+      valueType: item.valueType,
       description: item.description ?? "",
+      isSecret: item.isSecret,
     });
     setModalOpen(true);
   };
@@ -89,22 +113,35 @@ export default function ConfigPage() {
     form.validateFields().then((values) => {
       upsertMutation.mutate({
         key: values.key as string,
-        value: values.value as string,
+        configValue: values.configValue as string,
+        valueType: values.valueType as "string" | "number" | "boolean" | "json",
         description: (values.description as string) || undefined,
+        isSecret: Boolean(values.isSecret),
       });
     });
   };
 
-  // Normalize data: the API might return an array directly or a paginated response
-  const configItems: ConfigItem[] = Array.isArray(data)
-    ? data
-    : (data as unknown as { items: ConfigItem[] })?.items ?? [];
+  const runBatchDelete = () => {
+    if (selectedConfigKeys.length === 0) return;
+    Modal.confirm({
+      title: t("batch.confirmTitle"),
+      content: t("batch.confirmContent", {
+        action: t("batch.deleteSelected"),
+        count: String(selectedConfigKeys.length),
+      }),
+      okText: t("common.delete"),
+      okButtonProps: { danger: true },
+      onOk: () => batchDeleteMutation.mutateAsync(selectedConfigKeys),
+    });
+  };
+
+  const configItems: ConfigItem[] = data?.items ?? [];
 
   const columns: ColumnsType<ConfigItem> = [
     {
       title: t("table.key"),
-      dataIndex: "key",
-      key: "key",
+      dataIndex: "configKey",
+      key: "configKey",
       width: 250,
       render: (key: string) => (
         <span style={{ fontFamily: "monospace" }}>{key}</span>
@@ -112,9 +149,15 @@ export default function ConfigPage() {
     },
     {
       title: t("table.value"),
-      dataIndex: "value",
-      key: "value",
+      dataIndex: "configValue",
+      key: "configValue",
       ellipsis: true,
+    },
+    {
+      title: t("table.type"),
+      dataIndex: "valueType",
+      key: "valueType",
+      width: 120,
     },
     {
       title: t("table.description"),
@@ -136,17 +179,17 @@ export default function ConfigPage() {
       width: 140,
       render: (_: unknown, record: ConfigItem) => (
         <Space>
-          <Button
-            type="link"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
+            <Button
+              type="link"
+              size="small"
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(record)}
           >
             {t("table.edit")}
           </Button>
           <Popconfirm
             title={t("config.deleteConfirm")}
-            onConfirm={() => deleteMutation.mutate(record.key)}
+            onConfirm={() => deleteMutation.mutate(record.configKey)}
             okText={t("common.delete")}
             okButtonProps={{ danger: true }}
           >
@@ -192,9 +235,29 @@ export default function ConfigPage() {
           columns={columns}
           dataSource={configItems}
           loading={isLoading}
-          rowKey="key"
+          rowKey="configKey"
+          rowSelection={{
+            selectedRowKeys: selectedConfigKeys,
+            onChange: (keys) =>
+              setSelectedConfigKeys(keys.map((key) => String(key))),
+          }}
           pagination={false}
           size="middle"
+          title={() => (
+            <Space wrap>
+              <Typography.Text>
+                {t("batch.selectedCount", { count: String(selectedConfigKeys.length) })}
+              </Typography.Text>
+              <Button
+                danger
+                onClick={runBatchDelete}
+                disabled={selectedConfigKeys.length === 0}
+                loading={batchDeleteMutation.isPending}
+              >
+                {t("batch.deleteSelected")}
+              </Button>
+            </Space>
+          )}
         />
 
         <Modal
@@ -223,7 +286,7 @@ export default function ConfigPage() {
             </Form.Item>
             <Form.Item
               label={t("table.value")}
-              name="value"
+              name="configValue"
               rules={[{ required: true, message: t("config.valueRequired") }]}
             >
               <Input.TextArea
@@ -232,8 +295,31 @@ export default function ConfigPage() {
                 style={{ fontFamily: "monospace" }}
               />
             </Form.Item>
+            <Form.Item
+              label={t("table.type")}
+              name="valueType"
+              initialValue="string"
+              rules={[{ required: true, message: t("config.typeRequired") }]}
+            >
+              <Select
+                options={[
+                  { label: "string", value: "string" },
+                  { label: "number", value: "number" },
+                  { label: "boolean", value: "boolean" },
+                  { label: "json", value: "json" },
+                ]}
+              />
+            </Form.Item>
             <Form.Item label={t("table.description")} name="description">
               <Input placeholder={t("config.descriptionPlaceholder")} />
+            </Form.Item>
+            <Form.Item
+              label={t("table.secret")}
+              name="isSecret"
+              valuePropName="checked"
+              initialValue={false}
+            >
+              <Switch />
             </Form.Item>
           </Form>
         </Modal>
