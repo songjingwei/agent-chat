@@ -58,6 +58,16 @@ export default function SessionDetailPage() {
     );
   }
 
+  const renderPersonaIdentity = (
+    personaId: string,
+    personaName?: string,
+  ) => (
+    <Space direction="vertical" size={0}>
+      {personaName ? <Text>{personaName}</Text> : null}
+      <Text style={{ fontFamily: "monospace" }}>{personaId}</Text>
+    </Space>
+  );
+
   return (
     <div>
       <Space style={{ marginBottom: 16 }}>
@@ -80,10 +90,16 @@ export default function SessionDetailPage() {
             <StatusTag status={session.status} />
           </Descriptions.Item>
           <Descriptions.Item label={t("table.initiatorPersona")}>
-            {session.initiatorPersona?.name ?? session.initiatorPersonaId}
+            {renderPersonaIdentity(
+              session.initiatorPersonaId,
+              session.initiatorPersona?.name,
+            )}
           </Descriptions.Item>
           <Descriptions.Item label={t("table.targetPersona")}>
-            {session.targetPersona?.name ?? session.targetPersonaId}
+            {renderPersonaIdentity(
+              session.targetPersonaId,
+              session.targetPersona?.name,
+            )}
           </Descriptions.Item>
           <Descriptions.Item label={t("table.currentRound")}>
             {session.currentRound}

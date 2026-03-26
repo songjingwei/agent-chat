@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { and, eq, gt, inArray, asc } from "drizzle-orm";
 import type { DbClient } from "@agent/db";
-import { chatSessions } from "@agent/db";
+import { agentPersonas, chatSessions } from "@agent/db";
 
 import { ApiError } from "../../lib/api-error.js";
 import { jsonOk } from "../../lib/http.js";
@@ -14,6 +14,42 @@ import {
 
 export const createAdminSessionsRoutes = (db: DbClient) => {
   const routes = new Hono();
+
+  const attachPersonaNames = async (
+    sessions: Array<typeof chatSessions.$inferSelect>,
+  ) => {
+    if (sessions.length === 0) {
+      return sessions;
+    }
+
+    const personaIds = Array.from(
+      new Set(
+        sessions.flatMap((session) => [
+          session.initiatorPersonaId,
+          session.targetPersonaId,
+        ]),
+      ),
+    );
+
+    const personaRows =
+      personaIds.length === 0
+        ? []
+        : await db
+            .select({
+              id: agentPersonas.id,
+              name: agentPersonas.name,
+            })
+            .from(agentPersonas)
+            .where(inArray(agentPersonas.id, personaIds));
+    const personaMap = new Map(personaRows.map((row) => [row.id, row]));
+
+    return sessions.map((session) => ({
+      ...session,
+      initiatorPersona:
+        personaMap.get(session.initiatorPersonaId) ?? undefined,
+      targetPersona: personaMap.get(session.targetPersonaId) ?? undefined,
+    }));
+  };
 
   // GET /sessions — list sessions with cursor-based pagination
   routes.get("/sessions", async (c) => {
@@ -40,8 +76,9 @@ export const createAdminSessionsRoutes = (db: DbClient) => {
     const hasNextPage = rows.length > limit;
     const items = hasNextPage ? rows.slice(0, limit) : rows;
     const nextCursor = hasNextPage ? items[items.length - 1]!.id : null;
+    const itemsWithPersonas = await attachPersonaNames(items);
 
-    return jsonOk(c, { items, nextCursor, hasNextPage });
+    return jsonOk(c, { items: itemsWithPersonas, nextCursor, hasNextPage });
   });
 
   // POST /sessions/batch — batch delete/update status with partial success
@@ -149,7 +186,8 @@ export const createAdminSessionsRoutes = (db: DbClient) => {
       );
     }
 
-    return jsonOk(c, session);
+    const [sessionWithPersonas] = await attachPersonaNames([session]);
+    return jsonOk(c, sessionWithPersonas);
   });
 
   // PATCH /sessions/:sessionId — update status only

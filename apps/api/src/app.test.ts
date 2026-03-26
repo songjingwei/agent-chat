@@ -1385,3 +1385,40 @@ test("reports admin endpoints should support batch delete partial success and si
     .where(inArray(dbSchema.matchReports.id, [reportIdA, reportIdB]));
   assert.equal(remainingRows.length, 0);
 });
+
+test("admin sessions endpoints should include initiator and target persona names", async () => {
+  const app = createTestApp();
+  const adminToken = createAdminAccessToken();
+  const context = await registerPairAndCreateSession(app, "admin-session-persona-names");
+
+  const detailResponse = await app.request(`/admin/sessions/${context.sessionId}`, {
+    headers: adminAuthHeaders(adminToken),
+  });
+  assert.equal(detailResponse.status, 200);
+  const detailJson = await detailResponse.json();
+  assert.equal(detailJson.success, true);
+  assert.equal(detailJson.data.initiatorPersona?.id, context.initiatorPersonaId);
+  assert.equal(detailJson.data.initiatorPersona?.name, "Alice");
+  assert.equal(detailJson.data.targetPersona?.id, context.targetPersonaId);
+  assert.equal(detailJson.data.targetPersona?.name, "Bob");
+
+  const listResponse = await app.request("/admin/sessions?limit=20", {
+    headers: adminAuthHeaders(adminToken),
+  });
+  assert.equal(listResponse.status, 200);
+  const listJson = await listResponse.json();
+  assert.equal(listJson.success, true);
+
+  const sessionFromList = (
+    listJson.data.items as Array<{
+      id: string;
+      initiatorPersona?: { id: string; name: string };
+      targetPersona?: { id: string; name: string };
+    }>
+  ).find((item) => item.id === context.sessionId);
+  assert.ok(sessionFromList);
+  assert.equal(sessionFromList?.initiatorPersona?.id, context.initiatorPersonaId);
+  assert.equal(sessionFromList?.initiatorPersona?.name, "Alice");
+  assert.equal(sessionFromList?.targetPersona?.id, context.targetPersonaId);
+  assert.equal(sessionFromList?.targetPersona?.name, "Bob");
+});
