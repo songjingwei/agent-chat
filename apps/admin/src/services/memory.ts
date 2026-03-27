@@ -1,5 +1,6 @@
 import { apiClient } from "@/lib/api-client";
 import type { BatchResult } from "@/lib/batch-feedback";
+import type { SortOrder, TimeSortBy } from "@/lib/time-sort";
 
 export interface MemoryItem {
   id: string;
@@ -18,6 +19,8 @@ export interface MemoryListParams {
   personaId?: string;
   category?: string;
   source?: string;
+  sortBy?: TimeSortBy;
+  sortOrder?: SortOrder;
 }
 
 export interface PaginatedList<T> {
@@ -33,6 +36,8 @@ export const memoryApi = {
     if (params?.personaId) qs.set("personaId", params.personaId);
     if (params?.category) qs.set("category", params.category);
     if (params?.source) qs.set("source", params.source);
+    if (params?.sortBy) qs.set("sortBy", params.sortBy);
+    if (params?.sortOrder) qs.set("sortOrder", params.sortOrder);
     const query = qs.toString();
     return apiClient.get<PaginatedList<MemoryItem>>(
       `/admin/memory-items${query ? `?${query}` : ""}`,

@@ -1,5 +1,6 @@
 import { apiClient } from "@/lib/api-client";
 import type { BatchResult } from "@/lib/batch-feedback";
+import type { SortOrder, TimeSortBy } from "@/lib/time-sort";
 
 export interface User {
   id: string;
@@ -16,6 +17,8 @@ export interface UserListParams {
   cursor?: string;
   limit?: number;
   search?: string;
+  sortBy?: TimeSortBy;
+  sortOrder?: SortOrder;
 }
 
 export interface PaginatedList<T> {
@@ -29,6 +32,8 @@ export const usersApi = {
     if (params?.cursor) qs.set("cursor", params.cursor);
     if (params?.limit) qs.set("limit", String(params.limit));
     if (params?.search) qs.set("search", params.search);
+    if (params?.sortBy) qs.set("sortBy", params.sortBy);
+    if (params?.sortOrder) qs.set("sortOrder", params.sortOrder);
     const query = qs.toString();
     return apiClient.get<PaginatedList<User>>(
       `/admin/users${query ? `?${query}` : ""}`,

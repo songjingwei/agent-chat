@@ -2,7 +2,16 @@
 
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Typography, Input, Modal, Tooltip, Space, Button, message } from "antd";
+import {
+  Typography,
+  Input,
+  Modal,
+  Tooltip,
+  Space,
+  Button,
+  Select,
+  message,
+} from "antd";
 import {
   SearchOutlined,
   EyeOutlined,
@@ -14,6 +23,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { queryKeys } from "@/lib/query-keys";
 import { showBatchResult } from "@/lib/batch-feedback";
+import type { SortOrder, TimeSortBy } from "@/lib/time-sort";
 import { usersApi, type User } from "@/services/users";
 import CursorPaginatedTable from "@/components/CursorPaginatedTable";
 import StatusTag from "@/components/StatusTag";
@@ -30,6 +40,8 @@ export default function UsersPage() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [cursor, setCursor] = useState<string | undefined>(undefined);
+  const [sortBy, setSortBy] = useState<TimeSortBy>("createdAt");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
 
   // Debounce search
@@ -45,9 +57,18 @@ export default function UsersPage() {
   }, []);
 
   const { data, isLoading } = useQuery({
-    queryKey: [...queryKeys.users.all, { cursor, search: debouncedSearch }],
+    queryKey: [
+      ...queryKeys.users.all,
+      { cursor, search: debouncedSearch, sortBy, sortOrder },
+    ],
     queryFn: () =>
-      usersApi.list({ cursor, limit: 20, search: debouncedSearch || undefined }),
+      usersApi.list({
+        cursor,
+        limit: 20,
+        search: debouncedSearch || undefined,
+        sortBy,
+        sortOrder,
+      }),
   });
 
   const deleteMutation = useMutation({
@@ -189,17 +210,43 @@ export default function UsersPage() {
       <div>
         <Title level={4}>{t("users.title")}</Title>
         <div style={{ marginBottom: 16 }}>
-          <Input
-            placeholder={t("users.searchPlaceholder")}
-            prefix={<SearchOutlined />}
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              debounceTimer(e.target.value);
-            }}
-            style={{ width: 360 }}
-            allowClear
-          />
+          <Space wrap>
+            <Input
+              placeholder={t("users.searchPlaceholder")}
+              prefix={<SearchOutlined />}
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                debounceTimer(e.target.value);
+              }}
+              style={{ width: 360 }}
+              allowClear
+            />
+            <Select
+              value={sortBy}
+              style={{ width: 150 }}
+              onChange={(value: TimeSortBy) => {
+                setSortBy(value);
+                setCursor(undefined);
+              }}
+              options={[
+                { label: t("sort.createdAt"), value: "createdAt" },
+                { label: t("sort.updatedAt"), value: "updatedAt" },
+              ]}
+            />
+            <Select
+              value={sortOrder}
+              style={{ width: 140 }}
+              onChange={(value: SortOrder) => {
+                setSortOrder(value);
+                setCursor(undefined);
+              }}
+              options={[
+                { label: t("sort.desc"), value: "desc" },
+                { label: t("sort.asc"), value: "asc" },
+              ]}
+            />
+          </Space>
         </div>
         <CursorPaginatedTable<User>
           columns={columns}

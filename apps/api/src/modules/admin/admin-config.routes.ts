@@ -1,20 +1,39 @@
 import { Hono } from "hono";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, asc, desc } from "drizzle-orm";
 import type { DbClient } from "@agent/db";
 import { systemConfigs } from "@agent/db";
 
 import { createId } from "../../lib/id.js";
 import { ApiError } from "../../lib/api-error.js";
 import { jsonOk } from "../../lib/http.js";
-import { parseJsonBody } from "../../lib/validation.js";
-import { batchConfigsBodySchema, upsertConfigBodySchema } from "../../schemas/admin.js";
+import { parseJsonBody, parseWithSchema } from "../../lib/validation.js";
+import {
+  batchConfigsBodySchema,
+  listConfigsQuerySchema,
+  upsertConfigBodySchema,
+} from "../../schemas/admin.js";
 
 export const createAdminConfigRoutes = (db: DbClient) => {
   const routes = new Hono();
 
   // GET /configs — list all config entries (mask is_secret values)
   routes.get("/configs", async (c) => {
-    const rows = await db.select().from(systemConfigs);
+    const query = parseWithSchema(listConfigsQuerySchema, c.req.query());
+    const { sortBy, sortOrder } = query;
+    const timeColumn =
+      sortBy === "createdAt"
+        ? systemConfigs.createdAt
+        : systemConfigs.updatedAt;
+
+    const rows = await db
+      .select()
+      .from(systemConfigs)
+      .orderBy(
+        sortOrder === "desc" ? desc(timeColumn) : asc(timeColumn),
+        sortOrder === "desc"
+          ? desc(systemConfigs.id)
+          : asc(systemConfigs.id),
+      );
 
     const items = rows.map((row) => ({
       ...row,

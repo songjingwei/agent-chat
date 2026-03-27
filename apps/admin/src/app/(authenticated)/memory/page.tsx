@@ -17,6 +17,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { queryKeys } from "@/lib/query-keys";
 import { showBatchResult } from "@/lib/batch-feedback";
+import type { SortOrder, TimeSortBy } from "@/lib/time-sort";
 import { memoryApi, type MemoryItem } from "@/services/memory";
 import CursorPaginatedTable from "@/components/CursorPaginatedTable";
 import { useT } from "@/lib/i18n";
@@ -35,6 +36,8 @@ export default function MemoryPage() {
   const [sourceFilter, setSourceFilter] = useState<string | undefined>(
     undefined,
   );
+  const [sortBy, setSortBy] = useState<TimeSortBy>("createdAt");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editWeight, setEditWeight] = useState<number>(1);
   const [editCategory, setEditCategory] = useState<string>("");
@@ -47,7 +50,7 @@ export default function MemoryPage() {
   const { data, isLoading } = useQuery({
     queryKey: [
       ...queryKeys.memory.all,
-      { cursor, category: categoryFilter, source: sourceFilter },
+      { cursor, category: categoryFilter, source: sourceFilter, sortBy, sortOrder },
     ],
     queryFn: () =>
       memoryApi.list({
@@ -55,6 +58,8 @@ export default function MemoryPage() {
         limit: 20,
         category: categoryFilter,
         source: sourceFilter,
+        sortBy,
+        sortOrder,
       }),
   });
 
@@ -320,7 +325,7 @@ export default function MemoryPage() {
       <div>
         <Title level={4}>{t("memory.title")}</Title>
         <div style={{ marginBottom: 16 }}>
-          <Space>
+          <Space wrap>
             <Select
               placeholder={t("memory.filterCategory")}
               allowClear
@@ -350,6 +355,30 @@ export default function MemoryPage() {
                 { label: "Agent Inferred", value: "agent_inferred" },
                 { label: "Human Override", value: "human_override" },
                 { label: "System", value: "system" },
+              ]}
+            />
+            <Select
+              value={sortBy}
+              style={{ width: 150 }}
+              onChange={(value: TimeSortBy) => {
+                setSortBy(value);
+                setCursor(undefined);
+              }}
+              options={[
+                { label: t("sort.createdAt"), value: "createdAt" },
+                { label: t("sort.updatedAt"), value: "updatedAt" },
+              ]}
+            />
+            <Select
+              value={sortOrder}
+              style={{ width: 140 }}
+              onChange={(value: SortOrder) => {
+                setSortOrder(value);
+                setCursor(undefined);
+              }}
+              options={[
+                { label: t("sort.desc"), value: "desc" },
+                { label: t("sort.asc"), value: "asc" },
               ]}
             />
           </Space>

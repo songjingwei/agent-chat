@@ -1,5 +1,6 @@
 import { apiClient } from "@/lib/api-client";
 import type { BatchResult } from "@/lib/batch-feedback";
+import type { SortOrder, TimeSortBy } from "@/lib/time-sort";
 
 export interface Persona {
   id: string;
@@ -21,6 +22,8 @@ export interface PersonaListParams {
   limit?: number;
   status?: string;
   userId?: string;
+  sortBy?: TimeSortBy;
+  sortOrder?: SortOrder;
 }
 
 export interface PaginatedList<T> {
@@ -35,6 +38,8 @@ export const personasApi = {
     if (params?.limit) qs.set("limit", String(params.limit));
     if (params?.status) qs.set("status", params.status);
     if (params?.userId) qs.set("userId", params.userId);
+    if (params?.sortBy) qs.set("sortBy", params.sortBy);
+    if (params?.sortOrder) qs.set("sortOrder", params.sortOrder);
     const query = qs.toString();
     return apiClient.get<PaginatedList<Persona>>(
       `/admin/personas${query ? `?${query}` : ""}`,

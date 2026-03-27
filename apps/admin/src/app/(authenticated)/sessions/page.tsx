@@ -20,6 +20,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { queryKeys } from "@/lib/query-keys";
 import { showBatchResult } from "@/lib/batch-feedback";
+import type { SortOrder, TimeSortBy } from "@/lib/time-sort";
 import { sessionsApi, type Session } from "@/services/sessions";
 import CursorPaginatedTable from "@/components/CursorPaginatedTable";
 import StatusTag from "@/components/StatusTag";
@@ -37,15 +38,26 @@ export default function SessionsPage() {
   const [statusFilter, setStatusFilter] = useState<string | undefined>(
     undefined,
   );
+  const [sortBy, setSortBy] = useState<TimeSortBy>("createdAt");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [selectedSessionIds, setSelectedSessionIds] = useState<string[]>([]);
   const [batchStatus, setBatchStatus] = useState<
     "pending" | "active" | "paused" | "completed" | "failed"
   >("active");
 
   const { data, isLoading } = useQuery({
-    queryKey: [...queryKeys.sessions.all, { cursor, status: statusFilter }],
+    queryKey: [
+      ...queryKeys.sessions.all,
+      { cursor, status: statusFilter, sortBy, sortOrder },
+    ],
     queryFn: () =>
-      sessionsApi.list({ cursor, limit: 20, status: statusFilter }),
+      sessionsApi.list({
+        cursor,
+        limit: 20,
+        status: statusFilter,
+        sortBy,
+        sortOrder,
+      }),
   });
 
   const deleteMutation = useMutation({
@@ -208,7 +220,7 @@ export default function SessionsPage() {
       <div>
         <Title level={4}>{t("sessions.title")}</Title>
         <div style={{ marginBottom: 16 }}>
-          <Space>
+          <Space wrap>
             <Select
               placeholder={t("sessions.filterStatus")}
               allowClear
@@ -224,6 +236,30 @@ export default function SessionsPage() {
                 { label: t("status.completed"), value: "completed" },
                 { label: t("status.paused"), value: "paused" },
                 { label: t("status.failed"), value: "failed" },
+              ]}
+            />
+            <Select
+              value={sortBy}
+              style={{ width: 150 }}
+              onChange={(value: TimeSortBy) => {
+                setSortBy(value);
+                setCursor(undefined);
+              }}
+              options={[
+                { label: t("sort.createdAt"), value: "createdAt" },
+                { label: t("sort.updatedAt"), value: "updatedAt" },
+              ]}
+            />
+            <Select
+              value={sortOrder}
+              style={{ width: 140 }}
+              onChange={(value: SortOrder) => {
+                setSortOrder(value);
+                setCursor(undefined);
+              }}
+              options={[
+                { label: t("sort.desc"), value: "desc" },
+                { label: t("sort.asc"), value: "asc" },
               ]}
             />
           </Space>

@@ -20,6 +20,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { queryKeys } from "@/lib/query-keys";
 import { showBatchResult } from "@/lib/batch-feedback";
+import type { SortOrder, TimeSortBy } from "@/lib/time-sort";
 import { configApi, type ConfigItem } from "@/services/config";
 import { useT } from "@/lib/i18n";
 
@@ -34,10 +35,12 @@ export default function ConfigPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [selectedConfigKeys, setSelectedConfigKeys] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<TimeSortBy>("updatedAt");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
 
   const { data, isLoading } = useQuery({
-    queryKey: queryKeys.configs.all,
-    queryFn: () => configApi.list(),
+    queryKey: [...queryKeys.configs.all, { sortBy, sortOrder }],
+    queryFn: () => configApi.list({ sortBy, sortOrder }),
   });
 
   const upsertMutation = useMutation({
@@ -219,9 +222,33 @@ export default function ConfigPage() {
             marginBottom: 16,
           }}
         >
-          <Title level={4} style={{ margin: 0 }}>
-            {t("config.title")}
-          </Title>
+          <Space wrap>
+            <Title level={4} style={{ margin: 0 }}>
+              {t("config.title")}
+            </Title>
+            <Select
+              value={sortBy}
+              style={{ width: 150 }}
+              onChange={(value: TimeSortBy) => {
+                setSortBy(value);
+              }}
+              options={[
+                { label: t("sort.createdAt"), value: "createdAt" },
+                { label: t("sort.updatedAt"), value: "updatedAt" },
+              ]}
+            />
+            <Select
+              value={sortOrder}
+              style={{ width: 140 }}
+              onChange={(value: SortOrder) => {
+                setSortOrder(value);
+              }}
+              options={[
+                { label: t("sort.desc"), value: "desc" },
+                { label: t("sort.asc"), value: "asc" },
+              ]}
+            />
+          </Space>
           <Button
             type="primary"
             icon={<PlusOutlined />}

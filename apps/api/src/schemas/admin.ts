@@ -2,10 +2,15 @@ import { MEMORY_ITEM_CATEGORIES, MEMORY_ITEM_SOURCES } from "@agent/db";
 import { z } from "zod";
 
 // ── Shared pagination ──────────────────────────────────────────────
+export const timeSortQuerySchema = z.object({
+  sortBy: z.enum(["createdAt", "updatedAt"]).default("createdAt"),
+  sortOrder: z.enum(["asc", "desc"]).default("desc"),
+});
+
 export const cursorPaginationQuerySchema = z.object({
   cursor: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(20),
-});
+}).merge(timeSortQuerySchema);
 
 // ── Users ──────────────────────────────────────────────────────────
 export const listUsersQuerySchema = cursorPaginationQuerySchema.extend({
@@ -134,4 +139,9 @@ export const upsertConfigBodySchema = z.object({
 export const batchConfigsBodySchema = z.object({
   action: z.literal("delete"),
   configKeys: z.array(z.string().min(1)).min(1).max(200),
+});
+
+export const listConfigsQuerySchema = z.object({
+  sortBy: z.enum(["createdAt", "updatedAt"]).default("updatedAt"),
+  sortOrder: z.enum(["asc", "desc"]).default("desc"),
 });

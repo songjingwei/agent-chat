@@ -1,5 +1,6 @@
 import { apiClient } from "@/lib/api-client";
 import type { BatchResult } from "@/lib/batch-feedback";
+import type { SortOrder, TimeSortBy } from "@/lib/time-sort";
 
 export interface Report {
   id: string;
@@ -17,6 +18,8 @@ export interface ReportListParams {
   cursor?: string;
   limit?: number;
   status?: string;
+  sortBy?: TimeSortBy;
+  sortOrder?: SortOrder;
 }
 
 export interface PaginatedList<T> {
@@ -30,6 +33,8 @@ export const reportsApi = {
     if (params?.cursor) qs.set("cursor", params.cursor);
     if (params?.limit) qs.set("limit", String(params.limit));
     if (params?.status) qs.set("status", params.status);
+    if (params?.sortBy) qs.set("sortBy", params.sortBy);
+    if (params?.sortOrder) qs.set("sortOrder", params.sortOrder);
     const query = qs.toString();
     return apiClient.get<PaginatedList<Report>>(
       `/admin/reports${query ? `?${query}` : ""}`,

@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { and, eq, gt, inArray, asc } from "drizzle-orm";
+import { and, eq, gt, lt, inArray, or, asc, desc } from "drizzle-orm";
 import type { DbClient } from "@agent/db";
 import { agentPersonas, chatSessions } from "@agent/db";
 
@@ -54,11 +54,31 @@ export const createAdminSessionsRoutes = (db: DbClient) => {
   // GET /sessions — list sessions with cursor-based pagination
   routes.get("/sessions", async (c) => {
     const query = parseWithSchema(listSessionsQuerySchema, c.req.query());
-    const { cursor, limit, status } = query;
+    const { cursor, limit, status, sortBy, sortOrder } = query;
+    const timeColumn =
+      sortBy === "updatedAt" ? chatSessions.updatedAt : chatSessions.createdAt;
 
     const conditions = [];
     if (cursor) {
-      conditions.push(gt(chatSessions.id, cursor));
+      const [cursorTimeText, cursorId] = cursor.split("|");
+      const cursorTime = cursorTimeText ? new Date(cursorTimeText) : null;
+      if (
+        cursorId &&
+        cursorTime &&
+        !Number.isNaN(cursorTime.getTime())
+      ) {
+        conditions.push(
+          sortOrder === "desc"
+            ? or(
+                lt(timeColumn, cursorTime),
+                and(eq(timeColumn, cursorTime), lt(chatSessions.id, cursorId)),
+              )
+            : or(
+                gt(timeColumn, cursorTime),
+                and(eq(timeColumn, cursorTime), gt(chatSessions.id, cursorId)),
+              ),
+        );
+      }
     }
     if (status) {
       conditions.push(eq(chatSessions.status, status));
@@ -70,12 +90,21 @@ export const createAdminSessionsRoutes = (db: DbClient) => {
       .select()
       .from(chatSessions)
       .where(where)
-      .orderBy(asc(chatSessions.id))
+      .orderBy(
+        sortOrder === "desc" ? desc(timeColumn) : asc(timeColumn),
+        sortOrder === "desc" ? desc(chatSessions.id) : asc(chatSessions.id),
+      )
       .limit(limit + 1);
 
     const hasNextPage = rows.length > limit;
     const items = hasNextPage ? rows.slice(0, limit) : rows;
-    const nextCursor = hasNextPage ? items[items.length - 1]!.id : null;
+    const nextCursor = hasNextPage
+      ? `${(
+          sortBy === "updatedAt"
+            ? items[items.length - 1]!.updatedAt
+            : items[items.length - 1]!.createdAt
+        ).toISOString()}|${items[items.length - 1]!.id}`
+      : null;
     const itemsWithPersonas = await attachPersonaNames(items);
 
     return jsonOk(c, { items: itemsWithPersonas, nextCursor, hasNextPage });

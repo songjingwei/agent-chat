@@ -1487,3 +1487,92 @@ test("admin session messages endpoint should include sender persona names", asyn
   assert.equal(targetMessage?.senderPersona?.id, context.targetPersonaId);
   assert.equal(targetMessage?.senderPersona?.name, "Bob");
 });
+
+test("admin users list should default to createdAt desc and support time sorting options", async () => {
+  const app = createTestApp();
+  const adminToken = createAdminAccessToken();
+  const label = `sort-contract-${randomUUID().slice(0, 8)}`;
+
+  const oldCreatedAt = new Date("2025-01-01T00:00:00.000Z");
+  const midCreatedAt = new Date("2025-06-01T00:00:00.000Z");
+  const newCreatedAt = new Date("2025-12-01T00:00:00.000Z");
+
+  const oldUpdatedAt = new Date("2025-12-31T00:00:00.000Z");
+  const midUpdatedAt = new Date("2025-07-01T00:00:00.000Z");
+  const newUpdatedAt = new Date("2025-01-05T00:00:00.000Z");
+
+  const oldUserId = `usr_${randomUUID().replace(/-/g, "")}`;
+  const midUserId = `usr_${randomUUID().replace(/-/g, "")}`;
+  const newUserId = `usr_${randomUUID().replace(/-/g, "")}`;
+
+  await testDatabase.db.insert(dbSchema.users).values([
+    {
+      id: oldUserId,
+      email: `${label}-old@test.local`,
+      passwordHash: "seeded-password-hash",
+      displayName: `${label}-old`,
+      createdAt: oldCreatedAt,
+      updatedAt: oldUpdatedAt,
+    },
+    {
+      id: midUserId,
+      email: `${label}-mid@test.local`,
+      passwordHash: "seeded-password-hash",
+      displayName: `${label}-mid`,
+      createdAt: midCreatedAt,
+      updatedAt: midUpdatedAt,
+    },
+    {
+      id: newUserId,
+      email: `${label}-new@test.local`,
+      passwordHash: "seeded-password-hash",
+      displayName: `${label}-new`,
+      createdAt: newCreatedAt,
+      updatedAt: newUpdatedAt,
+    },
+  ]);
+
+  const defaultSortResponse = await app.request(
+    `/admin/users?limit=10&search=${encodeURIComponent(label)}`,
+    { headers: adminAuthHeaders(adminToken) },
+  );
+  assert.equal(defaultSortResponse.status, 200);
+  const defaultSortJson = await defaultSortResponse.json();
+  const defaultSortItems = defaultSortJson.data.items as Array<{ id: string }>;
+  assert.equal(defaultSortItems.length, 3);
+  assert.deepEqual(defaultSortItems.map((item) => item.id), [
+    newUserId,
+    midUserId,
+    oldUserId,
+  ]);
+
+  const createdAscResponse = await app.request(
+    `/admin/users?limit=10&search=${encodeURIComponent(
+      label,
+    )}&sortBy=createdAt&sortOrder=asc`,
+    { headers: adminAuthHeaders(adminToken) },
+  );
+  assert.equal(createdAscResponse.status, 200);
+  const createdAscJson = await createdAscResponse.json();
+  const createdAscItems = createdAscJson.data.items as Array<{ id: string }>;
+  assert.deepEqual(createdAscItems.map((item) => item.id), [
+    oldUserId,
+    midUserId,
+    newUserId,
+  ]);
+
+  const updatedDescResponse = await app.request(
+    `/admin/users?limit=10&search=${encodeURIComponent(
+      label,
+    )}&sortBy=updatedAt&sortOrder=desc`,
+    { headers: adminAuthHeaders(adminToken) },
+  );
+  assert.equal(updatedDescResponse.status, 200);
+  const updatedDescJson = await updatedDescResponse.json();
+  const updatedDescItems = updatedDescJson.data.items as Array<{ id: string }>;
+  assert.deepEqual(updatedDescItems.map((item) => item.id), [
+    oldUserId,
+    midUserId,
+    newUserId,
+  ]);
+});
