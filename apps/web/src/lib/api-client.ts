@@ -1,10 +1,15 @@
 import { getAccessToken, getRefreshToken, setTokens, clearTokens } from './auth-tokens'
 import type {
+  AssessmentResult,
+  AssessmentSession,
   ApiResponse,
   AuthResponse,
   AuthTokens,
   AuthUser,
+  BuildPersonaInput,
+  BuildPersonaResult,
   ChatMessage,
+  CreateAssessmentSessionInput,
   CreateHumanMessageInput,
   CreatePersonaInput,
   CreateSessionInput,
@@ -16,6 +21,8 @@ import type {
   RefreshInput,
   RegisterInput,
   Session,
+  SubmitAssessmentAnswerInput,
+  UpdatePersonaInput,
 } from './types'
 
 const configuredApiOrigin = import.meta.env.VITE_API_ORIGIN?.trim()
@@ -63,7 +70,7 @@ async function doRefresh(): Promise<AuthTokens> {
 }
 
 async function request<T>(
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
   path: string,
   body?: unknown,
   skipAuth = false,
@@ -152,6 +159,10 @@ export function createPersona(input: CreatePersonaInput) {
   return request<Persona>('POST', '/personas', input)
 }
 
+export function buildPersona(input: BuildPersonaInput) {
+  return request<BuildPersonaResult>('POST', '/personas/build', input)
+}
+
 export function listPersonas(input?: {
   cursor?: string
   limit?: number
@@ -192,6 +203,18 @@ export function listAllPersonas() {
 
 export function getPersona(id: string) {
   return request<Persona>('GET', `/personas/${id}`)
+}
+
+export function getPresetTraits() {
+  return request<{ traits: Array<{ zh: string; en: string }> }>('GET', '/configs/persona-traits', undefined, true)
+}
+
+export function updatePersona(id: string, input: UpdatePersonaInput) {
+  return request<Persona>('PATCH', `/personas/${id}`, input)
+}
+
+export function deletePersona(id: string) {
+  return request<{ deleted: boolean }>('DELETE', `/personas/${id}`)
 }
 
 // Sessions
@@ -245,5 +268,32 @@ export function getLatestReport(personaId: string) {
   return request<LatestReport>(
     'GET',
     `/reports/latest?personaId=${encodeURIComponent(personaId)}`,
+  )
+}
+
+// Assessments
+export function createAssessmentSession(input: CreateAssessmentSessionInput) {
+  return request<AssessmentSession>('POST', '/assessment-sessions', input)
+}
+
+export function getAssessmentSession(sessionId: string) {
+  return request<AssessmentSession>('GET', `/assessment-sessions/${sessionId}`)
+}
+
+export function submitAssessmentAnswer(
+  sessionId: string,
+  input: SubmitAssessmentAnswerInput,
+) {
+  return request<AssessmentSession>(
+    'POST',
+    `/assessment-sessions/${sessionId}/answers`,
+    input,
+  )
+}
+
+export function getAssessmentResult(sessionId: string) {
+  return request<AssessmentResult>(
+    'GET',
+    `/assessment-sessions/${sessionId}/result`,
   )
 }

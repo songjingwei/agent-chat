@@ -366,6 +366,11 @@ a {
   color: var(--sea-ink-soft);
 }
 
+.status-badge--paused {
+  background: rgba(242, 204, 143, 0.2);
+  color: #9a6b2f;
+}
+
 :root[data-theme="dark"] .status-badge--queued,
 :root:not([data-theme="light"]) .status-badge--queued {
   background: rgba(245, 180, 60, 0.12);
@@ -376,6 +381,12 @@ a {
 :root:not([data-theme="light"]) .status-badge--active {
   background: rgba(110, 200, 154, 0.14);
   color: var(--palm);
+}
+
+:root[data-theme="dark"] .status-badge--paused,
+:root:not([data-theme="light"]) .status-badge--paused {
+  background: rgba(242, 204, 143, 0.14);
+  color: #f2cc8f;
 }
 
 /* ---------- Chat bubbles ---------- */

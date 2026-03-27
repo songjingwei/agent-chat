@@ -22,6 +22,10 @@ import {
   resolveRouteAuth,
   type AuthState,
 } from '../lib/auth-state'
+import {
+  DEFAULT_LANGUAGE,
+  resolvePreferredLanguage,
+} from '../lib/i18n'
 
 import appCss from '../styles.css?url'
 
@@ -100,13 +104,21 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   const { queryClient } = Route.useRouteContext()
   const { auth } = Route.useLoaderData()
   const { t, i18n } = useTranslation()
+  const documentLanguage = i18n.resolvedLanguage || DEFAULT_LANGUAGE
+
+  React.useEffect(() => {
+    const preferredLanguage = resolvePreferredLanguage()
+    if (preferredLanguage !== i18n.resolvedLanguage) {
+      void i18n.changeLanguage(preferredLanguage)
+    }
+  }, [i18n])
 
   React.useEffect(() => {
     document.title = t('app.title')
-  }, [i18n.language, t])
+  }, [documentLanguage, t])
 
   return (
-    <html lang={i18n.language} suppressHydrationWarning>
+    <html lang={documentLanguage} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <HeadContent />

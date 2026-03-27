@@ -4,12 +4,19 @@ import { createRuntimeModelClient } from "@agent/runtime";
 import { apiConfig } from "../config.js";
 import { AdminAuthService } from "./admin-auth.service.js";
 import { AuthService } from "./auth.service.js";
+import { BullMQConversationOrchestrator } from "./bullmq-conversation-orchestrator.service.js";
 import {
   InProcessConversationOrchestratorService,
   type ConversationOrchestrator,
 } from "./conversation-orchestrator.service.js";
+
+export { advanceConversation } from "./conversation-advancer.service.js";
+export type { AdvanceDeps, AdvanceResult } from "./conversation-advancer.service.js";
+export { NoopConversationOrchestratorService } from "./conversation-orchestrator.service.js";
+export type { ConversationOrchestrator } from "./conversation-orchestrator.service.js";
 import { HealthService } from "./health.service.js";
 import { MessageService } from "./message.service.js";
+import { AssessmentService } from "./assessment.service.js";
 import { PairInsightService } from "./pair-insight.service.js";
 import { PersonaBuilderService } from "./persona-builder.service.js";
 import { PersonaEditorService } from "./persona-editor.service.js";
@@ -23,6 +30,7 @@ export interface AppServices {
   healthService: HealthService;
   authService: AuthService;
   adminAuthService: AdminAuthService;
+  assessmentService: AssessmentService;
   personaService: PersonaService;
   personaBuilderService: PersonaBuilderService;
   personaEditorService: PersonaEditorService;
@@ -72,6 +80,7 @@ export const createServices = (
     jwtAccessExpiresIn: apiConfig.jwtAccessExpiresIn,
     jwtRefreshExpiresIn: apiConfig.jwtRefreshExpiresIn,
   });
+  const assessmentService = new AssessmentService(db);
   const personaService = new PersonaService(db);
   const personaBuilderService = new PersonaBuilderService(db, { modelClient });
   const personaEditorService = new PersonaEditorService(db);
@@ -88,20 +97,31 @@ export const createServices = (
   const runtimeService =
     options.runtimeService ??
     new RuntimeService({ db, env: runtimeModelEnv });
+
+  const useBullMQ = process.env.BULLMQ_ENABLED === "true";
+  console.info(
+    `[api] conversation orchestrator: ${useBullMQ ? "BullMQ" : "in-process"}`,
+  );
   const conversationOrchestrator =
     options.conversationOrchestrator ??
-    new InProcessConversationOrchestratorService({
-      messageService,
-      sessionService,
-      personaService,
-      runtimeService,
-    });
+    (useBullMQ
+      ? new BullMQConversationOrchestrator({
+          redisUrl: apiConfig.redisUrl,
+          queuePrefix: process.env.QUEUE_PREFIX,
+        })
+      : new InProcessConversationOrchestratorService({
+          messageService,
+          sessionService,
+          personaService,
+          runtimeService,
+        }));
 
   return {
     db,
     healthService,
     authService,
     adminAuthService,
+    assessmentService,
     personaService,
     personaBuilderService,
     personaEditorService,

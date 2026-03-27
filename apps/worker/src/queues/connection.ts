@@ -9,6 +9,7 @@ const parseRedisUrl = (url: string): ConnectionOptions => {
     port: Number(parsed.port) || 6379,
     password: parsed.password || undefined,
     username: parsed.username || undefined,
+    maxRetriesPerRequest: null,
   };
 };
 

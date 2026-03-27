@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { readFile, readdir } from "node:fs/promises";
 import test, { after } from "node:test";
 
-import { inArray } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import jwt from "jsonwebtoken";
 import pg from "pg";
@@ -507,6 +507,49 @@ test("persona/session/message/report flow should work", async () => {
   assert.equal(reportJson.success, true);
   assert.equal(reportJson.data.personaId, personaAJson.data.id);
   assert.equal(reportJson.data.totalMessages, 1);
+});
+
+test("POST /personas/:personaId/activate should restore an archived persona to active", async () => {
+  const app = createTestApp();
+  const user = await registerTestUser(app, "persona-activate");
+
+  const createResponse = await app.request("/personas", {
+    method: "POST",
+    headers: authHeaders(user.accessToken),
+    body: JSON.stringify({
+      displayName: "Reactivatable",
+      traits: ["steady"],
+    }),
+  });
+  assert.equal(createResponse.status, 201);
+  const createJson = await createResponse.json();
+  const personaId = createJson.data.id as string;
+
+  const archiveResponse = await app.request(`/personas/${personaId}/archive`, {
+    method: "POST",
+    headers: authHeaders(user.accessToken),
+  });
+  assert.equal(archiveResponse.status, 200);
+
+  const [archivedPersona] = await testDatabase.db
+    .select({ status: dbSchema.agentPersonas.status })
+    .from(dbSchema.agentPersonas)
+    .where(eq(dbSchema.agentPersonas.id, personaId))
+    .limit(1);
+  assert.equal(archivedPersona?.status, "archived");
+
+  const activateResponse = await app.request(`/personas/${personaId}/activate`, {
+    method: "POST",
+    headers: authHeaders(user.accessToken),
+  });
+  assert.equal(activateResponse.status, 200);
+
+  const [reactivatedPersona] = await testDatabase.db
+    .select({ status: dbSchema.agentPersonas.status })
+    .from(dbSchema.agentPersonas)
+    .where(eq(dbSchema.agentPersonas.id, personaId))
+    .limit(1);
+  assert.equal(reactivatedPersona?.status, "active");
 });
 
 test("GET /sessions/:id/messages should support pair-scope cursor pagination", async () => {

@@ -238,6 +238,16 @@ export const fetchMessages = createServerFn({ method: 'GET' })
     )
   })
 
+// Configs
+export const fetchPresetTraits = createServerFn({ method: 'GET' }).handler(
+  async () => {
+    const API_URL = process.env.API_URL || 'http://localhost:3001'
+    const res = await fetch(`${API_URL}/configs/persona-traits`)
+    const json = (await res.json()) as { success: boolean; data: { traits: Array<{ zh: string; en: string }> } }
+    return json.success ? json.data.traits : []
+  },
+)
+
 // Reports
 export const fetchLatestReport = createServerFn({ method: 'GET' })
   .inputValidator((personaId: string) => personaId)

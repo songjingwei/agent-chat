@@ -176,21 +176,13 @@ export class PromptManager {
     lines.push("- Return strictly one JSON object.");
     lines.push("- Do not use markdown fences.");
     lines.push("- Keep response.content concise and natural.");
+    lines.push("- Do not include chain-of-thought or extra analysis fields.");
     lines.push("");
     lines.push("JSON shape:");
     lines.push("{");
-    lines.push('  "thought": {');
-    lines.push(
-      '    "intent": "ask_question|share_experience|empathize|clarify|close_session",',
-    );
-    lines.push('    "tone": "warm|curious|calm|playful|serious",');
-    lines.push('    "rationale": "string"');
-    lines.push("  },");
     lines.push('  "response": {');
     lines.push('    "content": "string",');
-    lines.push('    "shouldEndSession": false,');
-    lines.push('    "extractMemories": false,');
-    lines.push('    "memoryCandidates": []');
+    lines.push('    "shouldEndSession": false');
     lines.push("  }");
     lines.push("}");
     return lines.join("\n");

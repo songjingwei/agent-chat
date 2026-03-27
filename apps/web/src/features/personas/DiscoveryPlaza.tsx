@@ -1,7 +1,7 @@
-import { useTranslation, Trans } from 'react-i18next'
+import { useTranslation } from 'react-i18next'
 import { Link } from '@tanstack/react-router'
 import { ChevronLeft, ChevronRight, HeartHandshake, RefreshCw, Wand2 } from 'lucide-react'
-import { ConfirmDialog } from '#/components/ConfirmDialog'
+import { ConversationLauncherDialog } from '#/components/ConversationLauncherDialog'
 import { PersonaCard } from '#/components/PersonaCard'
 import { EmptyState } from '#/components/EmptyState'
 import { ErrorDisplay } from '#/components/ErrorDisplay'
@@ -21,11 +21,11 @@ export function DiscoveryPlaza() {
     goToPreviousHistoryPage,
     goToNextHistoryPage,
     total,
-    pageSize,
     shuffleDiscoveryBatch,
     canShuffleDiscovery,
     myPersona,
     selectedTarget,
+    selectedIntent,
     handleStartChat,
     confirmStartChat,
     cancelSelection,
@@ -226,28 +226,13 @@ export function DiscoveryPlaza() {
         )}
       </section>
 
-      <ConfirmDialog
-        isOpen={selectedTarget !== null}
+      <ConversationLauncherDialog
+        initiatorPersona={myPersona}
+        targetPersona={selectedTarget}
+        intent={selectedIntent}
         isSubmitting={isCreatingSession}
-        title={t('plaza.startConversation')}
-        description={
-          selectedTarget ? (
-            <Trans
-              i18nKey="plaza.startConversationDesc"
-              values={{
-                initiator: myPersona?.displayName ?? '',
-                target: selectedTarget.displayName,
-              }}
-              components={{ strong: <strong /> }}
-            />
-          ) : null
-        }
-        cancelLabel={t('plaza.cancel')}
-        confirmLabel={t('plaza.startChat')}
-        confirmingLabel={t('plaza.starting')}
         onCancel={cancelSelection}
         onConfirm={confirmStartChat}
-        maxWidthClassName="max-w-sm"
       />
     </div>
   )

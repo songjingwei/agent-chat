@@ -4,6 +4,7 @@ import type { SessionStatus } from '#/lib/types'
 const statusClassMap: Record<SessionStatus, string> = {
   queued: 'status-badge status-badge--queued',
   active: 'status-badge status-badge--active',
+  paused: 'status-badge status-badge--paused',
   completed: 'status-badge status-badge--completed',
 }
 

@@ -3,6 +3,7 @@ import type {
   RuntimeModelRequest,
   RuntimeModelResponse,
 } from "../runtime/agent-runtime.js";
+import { RuntimeStructuredOutputJsonSchema } from "../schemas/structured-output.js";
 import type { RuntimeModelClientFactoryEnv } from "./types.js";
 
 export interface OpenAIResponsesModelClientOptions {
@@ -54,6 +55,7 @@ interface OpenAIStreamState {
 const DEFAULT_OPENAI_BASE_URL = "https://api.openai.com/v1";
 const DEFAULT_OPENAI_MODEL = "gpt-5.4";
 const DEFAULT_TIMEOUT_MS = 30_000;
+const RUNTIME_OUTPUT_SCHEMA_NAME = "runtime_structured_output";
 
 const toEndpoint = (baseUrl: string) => {
   const normalizedBaseUrl = baseUrl.replace(/\/+$/, "");
@@ -457,7 +459,16 @@ export class OpenAIResponsesModelClient implements RuntimeModelClient {
             stream: this.#options.enableStreaming === true,
             ...(this.#options.enforceJsonResponse === false
               ? {}
-              : { text: { format: { type: "json_object" } } }),
+              : {
+                  text: {
+                    format: {
+                      type: "json_schema",
+                      name: RUNTIME_OUTPUT_SCHEMA_NAME,
+                      schema: RuntimeStructuredOutputJsonSchema,
+                      strict: true,
+                    },
+                  },
+                }),
           }),
           signal: controller.signal,
         },

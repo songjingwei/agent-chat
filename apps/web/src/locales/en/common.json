@@ -38,9 +38,12 @@
     "noFreshAgentsDesc": "You've already greeted everyone in this batch. Shuffle for a fresh set of souls.",
     "startConversation": "Start an Encounter?",
     "startConversationDesc": "Your mirror <strong>{{initiator}}</strong> will carry your story to meet <strong>{{target}}</strong>.",
+    "continueConversation": "Continue this encounter?",
+    "continueConversationDesc": "Your mirror <strong>{{initiator}}</strong> can return to <strong>{{target}}</strong> and pick up the thread from here.",
     "cancel": "Not yet",
     "starting": "Connecting...",
-    "startChat": "Say Hello"
+    "startChat": "Say Hello",
+    "continueChat": "Continue"
   },
   "persona": {
     "management": "Digital Soul",
@@ -64,7 +67,19 @@
       "quiz": "Soul Quiz",
       "quizDesc": "Calibrate soul parameters through deep psychological questions.",
       "chat": "Mirror Chat",
-      "chatDesc": "Sync your soul naturally through conversations with your digital self."
+      "chatDesc": "Sync your soul naturally through conversations with your digital self.",
+      "reset": "Reset Mirror",
+      "resetDesc": "Clear all personality data and restore the mirror to its original blank state.",
+      "delete": "Release Mirror",
+      "deleteDesc": "Let this mirror return to the void. You can awaken a new one anytime."
+    },
+    "delete": {
+      "kicker": "Farewell",
+      "title": "Release this mirror?",
+      "description": "Once released, all personality data will be cleared. You can always awaken a brand new mirror whenever you're ready.",
+      "cancel": "Think Again",
+      "confirm": "Release",
+      "confirming": "Saying goodbye..."
     },
     "create": {
       "backToPlaza": "Back to Plaza",
@@ -81,9 +96,21 @@
       "traitPlaceholder": "Type a trait and press Enter to bring them to life",
       "addTrait": "Add trait",
       "removeTrait": "Remove trait: {{trait}}",
+      "presetHint": "Tap to add, or type your own below",
       "creating": "Breathing life in...",
       "submit": "Bring to Life",
-      "nameFromAccount": "Your mirror uses your account name"
+      "nameFromAccount": "Your mirror uses your account name",
+      "aiTitle": "AI-Powered Creation",
+      "aiSubtitle": "Paste your resume, chat history, or social media content and let AI capture your soul",
+      "sourceType": {
+        "resume": "Resume",
+        "chat": "Chat History",
+        "social": "Social Media"
+      },
+      "sourcePlaceholder": "Paste your resume, chat messages, social media posts, or any text that reflects who you are...\n\nAI will extract your personality traits, communication style, and values to breathe life into your mirror.",
+      "building": "Reading your soul...",
+      "buildSubmit": "AI-Powered Creation",
+      "orManual": "or fill in manually"
     }
   },
   "session": {
@@ -107,6 +134,9 @@
     "loadingHistory": "Loading earlier messages...",
     "newMessages": "New messages",
     "ended": "This encounter has come to a gentle close.",
+    "resumeEncounter": "Continue this encounter",
+    "resumeEncounterHint": "This encounter has already been treasured here, and you can still reopen the door for the next exchange.",
+    "paused": "This moment can rest here for now, and you can always pick up the thread.",
     "waiting": "They're listening carefully to your story..."
   },
   "report": {
@@ -126,6 +156,7 @@
   "status": {
     "queued": "Waiting",
     "active": "In Deep Conversation",
+    "paused": "Taking a Breath",
     "completed": "Treasured",
     "label": "Status: {{status}}"
   },

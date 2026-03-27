@@ -2,20 +2,48 @@ import { useTranslation } from 'react-i18next'
 import { useSoulQuiz } from './useSoulQuiz'
 import { Link } from '@tanstack/react-router'
 import { ArrowLeft, Sparkles } from 'lucide-react'
+import { ErrorDisplay } from '#/components/ErrorDisplay'
+import { LoadingSkeleton } from '#/components/LoadingSkeleton'
 
 export function SoulQuiz() {
   const { t } = useTranslation()
   const {
-    questions,
+    currentQuestion,
     currentStep,
+    error,
+    isLoading,
     isCompleted,
     isCalculating,
+    isAnswering,
+    resultSummary,
     traits,
     handleSelect,
-    goBack,
     goToPersonas,
     totalSteps,
   } = useSoulQuiz()
+
+  if (error) {
+    return (
+      <main className="page-wrap py-12">
+        <div className="max-w-lg mx-auto space-y-6">
+          <ErrorDisplay error={error} />
+          <div className="flex justify-center">
+            <Link to="/personas" className="btn-ghost no-underline">
+              返回镜像页
+            </Link>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <main className="page-wrap py-12">
+        <LoadingSkeleton variant="mirror" />
+      </main>
+    )
+  }
 
   if (isCalculating) {
     return (
@@ -55,7 +83,7 @@ export function SoulQuiz() {
               {t('persona.quiz.resultTitle')}
             </h2>
             <p className="text-sm text-[var(--sea-ink-soft)] max-w-sm mx-auto leading-relaxed">
-              {t('persona.quiz.resultDesc')}
+              {resultSummary || t('persona.quiz.resultDesc')}
             </p>
           </div>
 
@@ -132,8 +160,15 @@ export function SoulQuiz() {
       </main>
     )
   }
-
-  const question = questions[currentStep]
+  if (!currentQuestion) {
+    return (
+      <main className="page-wrap py-12">
+        <div className="max-w-lg mx-auto space-y-6">
+          <ErrorDisplay error={new Error('No active assessment question available.')} />
+        </div>
+      </main>
+    )
+  }
 
   return (
     <main className="page-wrap py-8 sm:py-12">
@@ -169,16 +204,17 @@ export function SoulQuiz() {
         </div>
 
         {/* Question */}
-        <div key={question.id} className="space-y-6 rise-in">
+        <div key={currentQuestion.id} className="space-y-6 rise-in">
           <h3 className="text-lg font-medium text-[var(--sea-ink)] text-center leading-relaxed px-4">
-            {question.text}
+            {currentQuestion.text}
           </h3>
 
           <div className="space-y-3">
-            {question.options.map((option) => (
+            {currentQuestion.options.map((option) => (
               <button
                 key={option.value}
-                onClick={() => handleSelect(question.id, option.value)}
+                onClick={() => handleSelect(currentQuestion.id, option.value)}
+                disabled={isAnswering}
                 className="w-full p-4 sm:p-5 rounded-2xl border border-[var(--line)] bg-[var(--surface)] hover:border-[var(--lagoon)] hover:bg-[var(--surface-sun)] transition-all text-left text-sm text-[var(--sea-ink)] font-medium active:scale-[0.98]"
               >
                 {option.label}
@@ -186,16 +222,6 @@ export function SoulQuiz() {
             ))}
           </div>
         </div>
-
-        {/* Back button */}
-        {currentStep > 0 && (
-          <button
-            onClick={goBack}
-            className="btn-ghost w-full py-3 text-[var(--sea-ink-soft)] text-sm"
-          >
-            {t('persona.quiz.previous')}
-          </button>
-        )}
       </div>
     </main>
   )

@@ -1,14 +1,23 @@
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
+import { ConfirmDialog } from '#/components/ConfirmDialog'
 import { EmptyState } from '#/components/EmptyState'
 import { ErrorDisplay } from '#/components/ErrorDisplay'
 import { LoadingSkeleton } from '#/components/LoadingSkeleton'
 import { useMyPersonas } from './useMyPersonas'
-import { Sparkles, BrainCircuit, MessageSquareText } from 'lucide-react'
+import { useDeletePersona } from './useDeletePersona'
+import { Sparkles, BrainCircuit, MessageSquareText, Trash2 } from 'lucide-react'
 
 export function MyPersonasList() {
   const { t } = useTranslation()
   const { personas, isLoading, error } = useMyPersonas()
+  const {
+    showConfirm,
+    openConfirm,
+    closeConfirm,
+    deletePersona,
+    isDeleting,
+  } = useDeletePersona()
 
   if (error) return <ErrorDisplay error={error} />
 
@@ -125,12 +134,44 @@ export function MyPersonasList() {
               </p>
             </div>
           </Link>
+
+          {/* 删除镜像入口 */}
+          <button
+            type="button"
+            onClick={openConfirm}
+            className="flex items-start gap-4 p-5 rounded-2xl border border-[var(--line)] bg-[var(--surface)] hover:border-[var(--clay)] hover:bg-[var(--surface-sun)] transition-all group text-left md:col-span-2"
+          >
+            <div className="h-12 w-12 rounded-xl bg-[var(--surface-sun)] flex items-center justify-center shrink-0 border border-[var(--line)] group-hover:border-[var(--clay)] group-hover:scale-110 transition-transform">
+              <Trash2 className="text-[var(--sea-ink-soft)] group-hover:text-[var(--clay)]" size={24} />
+            </div>
+            <div className="space-y-1">
+              <h4 className="font-semibold text-[var(--sea-ink)] group-hover:text-[var(--clay)]">
+                {t('persona.evolve.delete')}
+              </h4>
+              <p className="text-xs text-[var(--sea-ink-soft)] opacity-70 leading-relaxed">
+                {t('persona.evolve.deleteDesc')}
+              </p>
+            </div>
+          </button>
         </div>
       </div>
 
       <p className="text-[0.6875rem] text-[var(--sea-ink-soft)] opacity-30 mt-8 italic text-center">
         {t('persona.realPerson')}
       </p>
+
+      <ConfirmDialog
+        isOpen={showConfirm}
+        isSubmitting={isDeleting}
+        kicker={t('persona.delete.kicker')}
+        title={t('persona.delete.title')}
+        description={t('persona.delete.description')}
+        cancelLabel={t('persona.delete.cancel')}
+        confirmLabel={t('persona.delete.confirm')}
+        confirmingLabel={t('persona.delete.confirming')}
+        onCancel={closeConfirm}
+        onConfirm={() => deletePersona(soulMirror.id)}
+      />
     </div>
   )
 }

@@ -170,18 +170,24 @@ export const createPersonaRoutes = (options: {
     return jsonOk(c, { archived: true });
   });
 
+  routes.delete("/personas/:personaId", async (c) => {
+    const personaId = c.req.param("personaId");
+    const userId = c.get("userId");
+    const success = await personaEditorService.deletePersona(personaId, userId);
+    if (!success) {
+      throw new ApiError(404, "PERSONA_NOT_FOUND", `Persona not found: ${personaId}`);
+    }
+    return jsonOk(c, { deleted: true });
+  });
+
   routes.post("/personas/:personaId/activate", async (c) => {
     const personaId = c.req.param("personaId");
     const userId = c.get("userId");
-    const existing = await personaService.getById(personaId);
-    if (!existing || existing.userId !== userId) {
+    const success = await personaEditorService.activatePersona(personaId, userId);
+    if (!success) {
       throw new ApiError(404, "PERSONA_NOT_FOUND", `Persona not found: ${personaId}`);
     }
 
-    await personaEditorService.updatePersona({
-      personaId,
-      userId,
-    });
     const persona = await personaService.getById(personaId);
     return jsonOk(c, persona);
   });

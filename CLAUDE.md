@@ -10,15 +10,37 @@ Agent Chat — an AI-powered social/dating platform where users create personal 
 
 | Package | Purpose | Tech Stack |
 |---------|---------|------------|
-| `apps/web` | Frontend UI | TanStack Start, React 19, TanStack Router/Query, Tailwind CSS, Vite |
-| `apps/api` | API/BFF layer | Hono, Zod, @hono/node-server |
-| `apps/worker` | Async task worker | BullMQ (scaffold only) |
-| `packages/agent-runtime` | Agent state machine, prompts, memory, tools | OpenAI API (scaffold only) |
-| `packages/db` | DB schema, migrations, repositories | Drizzle ORM + PostgreSQL 16/pgvector |
-| `packages/shared` | Shared types, DTOs, error codes, constants | (scaffold only) |
-| `infra/docker/` | Local infrastructure | PostgreSQL 16, Redis 7, MinIO |
+| `apps/web` | User Frontend | TanStack Start, React 19, Tailwind CSS |
+| `apps/admin` | Admin Dashboard | Vite, React 19, Ant Design, Zustand |
+| `apps/api` | API/BFF layer | Hono, Zod, BullMQ, Jose |
+| `apps/worker` | Async task worker | BullMQ, Node.js |
+| `packages/agent-runtime` | Agent engine, memory, prompts | Multi-model (OpenAI, Anthropic) |
+| `packages/db` | DB schema & Repositories | Drizzle ORM + PostgreSQL 16/pgvector |
+| `packages/shared` | Shared types, DTOs, job types | TypeScript |
 
-Dependency flow: `web → api → {runtime, db, worker}` — all depend on `shared`.
+Dependency flow: `{web, admin, api, worker} → {shared}`, `{api, worker} → {runtime, db}`.
+
+## Current Status Snapshot (2026-03-28)
+
+- `Core Infrastructure`: `Done`
+- `Agent Engine & Runtime`: `Done`
+- `Async Conversation Loop`: `In Progress`（BullMQ 编排链路已落地，仍需继续做生产化验证）
+- `Admin Dashboard`: `Done`
+- `Personality Assessment`: `In Progress`（测评题库/会话/结果主流程已上线，专家解释与 Persona 自动校准未完成）
+
+## Today Plan (2026-03-28)
+
+- Day focus: `Day 7 — Personality Assessment 深化`
+- `P0`: Move assessment interpretation from synchronous `AssessmentService` logic to Worker (`assessment-interpretation` queue + processor). Answer submission should only persist state and enqueue job.
+- `P0`: Implement expert interpretation structured schema (`dimension_scores`, `confidence`, `evidence`, `memory_writes`, `persona_patch`, `auto_apply`) with parse-failure fallback and diagnostic logging.
+- `P1`: Implement Persona auto-calibration threshold policy. Before any auto-apply, write `persona_versions` snapshot with `change_source=assessment_calibration` and audit fields.
+- `P1`: Add end-to-end regression coverage for assessment flow (session create -> answer submit -> interpretation trigger -> result query) and pass `pnpm --filter @agent/api test` + `pnpm --filter @agent/api typecheck`.
+
+### Acceptance Criteria (2026-03-28)
+
+- Interpretation runs asynchronously after assessment completion and supports retry with correct status transitions.
+- `assessment_interpretations` persists both `error_code` and `raw_output` for observability and debugging.
+- `auto_apply` must always create a `persona_versions` snapshot first, ensuring rollbackability and traceability.
 
 ## Common Commands
 
@@ -90,10 +112,13 @@ docker compose -f infra/docker/docker-compose.yml up -d
 ## Key Documentation
 
 - `docs/system-architecture.md` — full system design and tech choices
+- `docs/architecture.md` — Mermaid architecture & flow diagrams
+- `docs/conversation-orchestration.md` — implementation details for agent-to-agent chat
 - `docs/mvp-implementation-plan.md` — 15-day MVP delivery plan
 - `plans/progress-tracker.md` — daily status tracking
 - `apps/api/AGENTS.md` — API module guide, endpoint roadmap, constraints
 - `apps/web/AGENTS.md` — frontend module guide, page roadmap, constraints
+- `apps/admin/package.json` — Admin dashboard info
 - `packages/db/AGENTS.md` — **数据库 schema 设计规范、迁移管理、性能指导、建表检查清单**
 
 ## Debugging & Browser Tools

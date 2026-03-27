@@ -57,7 +57,7 @@ export function useChatRoom(sessionId: string) {
       : session?.initiatorPersonaId
 
   const canSendMessage =
-    (session?.status === 'active' || session?.status === 'queued') &&
+    (session?.status === 'active' || session?.status === 'queued' || session?.status === 'paused') &&
     myPersonaId !== null
 
   useEffect(() => {

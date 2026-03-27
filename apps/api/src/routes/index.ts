@@ -15,7 +15,9 @@ import { createAdminMemoryRoutes } from "../modules/admin/admin-memory.routes.js
 import { createAdminConfigRoutes } from "../modules/admin/admin-config.routes.js";
 import { createAdminStatsRoutes } from "../modules/admin/admin-stats.routes.js";
 import { createDocsRoutes } from "../modules/docs/docs.routes.js";
+import { createPublicConfigRoutes } from "../modules/config/public-config.routes.js";
 import { createHealthRoutes } from "../modules/health/health.routes.js";
+import { createAssessmentRoutes } from "../modules/assessments/assessments.routes.js";
 import { createMessageRoutes } from "../modules/messages/messages.routes.js";
 import { createPersonaPublicRoutes, createPersonaRoutes } from "../modules/personas/personas.routes.js";
 import { createReportRoutes } from "../modules/reports/reports.routes.js";
@@ -33,15 +35,26 @@ export const registerRoutes = (app: Hono, services: AppServices) => {
     });
   });
 
+  // Bull Board — queue monitoring UI (dev only, mounted before auth middleware)
+  if (apiConfig.nodeEnv === "development") {
+    app.route("/_queue", createBullBoardRoutes());
+    console.info("[api] Bull Board UI available at /_queue");
+  }
+
   app.route("/", createDocsRoutes());
   app.route("/", createHealthRoutes(services.healthService));
   app.route("/", createAuthRoutes(services.authService));
   app.route("/", createPersonaPublicRoutes(services.personaService));
+  app.route("/", createPublicConfigRoutes(services.db));
   app.route("/", createAdminAuthRoutes(services.adminAuthService));
 
   // Protected routes — require JWT
   const protectedApp = new Hono();
   protectedApp.use("*", authMiddleware);
+  protectedApp.route(
+    "/",
+    createAssessmentRoutes(services.assessmentService),
+  );
   protectedApp.route(
     "/",
     createPersonaRoutes({
@@ -79,5 +92,6 @@ export const registerRoutes = (app: Hono, services: AppServices) => {
   adminApp.route("/", createAdminMemoryRoutes(services.db));
   adminApp.route("/", createAdminConfigRoutes(services.db));
   adminApp.route("/", createAdminStatsRoutes(services.db));
+
   app.route("/admin", adminApp);
 };

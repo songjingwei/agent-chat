@@ -1,5 +1,10 @@
 import { useTranslation } from 'react-i18next'
 import { Globe } from 'lucide-react'
+import {
+  DEFAULT_LANGUAGE,
+  LANGUAGE_STORAGE_KEY,
+  isSupportedLanguage,
+} from '#/lib/i18n'
 
 const langMap: Record<string, { label: string; next: string }> = {
   en: { label: 'EN', next: 'zh' },
@@ -8,11 +13,16 @@ const langMap: Record<string, { label: string; next: string }> = {
 
 export function LanguageSwitcher() {
   const { i18n } = useTranslation()
+  const resolvedLanguage = i18n.resolvedLanguage ?? ''
+  const currentLanguage = isSupportedLanguage(resolvedLanguage)
+    ? resolvedLanguage
+    : DEFAULT_LANGUAGE
 
-  const current = langMap[i18n.language] ?? langMap['en']!
+  const current = langMap[currentLanguage] ?? langMap[DEFAULT_LANGUAGE]!
 
   function toggle() {
-    i18n.changeLanguage(current.next)
+    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, current.next)
+    void i18n.changeLanguage(current.next)
   }
 
   return (

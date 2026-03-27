@@ -1,9 +1,14 @@
 import { useTranslation } from 'react-i18next'
+import { ConversationLauncherDialog } from '#/components/ConversationLauncherDialog'
 import { StatusBadge } from '#/components/StatusBadge'
 import { ErrorDisplay } from '#/components/ErrorDisplay'
 import { LoadingSkeleton } from '#/components/LoadingSkeleton'
 import { useReport } from './useReport'
 import { Link } from '@tanstack/react-router'
+import { usePersonaDetail } from '#/features/personas/usePersonaDetail'
+import { useConversationLauncher } from '#/features/sessions/useConversationLauncher'
+import { useSessionDetail } from '#/features/sessions/useSessionDetail'
+import { useAuth } from '#/lib/auth-context'
 import { MessageSquare, TrendingUp, FileText } from 'lucide-react'
 
 interface ReportViewProps {
@@ -13,6 +18,26 @@ interface ReportViewProps {
 export function ReportView({ personaId }: ReportViewProps) {
   const { t } = useTranslation()
   const { report, isLoading, error } = useReport(personaId)
+  const { user } = useAuth()
+  const { session } = useSessionDetail(report?.sessionId ?? '')
+  const { persona: initiatorPersona } = usePersonaDetail(session?.initiatorPersonaId ?? '')
+  const { persona: targetPersona } = usePersonaDetail(session?.targetPersonaId ?? '')
+  const selfPersona =
+    initiatorPersona?.userId === user?.id
+      ? initiatorPersona
+      : targetPersona?.userId === user?.id
+        ? targetPersona
+        : null
+  const counterpartPersona =
+    selfPersona?.id === initiatorPersona?.id ? targetPersona ?? null : initiatorPersona ?? null
+  const {
+    selectedTarget,
+    selectedIntent,
+    openConversation,
+    confirmConversation,
+    cancelConversation,
+    isLaunchingConversation,
+  } = useConversationLauncher(selfPersona)
 
   if (error) return <ErrorDisplay error={error} />
 
@@ -101,10 +126,28 @@ export function ReportView({ personaId }: ReportViewProps) {
         >
           {t('report.viewConversation')}
         </Link>
+        {report.sessionStatus === 'completed' && selfPersona && counterpartPersona ? (
+          <button
+            type="button"
+            onClick={() => openConversation(counterpartPersona, 'continue')}
+            className="btn-ghost"
+          >
+            {t('chat.resumeEncounter')}
+          </button>
+        ) : null}
         <Link to="/" className="btn-ghost">
           {t('report.backToPlaza')}
         </Link>
       </div>
+
+      <ConversationLauncherDialog
+        initiatorPersona={selfPersona}
+        targetPersona={selectedTarget}
+        intent={selectedIntent}
+        isSubmitting={isLaunchingConversation}
+        onCancel={cancelConversation}
+        onConfirm={confirmConversation}
+      />
     </div>
   )
 }

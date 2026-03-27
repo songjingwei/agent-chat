@@ -26,6 +26,12 @@ test("factory creates OpenAI Responses client and maps completed response", asyn
       const body = JSON.parse(String(init?.body));
       assert.equal(body.model, "gpt-5.4");
       assert.equal(body.max_output_tokens, 128);
+      assert.equal(body.text?.format?.type, "json_schema");
+      assert.equal(body.text?.format?.name, "runtime_structured_output");
+      assert.equal(body.text?.format?.strict, true);
+      const schemaText = JSON.stringify(body.text?.format?.schema);
+      assert.equal(schemaText.includes("\"$schema\""), false);
+      assert.equal(schemaText.includes("\"default\""), false);
 
       return new Response(
         JSON.stringify({
@@ -98,6 +104,8 @@ test("OpenAI Responses streaming mode sends stream flag and parses SSE deltas", 
     (async (_input, init) => {
       const body = JSON.parse(String(init?.body));
       assert.equal(body.stream, true);
+      assert.equal(body.text?.format?.type, "json_schema");
+      assert.equal(body.text?.format?.strict, true);
 
       const encoder = new TextEncoder();
       const stream = new ReadableStream<Uint8Array>({

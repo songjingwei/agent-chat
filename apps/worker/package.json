@@ -4,13 +4,23 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node -e \"console.log('[worker] scaffold ready: BullMQ worker placeholder')\"",
-    "build": "node -e \"console.log('[worker] build placeholder')\"",
-    "test": "node -e \"console.log('[worker] test placeholder')\"",
-    "lint": "node -e \"console.log('[worker] lint placeholder')\"",
-    "typecheck": "node -e \"console.log('[worker] typecheck placeholder')\""
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "test": "NODE_ENV=test tsx --test src/**/*.test.ts",
+    "lint": "pnpm run typecheck",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@agent/api": "workspace:*",
+    "@agent/db": "workspace:*",
+    "@agent/runtime": "workspace:*",
+    "@agent/shared": "workspace:*",
     "bullmq": "^5.71.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   }
 }

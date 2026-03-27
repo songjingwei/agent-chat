@@ -1,10 +1,12 @@
 import { useTranslation } from 'react-i18next'
 import { Link } from '@tanstack/react-router'
+import { ConversationLauncherDialog } from '#/components/ConversationLauncherDialog'
 import { StatusBadge } from '#/components/StatusBadge'
 import { EmptyState } from '#/components/EmptyState'
 import { ErrorDisplay } from '#/components/ErrorDisplay'
 import { LoadingSkeleton } from '#/components/LoadingSkeleton'
 import { useChatRoom } from './useChatRoom'
+import { useConversationLauncher } from './useConversationLauncher'
 import { ArrowDown, ArrowLeft, MessageCircle, Send } from 'lucide-react'
 import type { ChatMessage, Persona } from '#/lib/types'
 
@@ -59,6 +61,22 @@ export function ChatRoom({ sessionId }: ChatRoomProps) {
   const personaMap: Record<string, Persona> = {}
   if (initiatorPersona) personaMap[initiatorPersona.id] = initiatorPersona
   if (targetPersona) personaMap[targetPersona.id] = targetPersona
+  const selfPersona =
+    initiatorPersona?.id === myPersonaId
+      ? initiatorPersona
+      : targetPersona?.id === myPersonaId
+        ? targetPersona
+        : null
+  const counterpartPersona =
+    selfPersona?.id === initiatorPersona?.id ? targetPersona ?? null : initiatorPersona ?? null
+  const {
+    selectedTarget,
+    selectedIntent,
+    openConversation,
+    confirmConversation,
+    cancelConversation,
+    isLaunchingConversation,
+  } = useConversationLauncher(selfPersona)
 
   return (
     <div className="flex h-full flex-col">
@@ -245,9 +263,33 @@ export function ChatRoom({ sessionId }: ChatRoomProps) {
       )}
 
       {session.status === 'completed' && (
+        <div className="shrink-0 border-t border-[var(--line)] bg-[var(--surface)] px-4 py-4">
+          <div className="mx-auto flex max-w-3xl flex-col items-center gap-3 text-center">
+            <p className="text-sm text-[var(--sea-ink-soft)]">
+              {t('chat.ended')}
+            </p>
+            {selfPersona && counterpartPersona ? (
+              <>
+                <p className="max-w-xl text-xs leading-6 text-[var(--sea-ink-soft)]/90">
+                  {t('chat.resumeEncounterHint')}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => openConversation(counterpartPersona, 'continue')}
+                  className="btn-primary"
+                >
+                  {t('chat.resumeEncounter')}
+                </button>
+              </>
+            ) : null}
+          </div>
+        </div>
+      )}
+
+      {session.status === 'paused' && (
         <div className="shrink-0 text-center py-3 border-t border-[var(--line)] bg-[var(--surface)]">
           <p className="text-sm text-[var(--sea-ink-soft)]">
-            {t('chat.ended')}
+            {t('chat.paused')}
           </p>
         </div>
       )}
@@ -259,6 +301,15 @@ export function ChatRoom({ sessionId }: ChatRoomProps) {
           </p>
         </div>
       )}
+
+      <ConversationLauncherDialog
+        initiatorPersona={selfPersona}
+        targetPersona={selectedTarget}
+        intent={selectedIntent}
+        isSubmitting={isLaunchingConversation}
+        onCancel={cancelConversation}
+        onConfirm={confirmConversation}
+      />
     </div>
   )
 }

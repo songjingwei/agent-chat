@@ -15,8 +15,8 @@
 | Day 4 | 2026-03-26 | Runtime 状态机骨架 + 结构化输出 | `@agent/runtime` 已完成状态机、PromptManager、结构化输出 Zod Schema、解析失败重试与 fallback；新增关键回归测试 2 条（成功闭环 + 非法 JSON）；`apps/api` 已新增 `RuntimeService` 并接入服务容器；验证：`pnpm --filter @agent/runtime test` 2/2 通过，`pnpm --filter @agent/runtime typecheck` 通过，`pnpm --filter @agent/api test` 5/5 通过，`pnpm --filter @agent/api typecheck` 通过 | Done | 无 | 开始 Day 5：Persona Builder（资料到 persona 的结构化生成 + 版本化存储） |
 | Day 5 | 2026-03-25 | Persona Builder v1 + 广场优化 | 广场发现优化（shuffle-batch random feed + Redis 缓存）；ChatSessionSidebar 侧边栏；双 agent 对话编排器骨架；Persona Builder 接口/资料解析/版本化存储/人工编辑入口；OpenAPI + Swagger 双语文档 | Done | 无 | Admin 后台 + 前端核心页面 |
 | Day 5+ | 2026-03-26 | Admin 后台 + 前端核心页面 + Pair Insight | **Admin 后台**：新建 Next.js 15 应用（10+ 页面，Ant Design 5），9 个 Admin API 路由模块，JWT+refresh token 认证体系，admin 种子脚本；**Pair Insight**：关系洞察引擎（heuristic scoring + affinity label），广场集成展示；**前端补齐**：ChatRoom（消息气泡/无限滚动/实时轮询）、SessionList、Auth 表单、ReportView、10+ 共享组件、401 自动刷新；**DB**：5 张新表 + 2 个迁移；**其他**：Runtime CLI demo、骨架屏/卡片 UI 优化 | Done | 无 | 开始 Day 6：双 agent 自动对话 Worker |
-| Day 6 | 2026-03-27 | 双 agent 自动对话 Worker |  | Not Started |  |  |
-| Day 7 | 2026-03-31 | 用户介入高权重记忆生效 |  | Not Started |  |  |
+| Day 6 | 2026-03-27 | 双 agent 自动对话 Worker | 已完成 BullMQ 编排链路（`AdvanceConversationJobData`、`BullMQConversationOrchestrator`、`apps/worker` processor），会话创建可自动入队，`@agent/api` 回归测试 `23/23` 通过且 typecheck 通过 | Done | 无 | 推进 Day 7：补齐测评解释与人格自动校准流程 |
+| Day 7 | 2026-03-31 | 用户介入高权重记忆生效 | 已提前启动并完成测评域第一阶段：新增 assessment 全套 schema/迁移、会话与答题 API、前端 SoulQuiz 从 mock 切到后端、结果写入记忆；当前解释策略仍为 heuristic，专家 agent 校准未完成 | In Progress | 需要明确专家解释输出协议与自动应用阈值策略 | 实现 assessment interpretation worker（LLM）并接入 `persona_versions` 自动快照 |
 | Day 8 | 2026-04-01 | 评测集 + baseline 报告 |  | Not Started |  |  |
 | Day 9 | 2026-04-02 | 总结与推荐 v1 API |  | Not Started |  |  |
 | Day 10 | 2026-04-03 | 脱敏/审核/审计日志 |  | Not Started |  |  |

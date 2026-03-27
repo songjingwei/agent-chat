@@ -2,17 +2,36 @@
 
 ## Project Structure & Module Organization
 This repository already contains a working `pnpm workspace` monorepo scaffold plus planning docs:
-- `readme.md` defines the product goal, current status snapshot, and common commands.
+- readme.md` defines the product goal, current status snapshot, and common commands.
 - `plans/*` tracks day-by-day execution, adjustments, and daily records.
-- `docs/system-architecture.md` and `docs/mvp-implementation-plan.md` define the target architecture and MVP roadmap.
-- `apps/web` contains the TanStack Start frontend scaffold.
-- `apps/api` contains the runnable Hono + Zod API baseline with in-memory persona/session/message/report flows.
-- `apps/worker`, `packages/agent-runtime`, `packages/db`, and `packages/shared` exist but are still early-stage placeholders.
+- `docs/system-architecture.md` and `docs/architecture.md` define the target architecture and diagrams.
+- `docs/conversation-orchestration.md` defines how two agents chat with each other autonomously.
+- `apps/web` contains the TanStack Start frontend.
+- `apps/admin` contains the Admin dashboard built with Vite + Ant Design.
+- `apps/api` contains the Hono + Zod API with full business modules (auth, persona, session, memory, etc.).
+- `apps/worker` contains the BullMQ task processors for async conversation and reports.
+- `packages/agent-runtime` contains the multi-model agent engine and state machine.
+- `packages/db` contains the Drizzle schema, migrations, and repositories.
+- `packages/shared` contains shared DTOs, job types, and error codes.
 
-Current status as of `2026-03-22`:
-- `Day 0`: `Done`
-- `Day 1`: `Done`
-- `Day 2`: `Done`
+Current status as of `2026-03-28`:
+- `Core Infrastructure`: `Done`
+- `Agent Engine & Runtime`: `Done`
+- `Async Conversation Loop`: `In Progress`（in-process 编排稳定，BullMQ API/Worker 链路已接入并通过回归）
+- `Admin Dashboard`: `Done`
+- `Personality Assessment`: `In Progress`（测评 schema/API/Web 主链路已打通，专家解释与自动校准仍在推进）
+
+## Today Plan (`2026-03-28`)
+- Day focus: `Day 7 — Personality Assessment 深化`。
+- `P0`：将测评解释从 `AssessmentService` 同步逻辑迁移到 Worker（`assessment-interpretation` 队列 + processor），答题完成后仅入队，不阻塞请求线程。
+- `P0`：落地专家解释结构化输出协议（`dimension_scores`、`confidence`、`evidence`、`memory_writes`、`persona_patch`、`auto_apply`），并实现解析失败 fallback 与诊断日志。
+- `P1`：实现 Persona 自动校准阈值策略；自动应用前写入 `persona_versions` 快照，记录 `change_source=assessment_calibration` 与审计字段。
+- `P1`：补齐测评主链路回归测试（创建会话 → 提交答案 → 触发解释 → 读取结果），并通过 `pnpm --filter @agent/api test` 与 `pnpm --filter @agent/api typecheck`。
+
+### Acceptance Criteria (`2026-03-28`)
+- 测评提交后可异步生成解释结果，状态流转正确，可重试。
+- `assessment_interpretations` 可看到 `error_code` 与 `raw_output`，失败可追踪。
+- `auto_apply` 触发时必须写入 `persona_versions` 快照，Persona 更新链路可回滚、可审计。
 
 ## Build, Test, and Development Commands
 Contributors now validate both docs and runnable scaffolds:

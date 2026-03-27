@@ -16,6 +16,7 @@ export const queryKeys = {
     mine: () => [...queryKeys.personas.all, 'mine'] as const,
     detail: (id: string) =>
       [...queryKeys.personas.all, 'detail', id] as const,
+    presetTraits: ['personas', 'preset-traits'] as const,
   },
   sessions: {
     all: ['sessions'] as const,
@@ -41,5 +42,14 @@ export const queryKeys = {
   reports: {
     latest: (personaId: string) =>
       ['reports', 'latest', personaId] as const,
+  },
+  assessments: {
+    all: ['assessments'] as const,
+    bootstrap: (personaId: string) =>
+      [...queryKeys.assessments.all, 'bootstrap', personaId] as const,
+    session: (sessionId: string) =>
+      [...queryKeys.assessments.all, 'session', sessionId] as const,
+    result: (sessionId: string) =>
+      [...queryKeys.assessments.all, 'result', sessionId] as const,
   },
 }

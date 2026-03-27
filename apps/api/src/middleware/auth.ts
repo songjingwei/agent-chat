@@ -14,6 +14,11 @@ declare module "hono" {
 }
 
 export const authMiddleware = createMiddleware(async (c, next) => {
+  // Skip auth for internal tool routes (e.g. Bull Board)
+  if (c.req.path.startsWith("/_queue")) {
+    return next();
+  }
+
   const header = c.req.header("Authorization");
   if (!header?.startsWith("Bearer ")) {
     throw new ApiError(

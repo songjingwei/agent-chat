@@ -1,22 +1,17 @@
-import { useNavigate } from '@tanstack/react-router'
 import { usePersonaList } from './usePersonaList'
 import { useMyPersonas } from './useMyPersonas'
-import { useCreateSession } from '#/features/sessions/useCreateSession'
 import { useAuth } from '#/lib/auth-context'
-import type { Persona } from '#/lib/types'
 import { useEffect, useState } from 'react'
 import { buildPlazaSeed } from './plaza-seed'
+import { useConversationLauncher } from '#/features/sessions/useConversationLauncher'
 
 const PLAZA_PAGE_SIZE = 12
 const CHATTED_PAGE_SIZE = 3
 const CHATTED_FETCH_LIMIT = 18
 
 export function useDiscoveryPlaza() {
-  const [selectedTarget, setSelectedTarget] = useState<Persona | null>(null)
-  const [isBootstrappingChat, setIsBootstrappingChat] = useState(false)
   const [batch, setBatch] = useState(0)
   const [historyPage, setHistoryPage] = useState(0)
-  const navigate = useNavigate()
   const { user, isAuthenticated } = useAuth()
   const chattedSeed = buildPlazaSeed(user?.id, 0)
   const discoverySeed = buildPlazaSeed(user?.id, batch)
@@ -54,7 +49,14 @@ export function useDiscoveryPlaza() {
     enabled: discoveryEnabled,
   })
 
-  const createSession = useCreateSession()
+  const {
+    selectedTarget,
+    selectedIntent,
+    openConversation,
+    confirmConversation,
+    cancelConversation,
+    isLaunchingConversation,
+  } = useConversationLauncher(myPersona)
 
   const chattedPersonas = [...chattedCandidates].sort((left, right) => {
     const leftScore = left.relationship?.mutualScore ?? 0
@@ -97,48 +99,6 @@ export function useDiscoveryPlaza() {
       setHistoryPage(chattedPageCount - 1)
     }
   }, [chattedPageCount, historyPage])
-
-  function handleStartChat(target: Persona) {
-    if (!myPersona) {
-      navigate({ to: '/personas/create' })
-      return
-    }
-    setSelectedTarget(target)
-  }
-
-  async function confirmStartChat() {
-    if (!myPersona || !selectedTarget || isBootstrappingChat) return
-
-    setIsBootstrappingChat(true)
-    let sessionId: string | null = null
-
-    try {
-      const session = await createSession.mutateAsync({
-        initiatorPersonaId: myPersona.id,
-        targetPersonaId: selectedTarget.id,
-      })
-      sessionId = session.id
-    } catch (error) {
-      console.error(
-        '[plaza] start_chat_failed',
-        JSON.stringify({
-          targetPersonaId: selectedTarget.id,
-          sessionId,
-          error: error instanceof Error ? error.message : String(error),
-        }),
-      )
-    } finally {
-      setSelectedTarget(null)
-      setIsBootstrappingChat(false)
-      if (sessionId) {
-        navigate({ to: '/sessions/$id', params: { id: sessionId } })
-      }
-    }
-  }
-
-  function cancelSelection() {
-    setSelectedTarget(null)
-  }
 
   function shuffleDiscoveryBatch() {
     if (allLoading || total <= PLAZA_PAGE_SIZE) {
@@ -184,11 +144,12 @@ export function useDiscoveryPlaza() {
     canShuffleDiscovery: total > PLAZA_PAGE_SIZE,
     myPersona,
     selectedTarget,
-    handleStartChat,
-    confirmStartChat,
-    cancelSelection,
+    selectedIntent,
+    handleStartChat: openConversation,
+    confirmStartChat: confirmConversation,
+    cancelSelection: cancelConversation,
     isLoading: allLoading || myLoading || chattedLoading,
-    isCreatingSession: createSession.isPending || isBootstrappingChat,
+    isCreatingSession: isLaunchingConversation,
     error: allError ?? chattedError,
   }
 }

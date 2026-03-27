@@ -12,6 +12,21 @@ import { sql } from "drizzle-orm";
 import { agentPersonas } from "./agent-personas.js";
 import { chatSessions } from "./chat-sessions.js";
 
+export const MEMORY_ITEM_CATEGORIES = [
+  "fact",
+  "preference",
+  "experience",
+  "instruction",
+] as const;
+
+export const MEMORY_ITEM_SOURCES = [
+  "agent_inferred",
+  "human_override",
+  "system",
+  "assessment_self_report",
+  "assessment_inferred",
+] as const;
+
 export const memoryItems = pgTable(
   "memory_items",
   {
@@ -48,6 +63,8 @@ export const memoryItems = pgTable(
     // agent_inferred: AI 从对话中自动提取
     // human_override: 用户亲自输入（最高权重！）
     // system: 系统生成（如初始化记忆）
+    // assessment_self_report: 用户在测评中直接作答形成的自我陈述
+    // assessment_inferred: 测评解释器基于多题结果归纳出的推断
     source: varchar("source", { length: 30 }).notNull(),
 
     // 向量嵌入 —— 未来用于语义搜索
@@ -84,7 +101,7 @@ export const memoryItems = pgTable(
 
     check(
       "memory_items_source_check",
-      sql`${table.source} IN ('agent_inferred', 'human_override', 'system')`,
+      sql`${table.source} IN ('agent_inferred', 'human_override', 'system', 'assessment_self_report', 'assessment_inferred')`,
     ),
 
     // 权重必须在 0~1 之间

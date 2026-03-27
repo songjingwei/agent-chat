@@ -48,25 +48,37 @@ export const MemoryCandidateSchema = z.object({
 });
 
 export const RuntimeStructuredOutputSchema = z.object({
-  thought: ThoughtSchema,
-  response: z
-    .object({
-      content: z.string().min(1).max(2000),
-      shouldEndSession: z.boolean().default(false),
-      extractMemories: z.boolean().default(false),
-      memoryCandidates: z.array(MemoryCandidateSchema).default([]),
-    })
-    .superRefine((value, context) => {
-      if (!value.extractMemories && value.memoryCandidates.length > 0) {
-        context.addIssue({
-          code: "custom",
-          path: ["memoryCandidates"],
-          message:
-            "memoryCandidates must be empty when extractMemories is false.",
-        });
-      }
-    }),
+  response: z.object({
+    content: z.string().min(1).max(2000),
+    shouldEndSession: z.boolean().default(false),
+  }),
 });
+
+const stripUnsupportedOpenAIJsonSchemaKeywords = (value: unknown): unknown => {
+  if (Array.isArray(value)) {
+    return value.map(stripUnsupportedOpenAIJsonSchemaKeywords);
+  }
+
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+
+  const cleaned: Record<string, unknown> = {};
+  for (const [key, nestedValue] of Object.entries(value)) {
+    if (key === "$schema" || key === "default") {
+      continue;
+    }
+
+    cleaned[key] = stripUnsupportedOpenAIJsonSchemaKeywords(nestedValue);
+  }
+
+  return cleaned;
+};
+
+export const RuntimeStructuredOutputJsonSchema =
+  stripUnsupportedOpenAIJsonSchemaKeywords(
+    RuntimeStructuredOutputSchema.toJSONSchema(),
+  ) as Record<string, unknown>;
 
 export type RuntimeStructuredOutput = z.infer<typeof RuntimeStructuredOutputSchema>;
 

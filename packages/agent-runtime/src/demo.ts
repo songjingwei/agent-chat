@@ -161,23 +161,9 @@ function createModelClient(
   if (selectedMode === "static-ok") {
     return createStaticRuntimeModelClient(
       JSON.stringify({
-        thought: {
-          intent: "ask_question",
-          tone: "warm",
-          rationale: "继续围绕生活节奏提问，能自然推进关系。",
-        },
         response: {
           content: "我大概会先找家安静的咖啡店坐一会儿，然后傍晚出去散步。你更偏向宅着放松，还是想出门走走？",
           shouldEndSession: false,
-          extractMemories: true,
-          memoryCandidates: [
-            {
-              category: "preference",
-              content: "jeevsong 偏好安静、生活化的周末安排。",
-              weight: 0.71,
-              source: "agent_inferred",
-            },
-          ],
         },
       }),
     );

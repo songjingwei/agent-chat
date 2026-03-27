@@ -70,7 +70,7 @@ interface AgentRuntimeEngineOptions {
   promptManager?: PromptManager;     // 可选：默认 new PromptManager()
   maxAttempts?: number;              // 可选：最大重试次数，默认 2
   maxOutputTokens?: number;          // 可选：LLM 输出 token 上限，默认 450
-  fallbackReply?: string;            // 可选：所有重试失败后的兜底回复
+  fallbackReply?: string | ((input: RuntimeTurnInput) => string); // 可选：所有重试失败后的兜底回复
 }
 ```
 
@@ -118,6 +118,14 @@ interface RuntimeTurnResult {
   };
   memoryWrites: RuntimeMemoryWrite[];  // 需要持久化的新记忆
   failureCode?: RuntimeFailureCode;    // 失败原因码（仅 fallback 时）
+  failureDiagnostics?: Array<{
+    attempt: number;
+    failureCode: RuntimeFailureCode;
+    failureMessage: string;            // 具体解析/校验失败信息
+    finishReason?: "stop" | "length" | "error";
+    model?: string;
+    rawModelOutput?: string;           // 原始模型输出（若有）
+  }>;
   promptMeta: {
     tokenEstimate: number;
     includedMessages: number;
@@ -207,19 +215,16 @@ LLM 必须返回符合以下 JSON 结构的文本：
 
 ```json
 {
-  "thought": {
-    "intent": "ask_question|share_experience|empathize|clarify|close_session",
-    "tone": "warm|curious|calm|playful|serious",
-    "rationale": "为什么选择这个意图和语气（≤600 字符）"
-  },
   "response": {
     "content": "Agent 说的话（≤2000 字符）",
-    "shouldEndSession": false,
-    "extractMemories": false,
-    "memoryCandidates": []
+    "shouldEndSession": false
   }
 }
 ```
+
+说明：
+- 主链路只要求 `response`，避免内部分析字段拖垮用户可见回复。
+- `intent/tone` 在 runtime 内部以保守默认值补齐；`memoryWrites` 当前默认不从主回复里提取。
 
 #### 枚举值说明
 
@@ -323,8 +328,7 @@ import { createStaticRuntimeModelClient } from "@agent/runtime";
 
 // 创建返回固定文本的 mock client，用于测试
 const mockClient = createStaticRuntimeModelClient(JSON.stringify({
-  thought: { intent: "ask_question", tone: "warm", rationale: "test" },
-  response: { content: "Hello!", shouldEndSession: false, extractMemories: false, memoryCandidates: [] },
+  response: { content: "Hello!", shouldEndSession: false },
 }));
 ```
 

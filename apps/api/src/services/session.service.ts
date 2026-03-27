@@ -44,7 +44,7 @@ export class SessionService {
         and(
           eq(chatSessions.initiatorPersonaId, input.initiatorPersonaId),
           eq(chatSessions.targetPersonaId, input.targetPersonaId),
-          inArray(chatSessions.status, ["pending", "active"]),
+          inArray(chatSessions.status, ["pending", "active", "paused"]),
           isNull(chatSessions.deletedAt),
         ),
       )
@@ -130,8 +130,8 @@ export class SessionService {
       }
 
       // Prioritize active/pending over completed
-      const isCurrentActive = ["pending", "active"].includes(row.status);
-      const isExistingActive = ["pending", "active"].includes(existing.status);
+      const isCurrentActive = ["pending", "active", "paused"].includes(row.status);
+      const isExistingActive = ["pending", "active", "paused"].includes(existing.status);
 
       if (isCurrentActive && !isExistingActive) {
         aggregated.set(pairKey, row);
@@ -260,6 +260,9 @@ function mapSessionStatus(status: string): SessionStatus {
   }
   if (status === "active") {
     return "active";
+  }
+  if (status === "paused") {
+    return "paused";
   }
   return "completed";
 }

@@ -21,7 +21,7 @@ export interface PersonaRelationship {
   lastSessionId: string | null
 }
 
-export type SessionStatus = 'queued' | 'active' | 'completed'
+export type SessionStatus = 'queued' | 'active' | 'paused' | 'completed'
 
 export interface Session {
   id: string
@@ -53,6 +53,68 @@ export interface LatestReport {
   latestMessagePreview: string | null
   recommendation: string
   rationale: string
+}
+
+export type AssessmentSessionStatus =
+  | 'pending'
+  | 'in_progress'
+  | 'submitted'
+  | 'interpreting'
+  | 'completed'
+  | 'failed'
+
+export interface AssessmentQuestionOption {
+  label: string
+  value: string
+  dimension?: string | undefined
+  score?: number | undefined
+}
+
+export interface AssessmentQuestion {
+  sessionItemId: string
+  itemId: string
+  questionText: string
+  answerType: 'single_choice' | 'likert' | 'free_text'
+  options: AssessmentQuestionOption[]
+  answer: {
+    selectedOptionValue?: string | undefined
+    freeTextAnswer?: string | null | undefined
+  } | null
+}
+
+export interface AssessmentSession {
+  id: string
+  personaId: string
+  templateId: string
+  templateSlug: string
+  templateName: string
+  status: AssessmentSessionStatus
+  currentIndex: number
+  totalItems: number
+  answeredCount: number
+  currentItem: AssessmentQuestion | null
+  resultReady: boolean
+  startedAt: string | null
+  submittedAt: string | null
+  completedAt: string | null
+}
+
+export interface AssessmentDimensionScore {
+  dimension: string
+  label: string
+  score: number
+  normalizedScore: number
+  evidenceSessionItemIds: string[]
+}
+
+export interface AssessmentResult {
+  sessionId: string
+  status: 'pending' | 'completed' | 'failed' | 'applied'
+  summary: string | null
+  confidence: number | null
+  dimensionScores: AssessmentDimensionScore[]
+  applied: boolean
+  appliedVersion: number | null
 }
 
 // Auth types
@@ -96,6 +158,24 @@ export interface CreatePersonaInput {
   traits: string[]
 }
 
+export interface UpdatePersonaInput {
+  displayName?: string | undefined
+  bio?: string | undefined
+  traits?: string[] | undefined
+  systemPrompt?: string | undefined
+}
+
+export interface BuildPersonaInput {
+  sourceText: string
+  existingPersonaId?: string | undefined
+}
+
+export interface BuildPersonaResult {
+  persona: Persona
+  generatedSystemPrompt: string
+  version: number
+}
+
 export interface CreateSessionInput {
   initiatorPersonaId: string
   targetPersonaId: string
@@ -104,6 +184,17 @@ export interface CreateSessionInput {
 export interface CreateHumanMessageInput {
   authorPersonaId: string
   content: string
+}
+
+export interface CreateAssessmentSessionInput {
+  personaId: string
+  templateSlug?: string | undefined
+}
+
+export interface SubmitAssessmentAnswerInput {
+  sessionItemId: string
+  selectedOptionValue?: string | undefined
+  freeTextAnswer?: string | null | undefined
 }
 
 export interface ListMessagesInput {

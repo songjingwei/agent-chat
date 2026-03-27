@@ -38,9 +38,12 @@
     "noFreshAgentsDesc": "你已经和当前批次里的人打过招呼了，换一批看看新的回响。",
     "startConversation": "开启一段对话？",
     "startConversationDesc": "你的镜像 <strong>{{initiator}}</strong> 将带着你的故事，去邂逅 <strong>{{target}}</strong>。",
+    "continueConversation": "继续这段对话？",
+    "continueConversationDesc": "你的镜像 <strong>{{initiator}}</strong> 可以再次走向 <strong>{{target}}</strong>，把这段回响继续写下去。",
     "cancel": "再等等",
     "starting": "正在连接...",
-    "startChat": "开启对话"
+    "startChat": "开启对话",
+    "continueChat": "继续对话"
   },
   "persona": {
     "management": "数字灵魂管理",
@@ -64,7 +67,19 @@
       "quiz": "心灵测试",
       "quizDesc": "通过心理学维度的深度问答，精准校准镜像参数。",
       "chat": "镜像对话",
-      "chatDesc": "与你的数字镜像交谈，在自然的互动中完成灵魂同步。"
+      "chatDesc": "与你的数字镜像交谈，在自然的互动中完成灵魂同步。",
+      "reset": "初始化镜像",
+      "resetDesc": "清除所有人格数据，将镜像还原为最初的空白状态。",
+      "delete": "释放镜像",
+      "deleteDesc": "让这面镜像回归虚无，你可以随时重新塑造一面新的。"
+    },
+    "delete": {
+      "kicker": "灵魂告别",
+      "title": "确定要释放这面镜像吗？",
+      "description": "释放后，镜像的所有人格数据将被清除。你可以随时重新唤醒一面全新的镜像。",
+      "cancel": "再想想",
+      "confirm": "确认释放",
+      "confirming": "正在告别..."
     },
     "quiz": {
       "title": "心灵深度校准",
@@ -98,9 +113,21 @@
       "traitPlaceholder": "输入特质后按回车，让他更鲜活",
       "addTrait": "添加特质",
       "removeTrait": "移除特质：{{trait}}",
+      "presetHint": "点选快速添加，或手动输入自定义特质",
       "creating": "正在注入灵魂...",
       "submit": "完成塑造",
-      "nameFromAccount": "镜像将使用你的账户名称"
+      "nameFromAccount": "镜像将使用你的账户名称",
+      "aiTitle": "AI 智能塑造",
+      "aiSubtitle": "粘贴你的简历、聊天记录或社交媒体内容，让 AI 读懂你的灵魂",
+      "sourceType": {
+        "resume": "简历",
+        "chat": "聊天记录",
+        "social": "社交媒体"
+      },
+      "sourcePlaceholder": "将你的简历、微信聊天记录、朋友圈文案、微博内容等粘贴到这里……\n\nAI 会从中提炼你的性格特质、表达风格和价值观，自动为你的镜像注入灵魂。",
+      "building": "正在读取你的灵魂...",
+      "buildSubmit": "AI 智能塑造",
+      "orManual": "或者手动填写"
     }
   },
   "session": {
@@ -124,6 +151,9 @@
     "loadingHistory": "正在加载更早消息...",
     "newMessages": "查看新消息",
     "ended": "这段奇遇暂时告一段落。",
+    "resumeEncounter": "继续这段奇遇",
+    "resumeEncounterHint": "这段奇遇已经被留存在这里，但你随时都可以再次叩门，让新的回响从这一刻继续。",
+    "paused": "这一段话先轻轻落在这里，你也可以主动续上一句。",
     "waiting": "他正在认真倾听你的故事……"
   },
   "report": {
@@ -143,6 +173,7 @@
   "status": {
     "queued": "排队候场",
     "active": "深情交流",
+    "paused": "留白片刻",
     "completed": "已留存",
     "label": "状态：{{status}}"
   },

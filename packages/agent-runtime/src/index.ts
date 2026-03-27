@@ -6,6 +6,7 @@ export {
 } from "./state-machine/agent-state-machine.js";
 export {
   RuntimeStructuredOutputSchema,
+  RuntimeStructuredOutputJsonSchema,
   ThoughtSchema,
   MemoryCandidateSchema,
   parseRuntimeStructuredOutput,
@@ -29,6 +30,7 @@ export {
 export {
   AgentRuntimeEngine,
   createStaticRuntimeModelClient,
+  type RuntimeFailureDiagnostic,
   type RuntimeMemoryWrite,
   type RuntimeModelClient,
   type RuntimeModelRequest,

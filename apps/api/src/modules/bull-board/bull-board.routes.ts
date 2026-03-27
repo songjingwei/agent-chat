@@ -1,15 +1,11 @@
-import { Hono } from "hono";
 import { Queue } from "bullmq";
 import { createBullBoard } from "@bull-board/api";
 import { BullMQAdapter } from "@bull-board/api/bullMQAdapter";
 import { HonoAdapter } from "@bull-board/hono";
+import { serveStatic } from "@hono/node-server/serve-static";
+import { CONVERSATION_QUEUE_NAME } from "@agent/shared";
 
-import { apiConfig } from "../config.js";
-
-const QUEUE_NAMES = {
-  AGENT_CHAT: "agent-chat",
-  REPORT_GENERATION: "report-generation",
-} as const;
+import { apiConfig } from "../../config.js";
 
 const parseRedisConnection = (url: string) => {
   const parsed = new URL(url);
@@ -23,12 +19,14 @@ const parseRedisConnection = (url: string) => {
 
 export const createBullBoardRoutes = () => {
   const connection = parseRedisConnection(apiConfig.redisUrl);
+  const prefix = process.env.QUEUE_PREFIX ?? "agent-chat";
 
-  const queues = Object.values(QUEUE_NAMES).map(
-    (name) => new Queue(name, { connection }),
-  );
+  const queues = [
+    new Queue(CONVERSATION_QUEUE_NAME, { connection, prefix }),
+  ];
 
-  const serverAdapter = new HonoAdapter("/admin/queues");
+  const serverAdapter = new HonoAdapter(serveStatic);
+  serverAdapter.setBasePath("/_queue");
 
   createBullBoard({
     queues: queues.map((q) => new BullMQAdapter(q)),

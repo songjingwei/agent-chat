@@ -92,4 +92,51 @@ export class PersonaEditorService {
 
     return updated.length > 0;
   }
+
+  async activatePersona(
+    personaId: string,
+    userId: string,
+  ): Promise<boolean> {
+    const updated = await this.#db
+      .update(agentPersonas)
+      .set({
+        status: "active",
+        updatedAt: new Date(),
+        updatedBy: userId,
+      })
+      .where(
+        and(
+          eq(agentPersonas.id, personaId),
+          eq(agentPersonas.userId, userId),
+          isNull(agentPersonas.deletedAt),
+        ),
+      )
+      .returning({ id: agentPersonas.id });
+
+    return updated.length > 0;
+  }
+
+  async deletePersona(
+    personaId: string,
+    userId: string,
+  ): Promise<boolean> {
+    const now = new Date();
+    const updated = await this.#db
+      .update(agentPersonas)
+      .set({
+        deletedAt: now,
+        updatedAt: now,
+        updatedBy: userId,
+      })
+      .where(
+        and(
+          eq(agentPersonas.id, personaId),
+          eq(agentPersonas.userId, userId),
+          isNull(agentPersonas.deletedAt),
+        ),
+      )
+      .returning({ id: agentPersonas.id });
+
+    return updated.length > 0;
+  }
 }

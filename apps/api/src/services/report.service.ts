@@ -111,5 +111,8 @@ function mapSessionStatus(status: string): Session["status"] {
   if (status === "active") {
     return "active";
   }
+  if (status === "paused") {
+    return "paused";
+  }
   return "completed";
 }

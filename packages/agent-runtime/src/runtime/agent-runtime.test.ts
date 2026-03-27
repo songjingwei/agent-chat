@@ -8,23 +8,9 @@ test("runTurn returns structured message and memory writes on valid model JSON",
     async generate() {
       return {
         text: JSON.stringify({
-          thought: {
-            intent: "ask_question",
-            tone: "warm",
-            rationale: "Keep the conversation moving with a concrete question.",
-          },
           response: {
             content: "What travel destination do you want to visit most recently?",
             shouldEndSession: false,
-            extractMemories: true,
-            memoryCandidates: [
-              {
-                category: "preference",
-                content: "The partner prefers a relaxed opener.",
-                weight: 0.74,
-                source: "agent_inferred",
-              },
-            ],
           },
         }),
         finishReason: "stop",
@@ -67,20 +53,26 @@ test("runTurn returns structured message and memory writes on valid model JSON",
     result.message.content,
     "What travel destination do you want to visit most recently?",
   );
-  assert.equal(result.memoryWrites.length, 1);
+  assert.equal(result.message.intent, "clarify");
+  assert.equal(result.message.tone, "calm");
+  assert.equal(result.memoryWrites.length, 0);
   assert.deepEqual(
     result.transitions.map((transition) => transition.event),
     ["START_TURN", "MODEL_OUTPUT_PARSED", "MEMORY_PREPARED", "TURN_COMPLETED"],
   );
 });
 
-test("runTurn retries parse failures and returns fallback when all attempts fail", async () => {
+test("runTurn records schema validation diagnostics and returns fallback when response shape is invalid", async () => {
+  const invalidResponse = JSON.stringify({
+    response: {},
+  });
+  let attempt = 0;
   const modelClient: RuntimeModelClient = {
     async generate() {
       return {
-        text: "This is not JSON and cannot be parsed.",
+        text: invalidResponse,
         finishReason: "stop",
-        model: "mock-bad-json",
+        model: `mock-bad-schema-${++attempt}`,
       };
     },
   };
@@ -109,12 +101,71 @@ test("runTurn retries parse failures and returns fallback when all attempts fail
 
   assert.equal(result.status, "fallback");
   assert.equal(result.usedFallback, true);
-  assert.equal(result.failureCode, "json_parse_error");
+  assert.equal(result.failureCode, "schema_validation_error");
   assert.equal(result.attempts, 2);
   assert.equal(result.message.content, "fallback message");
   assert.equal(result.memoryWrites.length, 0);
+  assert.equal(result.failureDiagnostics?.length, 2);
+  assert.deepEqual(
+    result.failureDiagnostics?.map((item) => item.attempt),
+    [1, 2],
+  );
+  assert.ok(
+    result.failureDiagnostics?.every(
+      (item) =>
+        item.failureCode === "schema_validation_error"
+        && item.rawModelOutput === invalidResponse
+        && item.failureMessage.includes("response.content"),
+    ),
+  );
   assert.deepEqual(
     result.transitions.map((transition) => transition.event),
     ["START_TURN", "RETRY_GENERATION", "TURN_FAILED"],
   );
+});
+
+test("runTurn uses a natural default fallback reply instead of exposing parser errors", async () => {
+  const modelClient: RuntimeModelClient = {
+    async generate() {
+      return {
+        text: "{\"response\":{}}",
+        finishReason: "stop",
+        model: "mock-bad-schema",
+      };
+    },
+  };
+
+  const runtime = new AgentRuntimeEngine({
+    modelClient,
+    maxAttempts: 1,
+  });
+
+  const result = await runtime.runTurn({
+    sessionId: "ses_test_3",
+    speakerPersona: {
+      id: "per_a",
+      name: "jeevsong",
+      traits: ["warm"],
+    },
+    counterpartPersona: {
+      id: "per_b",
+      name: "易涵",
+      traits: ["gentle"],
+    },
+    recentMessages: [
+      {
+        role: "agent",
+        authorName: "易涵",
+        content: "其实我还挺想继续听你说下去。",
+      },
+    ],
+    memoryItems: [],
+  });
+
+  assert.equal(result.status, "fallback");
+  assert.equal(
+    result.message.content,
+    "易涵，你刚才那句话我记住了。换个轻一点的角度说，我还挺想继续听你讲下去。",
+  );
+  assert.equal(result.message.shouldEndSession, false);
 });
